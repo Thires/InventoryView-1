@@ -141,7 +141,7 @@ namespace InventoryView
                             ScanStart("Vault");
                         }
                         // If you don't have a vault book or you can't read a vault book, it skips to checking use of vault standard.
-                        else if (IsDenied(trimtext))
+                        else if (Regex.IsMatch(text, "^What were you referring to\\?"))
                         {
                             ScanMode = "StandardStart";
                             _host.EchoText("Skipping Book Vault.");
@@ -401,7 +401,7 @@ namespace InventoryView
                             ScanStart("Deed");
                         }
                         // If you don't have a deed register or it is empty, it skips to checking your house.
-                        else if (IsDenied(trimtext))
+                        else if (Regex.IsMatch(text, "^What were you referring to\\?"))
                         {
                             _host.EchoText("Skipping Deed Register.");
                             ScanMode = "HomeStart";
@@ -531,7 +531,7 @@ namespace InventoryView
                             _host.SendText("#parse InventoryView scan complete");
                             SaveSettings();
                         }
-                        else if (IsDenied(trimtext))
+                        else if (Regex.IsMatch(text, "^What were you referring to\\?"))
                         {
                             ScanMode = null;
                             _host.EchoText("Skipping Trader Storage.");
@@ -657,7 +657,6 @@ namespace InventoryView
                 || text == "You haven't stored any deeds in this register."
                 || text == "You shouldn't do that to somebody eles's deed book."
                 || text == "You shouldn't read somebody else's deed book."
-                || text == "What were you referring to?"
                 || text == "The storage book is filled with complex lists of inventory that make little sense to you."
                 || Regex.IsMatch(text, "^You shouldn't do that while inside of a home\\.  Step outside if you need to check something\\.")
                 || Regex.IsMatch(text, "^\\[You don't have access to advanced vault urchins because you don't have a subscription\\.")
@@ -754,7 +753,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "1.9"; }
+            get { return "2.0"; }
         }
 
         public string Description
@@ -781,6 +780,7 @@ namespace InventoryView
             {
                 try
                 {
+                    File.SetLastWriteTime(configFile, DateTime.Now);
                     using (Stream stream = File.Open(configFile, FileMode.Open))
                     {
                         XmlSerializer serializer = new XmlSerializer(typeof(List<CharacterData>));
@@ -791,7 +791,7 @@ namespace InventoryView
                         AddParents(cData.items, null);
                     }
                     if (!initial)
-                        _host.EchoText("InventoryView data loaded.");
+                        _host.EchoText("Inventory data loaded.");
                 }
                 catch (IOException ex)
                 {
