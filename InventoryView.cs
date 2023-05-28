@@ -753,7 +753,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.0"; }
+            get { return "2.1.1"; }
         }
 
         public string Description

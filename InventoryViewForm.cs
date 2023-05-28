@@ -23,7 +23,7 @@ namespace InventoryView
         private ToolStripMenuItem copyToolStripMenuItem;
         private ToolStripMenuItem wikiToolStripMenuItem;
         private ToolStripMenuItem copyAllToolStripMenuItem;
-        private bool clickSearch;
+        private bool clickSearch = false;
         private ToolStripMenuItem copySelectedToolStripMenuItem;
         private readonly ListBox listBox = new ListBox();
 
@@ -281,6 +281,9 @@ namespace InventoryView
                     return;
                 }
             }
+            // Set clickSearch to true to indicate that a search has been performed
+            clickSearch = true;
+
             // Set focus back to the txtSearch control
             txtSearch.Focus();
         }
@@ -393,7 +396,10 @@ namespace InventoryView
 
         private void OpenWikiPage(string text)
         {
-            Process.Start(new ProcessStartInfo(string.Format("https://elanthipedia.play.net/index.php?search={0}", Regex.Replace(text, @"\(\d+\)\s|\s\(closed\)", ""))) { UseShellExecute = true });
+            if (Class1._host.InterfaceVersion == 4)
+                Class1._host.SendText(string.Format("#browser https://elanthipedia.play.net/index.php?search={0}", Uri.EscapeDataString(Regex.Replace(text, @"\(\d+\)\s|\s\(closed\)", ""))));
+            else
+                Process.Start(new ProcessStartInfo(string.Format("https://elanthipedia.play.net/index.php?search={0}", Regex.Replace(text, @"\(\d+\)\s|\s\(closed\)", ""))) { UseShellExecute = true });
         }
 
         private void BtnFindNext_Click(object sender, EventArgs e)
@@ -600,6 +606,10 @@ namespace InventoryView
                 {
                     cboCharacters.SelectedIndex = -1;
                 }
+                if (cboCharacters.Items.Count == 0)
+                {
+                    cboCharacters.Text = "";
+                }
             }
             catch (Exception ex)
             {
@@ -616,6 +626,8 @@ namespace InventoryView
             searchMatches.Clear();
             currentMatch = null;
             txtSearch.Text = "";
+            // Set clickSearch to true to indicate that a search has been performed
+            clickSearch = false;
             // Set focus back to the txtSearch control
             txtSearch.Focus();
         }
@@ -874,7 +886,7 @@ namespace InventoryView
             this.tv.Location = new System.Drawing.Point(2, 2);
             this.tv.Name = "tv";
             this.tv.ShowNodeToolTips = true;
-            this.tv.Size = new System.Drawing.Size(65535, 28);
+            this.tv.Size = new System.Drawing.Size(5, 28);
             this.tv.TabIndex = 10;
             this.tv.Visible = false;
             this.tv.MouseUp += new System.Windows.Forms.MouseEventHandler(this.Tv_MouseUp);
