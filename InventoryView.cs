@@ -478,8 +478,7 @@ namespace InventoryView
                         }
                         break; //end of HomeStart
                     case "Home":
-
-                        if (trimtext == ">") // There is no text after the home list, so watch for the next >
+                        if (Regex.IsMatch(trimtext, @"\^[^>]*>|[^>]*\>|>|\^\>")) // There is no text after the home list, so watch for the next >
                         {
                             if (_host.get_Variable("guild") == "Trader")
                             {
@@ -753,7 +752,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.1.1"; }
+            get { return "2.1.3"; }
         }
 
         public string Description
