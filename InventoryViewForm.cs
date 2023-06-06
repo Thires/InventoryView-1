@@ -54,6 +54,7 @@ namespace InventoryView
         private CheckedListBox chkCharacters;
 
         private List<TreeNode> removedNodes = new List<TreeNode>();
+        private Label label1;
         private static string basePath = Application.StartupPath;
 
         public InventoryViewForm() => InitializeComponent();
@@ -109,7 +110,7 @@ namespace InventoryView
                 int totalCount = AddCharacterDataToTreeView(tv, character);
 
                 // Update the tab page text with the total item count
-                tabPage.Text = $"{character} (Total: {totalCount})";
+                tabPage.Text = $"{character} (T: {totalCount})";
             }
         }
 
@@ -251,10 +252,10 @@ namespace InventoryView
 
                     // Update the tab page text with the search count if greater than zero
                     if (searchCount > 0)
-                        tabPage.Text = $"{tabPage.Text.Split(' ')[0]} (Matches: {searchCount})";
+                        tabPage.Text = $"{tabPage.Text.Split(' ')[0]} (M: {searchCount})";
                     else
                     {
-                        tabPage.Text = $"{tabPage.Text.Split(' ')[0]} (Total: {totalCount})";
+                        tabPage.Text = $"{tabPage.Text.Split(' ')[0]} (T: {totalCount})";
 
                         // Remove the tab page from the TabControl if no matching items were found and it's not already hidden
                         if (tabControl1.TabPages.Contains(tabPage) && !hiddenTabPages.Any(x => x.tabPage == tabPage))
@@ -880,6 +881,7 @@ namespace InventoryView
             this.btnFindNext = new System.Windows.Forms.Button();
             this.btnReset = new System.Windows.Forms.Button();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.label1 = new System.Windows.Forms.Label();
             this.listBox_Menu.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.panel1.SuspendLayout();
@@ -980,6 +982,7 @@ namespace InventoryView
             // 
             // panel1
             // 
+            this.panel1.Controls.Add(this.label1);
             this.panel1.Controls.Add(this.cboCharacters);
             this.panel1.Controls.Add(this.btnRemoveCharacter);
             this.panel1.Controls.Add(this.btnFindPrev);
@@ -1185,6 +1188,15 @@ namespace InventoryView
             this.splitContainer1.Size = new System.Drawing.Size(1019, 408);
             this.splitContainer1.SplitterDistance = 590;
             this.splitContainer1.TabIndex = 19;
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(115, 42);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(201, 13);
+            this.label1.TabIndex = 16;
+            this.label1.Text = "T = Total Item Count | M = Total Matches";
             // 
             // InventoryViewForm
             // 
