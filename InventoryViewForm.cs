@@ -864,6 +864,7 @@ namespace InventoryView
             this.lblMatches = new System.Windows.Forms.ListBox();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.panel1 = new System.Windows.Forms.Panel();
+            this.label1 = new System.Windows.Forms.Label();
             this.cboCharacters = new System.Windows.Forms.ComboBox();
             this.btnRemoveCharacter = new System.Windows.Forms.Button();
             this.btnFindPrev = new System.Windows.Forms.Button();
@@ -881,7 +882,6 @@ namespace InventoryView
             this.btnFindNext = new System.Windows.Forms.Button();
             this.btnReset = new System.Windows.Forms.Button();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.label1 = new System.Windows.Forms.Label();
             this.listBox_Menu.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.panel1.SuspendLayout();
@@ -944,6 +944,7 @@ namespace InventoryView
             // 
             // tabControl1
             // 
+            this.tabControl1.Appearance = System.Windows.Forms.TabAppearance.Buttons;
             this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tabControl1.Location = new System.Drawing.Point(0, 0);
             this.tabControl1.Multiline = true;
@@ -1004,6 +1005,15 @@ namespace InventoryView
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(1019, 58);
             this.panel1.TabIndex = 0;
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(115, 42);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(201, 13);
+            this.label1.TabIndex = 16;
+            this.label1.Text = "T = Total Item Count | M = Total Matches";
             // 
             // cboCharacters
             // 
@@ -1188,15 +1198,6 @@ namespace InventoryView
             this.splitContainer1.Size = new System.Drawing.Size(1019, 408);
             this.splitContainer1.SplitterDistance = 590;
             this.splitContainer1.TabIndex = 19;
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(115, 42);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(201, 13);
-            this.label1.TabIndex = 16;
-            this.label1.Text = "T = Total Item Count | M = Total Matches";
             // 
             // InventoryViewForm
             // 
