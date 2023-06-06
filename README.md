@@ -31,7 +31,6 @@ Installation instructions:
 1. Download InventoryView.zip
 2. Install InventoryView.dll in either the Genie Plugins folder (%appdata%\Genie Client 3\Plugins) or your Genie.exe directory, whichever you keep config files in.
 3. Either restart any open instances of Genie, or type:  #plugin load InventoryView.dll  ..in each open instance of Genie.
-3a. Until this plugin is approved, you may get a warning saying you are installing an unapproved plugin the first time you load it.
 4. Go to the Plugins menu and Inventory View.
 5. Click the Scan Inventory button to record the inventory of the currently logged in character.
 
