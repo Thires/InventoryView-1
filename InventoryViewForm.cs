@@ -56,7 +56,7 @@ namespace InventoryView
 
         private List<TreeNode> removedNodes = new List<TreeNode>();
         private Label label1;
-        public CheckBox tabsMultiline;
+        public CheckBox checkBox1;
         private static string basePath = Application.StartupPath;
 
         public InventoryViewForm() => InitializeComponent();
@@ -337,7 +337,6 @@ namespace InventoryView
                         // Get the character name from the tab page's Text property
                         string characterName = tabControl1.SelectedTab.Text;
 
-                        // Check if the character name has already been added to the ListBox
                         if (!lblMatches.Items.Contains(" --- " + characterName + " --- "))
                         {
                             // Add a space after the last item if this is not the first character
@@ -419,7 +418,7 @@ namespace InventoryView
         {
             if (lblMatches.SelectedItem == null)
             {
-                int num = (int)MessageBox.Show("Select an item to lookup.");
+                MessageBox.Show("Select an item to lookup.");
             }
             else
             {
@@ -875,8 +874,8 @@ namespace InventoryView
 
         public void checkBox1_CheckedChanged(object sender, EventArgs e)
         {
-            tabControl1.Multiline = tabsMultiline.Checked;
-            if (tabsMultiline.Checked == true)
+            tabControl1.Multiline = checkBox1.Checked;
+            if (checkBox1.Checked == true)
                 tabControl1.Appearance = (TabAppearance)Appearance.Button;
             else
                 tabControl1.Appearance = (TabAppearance)Appearance.Normal;
@@ -904,7 +903,7 @@ namespace InventoryView
             this.lblMatches = new System.Windows.Forms.ListBox();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.tabsMultiline = new System.Windows.Forms.CheckBox();
+            this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.label1 = new System.Windows.Forms.Label();
             this.cboCharacters = new System.Windows.Forms.ComboBox();
             this.btnRemoveCharacter = new System.Windows.Forms.Button();
@@ -1022,7 +1021,7 @@ namespace InventoryView
             // 
             // panel1
             // 
-            this.panel1.Controls.Add(this.tabsMultiline);
+            this.panel1.Controls.Add(this.checkBox1);
             this.panel1.Controls.Add(this.label1);
             this.panel1.Controls.Add(this.cboCharacters);
             this.panel1.Controls.Add(this.btnRemoveCharacter);
@@ -1046,16 +1045,16 @@ namespace InventoryView
             this.panel1.Size = new System.Drawing.Size(1019, 58);
             this.panel1.TabIndex = 0;
             // 
-            // tabsMultiline
+            // checkBox1
             // 
-            this.tabsMultiline.AutoSize = true;
-            this.tabsMultiline.Location = new System.Drawing.Point(2, 40);
-            this.tabsMultiline.Name = "tabsMultiline";
-            this.tabsMultiline.Size = new System.Drawing.Size(91, 17);
-            this.tabsMultiline.TabIndex = 17;
-            this.tabsMultiline.Text = "Tabs Multiline";
-            this.tabsMultiline.UseVisualStyleBackColor = true;
-            this.tabsMultiline.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
+            this.checkBox1.AutoSize = true;
+            this.checkBox1.Location = new System.Drawing.Point(2, 40);
+            this.checkBox1.Name = "checkBox1";
+            this.checkBox1.Size = new System.Drawing.Size(91, 17);
+            this.checkBox1.TabIndex = 17;
+            this.checkBox1.Text = "Multiline Tabs";
+            this.checkBox1.UseVisualStyleBackColor = true;
+            this.checkBox1.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
             // 
             // label1
             // 

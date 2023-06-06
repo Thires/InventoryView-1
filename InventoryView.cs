@@ -802,7 +802,7 @@ namespace InventoryView
                     // Restore the state of the CheckBox from the value of the CheckBoxState element
                     if (checkBoxStateNode != null)
                     {
-                        ((InventoryViewForm)_form).tabsMultiline.Checked = bool.Parse(checkBoxStateNode.InnerText);
+                        ((InventoryViewForm)_form).checkBox1.Checked = bool.Parse(checkBoxStateNode.InnerText);
                     }
 
                     using (Stream stream = File.Open(configFile, FileMode.Open))
@@ -849,7 +849,7 @@ namespace InventoryView
 
                 // Create a new CheckBoxState element and set its value to the state of the checkBox1 control
                 XmlElement checkBoxStateElement = doc.CreateElement("CheckBoxState");
-                checkBoxStateElement.InnerText = ((InventoryViewForm)_form).tabsMultiline.Checked.ToString();
+                checkBoxStateElement.InnerText = ((InventoryViewForm)_form).checkBox1.Checked.ToString();
 
                 // Append the CheckBoxState element to the root element of the XmlDocument
                 doc.DocumentElement.AppendChild(checkBoxStateElement);
