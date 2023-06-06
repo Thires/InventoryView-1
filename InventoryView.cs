@@ -40,7 +40,7 @@ namespace InventoryView
 
         private bool Debug = false;
         private string LastText = "";
-	    private string Place;
+	    private string bookContainer;
 
         public void Initialize(IHost host)
         {
@@ -132,7 +132,7 @@ namespace InventoryView
                         if (Regex.Match(trimtext, "^You get a.*vault book.*from").Success || trimtext == "You are already holding that.")
                         {
                             Match match2 = Regex.Match(trimtext, "^You get a.*vault book.*from.+your (.+)\\.");
-                            Place = string.Format("{0}", match2.Groups[1]);
+                            bookContainer = string.Format("{0}", match2.Groups[1]);
                             _host.EchoText("Scanning Book Vault.");
                             _host.SendText("read my vault book");
                         }
@@ -152,10 +152,11 @@ namespace InventoryView
                         {
                             ScanMode = "StandardStart";
                             _host.EchoText("Skipping Book Vault.");
-                            if (Place == "")
+                            if (bookContainer == "")
                                 _host.SendText("stow my vault book");
                             else
-                                _host.SendText("put my vault book in my " + Place);
+                                _host.SendText("put my vault book in my " + bookContainer);
+                            bookContainer = "";
                             _host.SendText("vault standard");
                         }
                         break; //end of VaultStart
@@ -164,10 +165,11 @@ namespace InventoryView
                         if (text.StartsWith("The last note in your book indicates that your vault contains"))
                         {
                             ScanMode = "FamilyStart";
-                            if (Place == "")
+                            if (bookContainer == "")
                                 _host.SendText("stow my vault book");
                             else
-                                _host.SendText("put my vault book in my " + Place);
+                                _host.SendText("put my vault book in my " + bookContainer);
+                            bookContainer = "";
                             _host.SendText("vault family");
                         }
                         else
@@ -390,7 +392,7 @@ namespace InventoryView
                         if (match1.Success || trimtext == "You are already holding that.")
                         {
                             Match match2 = Regex.Match(trimtext, "^You get a.*deed register.*from.+your (.+)\\.");
-                            Place = string.Format("{0}", match2.Groups[1]);
+                            bookContainer = string.Format("{0}", match2.Groups[1]);
                             _host.EchoText("Scanning Deed Register.");
                             _host.SendText("turn my deed register to contents");
                             _host.SendText("read my deed register");
@@ -410,22 +412,24 @@ namespace InventoryView
                         else if (IsDenied(trimtext))
                         {
                             _host.EchoText("Skipping Deed Register.");
-                            if (Place == "")
+                            if (bookContainer == "")
                                 _host.SendText("stow my deed register");
                             else
-                                _host.SendText("put my deed register in my " + Place);
+                                _host.SendText("put my deed register in my " + bookContainer);
                             ScanMode = "HomeStart";
+                            bookContainer = "";
                             _host.SendText("home recall");
                         }
                         break;//end if DeedStart
                     case "Deed":
                         if (trimtext.StartsWith("Currently stored"))
                         {
-                            if (Place == "")
+                            if (bookContainer == "")
                                 _host.SendText("stow my deed register");
                             else
-                                _host.SendText("put my deed register in my " + Place);
+                                _host.SendText("put my deed register in my " + bookContainer);
                             ScanMode = "HomeStart";
+                            bookContainer = "";
                             _host.SendText("home recall");
                         }
                         else
@@ -513,7 +517,7 @@ namespace InventoryView
                         if (Regex.Match(trimtext, "^You get a.*storage book.*from").Success || trimtext == "You are already holding that.")
                         {
                             Match match3 = Regex.Match(trimtext, "^You get a.*storage book.*from.+your (.+)\\.");
-                            Place = string.Format("{0}", match3.Groups[1]);
+                            bookContainer = string.Format("{0}", match3.Groups[1]);
                             _host.EchoText("Scanning Trader Storage.");
                             _host.SendText("read my storage book");
                         }
@@ -535,11 +539,12 @@ namespace InventoryView
                             ScanMode = null;
                             _host.EchoText("Skipping Trader Storage.");
                             _host.EchoText("Scan Complete.");
-                            if (Place == "")
+                            if (bookContainer == "")
                                 _host.SendText("stow my storage book");
                             else
-                                _host.SendText("put my storage book in my " + Place);
+                                _host.SendText("put my storage book in my " + bookContainer);
                             _host.SendText("#parse InventoryView scan complete");
+                            bookContainer = "";
                             SaveSettings();
                         }
                         break; // end of trader start
@@ -549,11 +554,12 @@ namespace InventoryView
                         {
                             ScanMode = null;
                             _host.EchoText("Scan Complete.");
-                            if (Place == "")
+                            if (bookContainer == "")
                                 _host.SendText("stow my storage book");
                             else
-                                _host.SendText("put my storage book in my " + Place);
+                                _host.SendText("put my storage book in my " + bookContainer);
                                 _host.SendText("#parse InventoryView scan complete");
+                                bookContainer = "";
                             SaveSettings();
                         }
                         else
