@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Configuration;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
@@ -55,6 +56,7 @@ namespace InventoryView
 
         private List<TreeNode> removedNodes = new List<TreeNode>();
         private Label label1;
+        public CheckBox tabsMultiline;
         private static string basePath = Application.StartupPath;
 
         public InventoryViewForm() => InitializeComponent();
@@ -331,9 +333,26 @@ namespace InventoryView
                     // Add the node's text to the lblMatches ListBox control
                     if (tabControl1.SelectedTab.Controls[0] == treeView)
                     {
+
+                        // Get the character name from the tab page's Text property
+                        string characterName = tabControl1.SelectedTab.Text;
+
+                        // Check if the character name has already been added to the ListBox
+                        if (!lblMatches.Items.Contains(" --- " + characterName + " --- "))
+                        {
+                            // Add a space after the last item if this is not the first character
+                            if (lblMatches.Items.Count > 0)
+                            {
+                                lblMatches.Items.Add(" ");
+                            }
+                            // Add the character name to the ListBox
+                            lblMatches.Items.Add(" --- " + characterName + " --- ");
+                        }
+
                         node.Text = Regex.Replace(node.Text, @"\(\d+\)\s", "");
                         if (node.Text[node.Text.Length - 1] == '.')
                             node.Text = node.Text.TrimEnd('.');
+                        // Add the node's text to the lblMatches ListBox control
                         lblMatches.Items.Add(node.Text);
                     }
                 }
@@ -403,7 +422,17 @@ namespace InventoryView
                 int num = (int)MessageBox.Show("Select an item to lookup.");
             }
             else
-                OpenWikiPage((string)lblMatches.SelectedItem);
+            {
+                string selectedItem = (string)lblMatches.SelectedItem;
+                if (selectedItem == " " || selectedItem.StartsWith(" --- "))
+                {
+                    MessageBox.Show("Select a valid item to lookup.");
+                }
+                else
+                {
+                    OpenWikiPage(selectedItem);
+                }
+            }
         }
 
         private void OpenWikiPage(string text)
@@ -844,6 +873,17 @@ namespace InventoryView
             public List<string> Path { get; set; } = new List<string>();
         }
 
+        public void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            tabControl1.Multiline = tabsMultiline.Checked;
+            if (tabsMultiline.Checked == true)
+                tabControl1.Appearance = (TabAppearance)Appearance.Button;
+            else
+                tabControl1.Appearance = (TabAppearance)Appearance.Normal;
+            Class1.SaveSettings();
+
+        }
+
         protected override void Dispose(bool disposing)
         {
             if (disposing && components != null)
@@ -864,6 +904,7 @@ namespace InventoryView
             this.lblMatches = new System.Windows.Forms.ListBox();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.panel1 = new System.Windows.Forms.Panel();
+            this.tabsMultiline = new System.Windows.Forms.CheckBox();
             this.label1 = new System.Windows.Forms.Label();
             this.cboCharacters = new System.Windows.Forms.ComboBox();
             this.btnRemoveCharacter = new System.Windows.Forms.Button();
@@ -944,10 +985,8 @@ namespace InventoryView
             // 
             // tabControl1
             // 
-            this.tabControl1.Appearance = System.Windows.Forms.TabAppearance.Buttons;
             this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tabControl1.Location = new System.Drawing.Point(0, 0);
-            this.tabControl1.Multiline = true;
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
             this.tabControl1.Size = new System.Drawing.Size(590, 408);
@@ -983,6 +1022,7 @@ namespace InventoryView
             // 
             // panel1
             // 
+            this.panel1.Controls.Add(this.tabsMultiline);
             this.panel1.Controls.Add(this.label1);
             this.panel1.Controls.Add(this.cboCharacters);
             this.panel1.Controls.Add(this.btnRemoveCharacter);
@@ -1006,10 +1046,21 @@ namespace InventoryView
             this.panel1.Size = new System.Drawing.Size(1019, 58);
             this.panel1.TabIndex = 0;
             // 
+            // tabsMultiline
+            // 
+            this.tabsMultiline.AutoSize = true;
+            this.tabsMultiline.Location = new System.Drawing.Point(2, 40);
+            this.tabsMultiline.Name = "tabsMultiline";
+            this.tabsMultiline.Size = new System.Drawing.Size(91, 17);
+            this.tabsMultiline.TabIndex = 17;
+            this.tabsMultiline.Text = "Tabs Multiline";
+            this.tabsMultiline.UseVisualStyleBackColor = true;
+            this.tabsMultiline.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
+            // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(115, 42);
+            this.label1.Location = new System.Drawing.Point(100, 42);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(201, 13);
             this.label1.TabIndex = 16;
@@ -1050,9 +1101,9 @@ namespace InventoryView
             // 
             this.chkCharacters.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.chkCharacters.FormattingEnabled = true;
-            this.chkCharacters.Location = new System.Drawing.Point(-18, 39);
+            this.chkCharacters.Location = new System.Drawing.Point(207, 1);
             this.chkCharacters.Name = "chkCharacters";
-            this.chkCharacters.Size = new System.Drawing.Size(136, 19);
+            this.chkCharacters.Size = new System.Drawing.Size(93, 19);
             this.chkCharacters.TabIndex = 9;
             this.chkCharacters.Visible = false;
             // 

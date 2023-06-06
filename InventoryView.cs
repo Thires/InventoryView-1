@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Xml;
 
 namespace InventoryView
 {
@@ -17,8 +18,8 @@ namespace InventoryView
         // Genie host.
         public static IHost _host;
 
-        // Plugin Form
-        private Form _form;
+    // Plugin Form
+    public static Form _form;
 
         // This contains all the of the inventory data.
         public static List<CharacterData> characterData = new List<CharacterData>();
@@ -48,9 +49,13 @@ namespace InventoryView
 
             basePath = _host.get_Variable("PluginPath");
 
+            // Create a new instance of the InventoryViewForm class
+            _form = new InventoryViewForm();
+
             // Load inventory from the XML config if available.
             LoadSettings(initial: true);
         }
+
 
         public void Show()
         {
@@ -758,7 +763,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.1.4"; }
+            get { return "2.1.5"; }
         }
 
         public string Description
@@ -786,6 +791,20 @@ namespace InventoryView
                 try
                 {
                     File.SetLastWriteTime(configFile, DateTime.Now);
+
+                    // Load the XML file into an XmlDocument
+                    XmlDocument doc = new XmlDocument();
+                    doc.Load(configFile);
+
+                    // Get the CheckBoxState element
+                    XmlNode checkBoxStateNode = doc.DocumentElement.SelectSingleNode("CheckBoxState");
+
+                    // Restore the state of the CheckBox from the value of the CheckBoxState element
+                    if (checkBoxStateNode != null)
+                    {
+                        ((InventoryViewForm)_form).tabsMultiline.Checked = bool.Parse(checkBoxStateNode.InnerText);
+                    }
+
                     using (Stream stream = File.Open(configFile, FileMode.Open))
                     {
                         XmlSerializer serializer = new XmlSerializer(typeof(List<CharacterData>));
@@ -805,6 +824,7 @@ namespace InventoryView
             }
         }
 
+
         public static void SaveSettings()
         {
             string configFile = Path.Combine(basePath, "InventoryView.xml");
@@ -815,11 +835,28 @@ namespace InventoryView
                 {
                     RemoveParents(cData.items);
                 }
-                FileStream writer = new FileStream(configFile, FileMode.Create);
+
+                // Create a new XmlSerializer for the CharacterData type
                 XmlSerializer serializer = new XmlSerializer(typeof(List<CharacterData>));
+
+                // Serialize the characterData list to a StringWriter
+                StringWriter writer = new StringWriter();
                 serializer.Serialize(writer, characterData);
-                writer.Close();
-                
+
+                // Load the serialized characterData XML into an XmlDocument
+                XmlDocument doc = new XmlDocument();
+                doc.LoadXml(writer.ToString());
+
+                // Create a new CheckBoxState element and set its value to the state of the checkBox1 control
+                XmlElement checkBoxStateElement = doc.CreateElement("CheckBoxState");
+                checkBoxStateElement.InnerText = ((InventoryViewForm)_form).tabsMultiline.Checked.ToString();
+
+                // Append the CheckBoxState element to the root element of the XmlDocument
+                doc.DocumentElement.AppendChild(checkBoxStateElement);
+
+                // Save the changes to the XML file
+                doc.Save(configFile);
+
                 // ..and add them back again afterwards.
                 foreach (var cData in characterData)
                 {
@@ -831,5 +868,6 @@ namespace InventoryView
                 _host.EchoText("Error writing to InventoryView file: " + ex.Message);
             }
         }
+
     }
 }
