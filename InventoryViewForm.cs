@@ -25,7 +25,7 @@ namespace InventoryView
         private ToolStripMenuItem copyAllToolStripMenuItem;
         private bool clickSearch = false;
         private ToolStripMenuItem copySelectedToolStripMenuItem;
-        private readonly ListBox listBox = new ListBox();
+        //private readonly ListBox listBox = new ListBox();
 
         // Create a new list to store the search matches for each TreeView control
         private readonly List<InventoryViewForm.TreeViewSearchMatches> treeViewSearchMatchesList = new List<InventoryViewForm.TreeViewSearchMatches>();
@@ -53,6 +53,7 @@ namespace InventoryView
         private Button btnRemoveCharacter;
         private CheckedListBox chkCharacters;
 
+        private List<TreeNode> removedNodes = new List<TreeNode>();
         private static string basePath = Application.StartupPath;
 
         public InventoryViewForm() => InitializeComponent();
@@ -144,7 +145,10 @@ namespace InventoryView
                 TreeNode treeNode1 = treeNode.Nodes.Add(itemData.tap);
                 treeNode1.ToolTipText = treeNode1.FullPath;
 
-                totalCount++;
+                if (!itemData.tap.EndsWith("."))
+                {
+                    totalCount++;
+                }
 
                 if (itemData.items.Count<ItemData>() > 0)
                     totalCount += PopulateTree(treeNode1, itemData.items);
@@ -298,6 +302,9 @@ namespace InventoryView
                 // Reset the node's background color
                 node.BackColor = Color.White;
 
+                // Reset the node's foreground color
+                node.ForeColor = treeView.ForeColor;
+
                 // Search the node's child nodes
                 if (SearchTree(treeView, node.Nodes, searchMatches, ref searchCount, ref totalCount))
                 {
@@ -329,10 +336,14 @@ namespace InventoryView
                         lblMatches.Items.Add(node.Text);
                     }
                 }
+                else
+                {
+                    // Change the color of non-matching nodes
+                    node.ForeColor = Color.LightGray;
+                }
             }
             return isMatchFound;
         }
-
 
         private void BtnExpand_Click(object sender, EventArgs e)
         {
@@ -933,6 +944,7 @@ namespace InventoryView
             // 
             this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tabControl1.Location = new System.Drawing.Point(0, 0);
+            this.tabControl1.Multiline = true;
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
             this.tabControl1.Size = new System.Drawing.Size(590, 408);
@@ -992,7 +1004,6 @@ namespace InventoryView
             // 
             // cboCharacters
             // 
-            this.cboCharacters.AutoSize = true;
             this.cboCharacters.FormattingEnabled = true;
             this.cboCharacters.Location = new System.Drawing.Point(914, 5);
             this.cboCharacters.Name = "cboCharacters";
@@ -1034,7 +1045,6 @@ namespace InventoryView
             // 
             // txtSearch
             // 
-            this.txtSearch.AutoSize = true;
             this.txtSearch.Location = new System.Drawing.Point(58, 19);
             this.txtSearch.Name = "txtSearch";
             this.txtSearch.Size = new System.Drawing.Size(262, 20);
@@ -1129,7 +1139,7 @@ namespace InventoryView
             this.btnWiki.AutoSize = true;
             this.btnWiki.Location = new System.Drawing.Point(650, 19);
             this.btnWiki.Name = "btnWiki";
-            this.btnWiki.Size = new System.Drawing.Size(75, 23);
+            this.btnWiki.Size = new System.Drawing.Size(77, 23);
             this.btnWiki.TabIndex = 8;
             this.btnWiki.Text = "Wiki Lookup";
             this.btnWiki.UseVisualStyleBackColor = true;
