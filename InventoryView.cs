@@ -795,8 +795,8 @@ namespace InventoryView
                     {
                         AddParents(cData.items, null);
                     }
-                    if (!initial)
-                        _host.EchoText("Inventory data loaded.");
+                    //if (!initial)
+                    //    _host.EchoText("Inventory data loaded.");
                 }
                 catch (IOException ex)
                 {
