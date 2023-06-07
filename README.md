@@ -1,11 +1,6 @@
-![image](https://github.com/Thires/InventoryView-1/assets/28072996/ea8e3aae-77e0-4a82-998b-5ab449748483)
-
 ![image](https://github.com/Thires/InventoryView-1/assets/28072996/415cd495-7343-4602-9085-8236d4a5c4b2)
 
-![image](https://github.com/Thires/InventoryView-1/assets/28072996/64e12672-a2ad-4cbd-97ff-abcd70ed8ab7)
-
-![image](https://github.com/Thires/InventoryView-1/assets/28072996/06c591e3-d4dd-42ef-830a-a139ede85369)
-
+![image](https://github.com/Thires/InventoryView-1/assets/28072996/3a7d9d19-423d-4617-b0c9-07096c91c9c9)
 
 
 # InventoryView
