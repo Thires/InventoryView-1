@@ -106,7 +106,7 @@ namespace InventoryView
                             // remove the - from the beginning if it exists.
                             if (tap.StartsWith("-")) tap = tap.Remove(0, 1);
                             if (tap[tap.Length - 1] == '.') tap = tap.TrimEnd('.');
-                            tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
+                            tap = Regex.Replace(tap, @"^(an?|some)\s", "");
 
                             // The logic below builds a tree of inventory items.
                             if (newlevel == 1) // If the item is in the first level, add to the root item list
@@ -188,7 +188,7 @@ namespace InventoryView
                             string tap = trimtext;
                             if (tap.StartsWith("-")) tap = tap.Remove(0, 1);
                             if (tap[tap.Length - 1] == '.') tap = tap.TrimEnd('.');
-                            tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
+                            tap = Regex.Replace(tap, @"^(an?|some)\s", "");
                             if (newlevel == 1)
                             {
                                 lastItem = currentData.AddItem(new ItemData() { tap = tap, storage = true });
@@ -241,53 +241,50 @@ namespace InventoryView
                             // Determine how many levels down an item is based on the number of spaces before it.
                             // Anything greater than 4 levels down shows up at the same level as its parent.
                             int spaces = text.Length - text.TrimStart().Length;
-                            int newlevel = 1;
                             switch (spaces)
                             {
                                 case 5:
-                                    newlevel = 1;
+                                    spaces = 1;
                                     break;
                                 case 10:
-                                    newlevel = 2;
+                                    spaces = 2;
                                     break;
                                 case 15:
-                                    newlevel = 3;
+                                    spaces = 3;
                                     break;
                                 case 20:
-                                    newlevel = 4;
+                                    spaces = 4;
                                     break;
                                 default:
-                                    newlevel = 1;
+                                    spaces = 1;
                                     break;
                             }
 
                             string tap = trimtext;
-                            if (tap.StartsWith("-")) tap = tap.Remove(0, 1);
-                            if (tap.StartsWith(" ")) tap = tap.Remove(0, 1);
                             if (tap[tap.Length - 1] == '.') tap = tap.TrimEnd('.');
-                            tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
-                            tap = Regex.Replace(tap, @"\)\s{1,4}(an?|some|several)\s", ") ");
-                            if (newlevel == 1)
+                            tap = Regex.Replace(tap, @"^(an?|some)\s", "");
+                            tap = Regex.Replace(tap, @"\)\s{1,4}(an?|some)\s", ") ");
+                            if (spaces == 1)
                             {
                                 lastItem = currentData.AddItem(new ItemData() { tap = tap, storage = true });
                             }
-                            else if (newlevel == level)
+                            else if (spaces == level)
                             {
                                 lastItem = lastItem.parent.AddItem(new ItemData() { tap = tap });
                             }
-                            else if (newlevel == level + 1)
+                            else if (spaces == level + 1)
                             {
                                 lastItem = lastItem.AddItem(new ItemData() { tap = tap });
                             }
                             else
                             {
-                                for (int i = newlevel; i <= level; i++)
+                                for (int i = spaces; i <= level; i++)
                                 {
                                     lastItem = lastItem.parent;
                                 }
                                 lastItem = lastItem.AddItem(new ItemData() { tap = tap });
                             }
-                            level = newlevel;
+                            level = spaces;
                         }
                         break; //end of Standard Vault
                     case "FamilyStart":
@@ -334,55 +331,49 @@ namespace InventoryView
                             // Determine how many levels down an item is based on the number of spaces before it.
                             // Anything greater than 4 levels down shows up at the same level as its parent.
                             int spaces = text.Length - text.TrimStart().Length;
-                            int newlevel = 1;
-                            if (spaces > 4)
-                                newlevel += (spaces - 4) / 2;
-                            switch (newlevel)
+                            switch (spaces)
                             {
                                 case 5:
-                                    newlevel = 1;
+                                    spaces = 1;
                                     break;
                                 case 10:
-                                    newlevel = 2;
+                                    spaces = 2;
                                     break;
                                 case 15:
-                                    newlevel = 3;
+                                    spaces = 3;
                                     break;
-                                case 18:
-                                    newlevel = 4;
+                                case 20:
+                                    spaces = 4;
                                     break;
                                 default:
-                                    newlevel = 1;
+                                    spaces = 1;
                                     break;
                             }
                             string tap = trimtext;
-                            if (tap.StartsWith("-")) tap = tap.Remove(0, 1);
-                            if (tap.StartsWith(" ")) tap = tap.Remove(0, 1);
-                            if (tap[tap.Length - 1] == '.') tap = tap.TrimEnd('.');
-                            tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
-                            tap = Regex.Replace(tap, @"\)\s{1,4}(an?|some|several)\s", ") ");
-                            tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
-                            if (newlevel == 1)
+                            tap = Regex.Replace(tap, @"^(an?|some)\s", "");
+                            tap = Regex.Replace(tap, @"\)\s{1,4}(an?|some)\s", ") ");
+                            tap = Regex.Replace(tap, @"^(an?|some)\s", "");
+                            if (spaces == 1)
                             {
                                 lastItem = currentData.AddItem(new ItemData() { tap = tap, storage = true });
                             }
-                            else if (newlevel == level)
+                            else if (spaces == level)
                             {
                                 lastItem = lastItem.parent.AddItem(new ItemData() { tap = tap });
                             }
-                            else if (newlevel == level + 1)
+                            else if (spaces == level + 1)
                             {
                                 lastItem = lastItem.AddItem(new ItemData() { tap = tap });
                             }
                             else
                             {
-                                for (int i = newlevel; i <= level; i++)
+                                for (int i = spaces; i <= level; i++)
                                 {
                                     lastItem = lastItem.parent;
                                 }
                                 lastItem = lastItem.AddItem(new ItemData() { tap = tap });
                             }
-                            level = newlevel;
+                            level = spaces;
                         }
                         break; //end of Family Vault
                     case "DeedStart":
@@ -439,7 +430,7 @@ namespace InventoryView
                         }
                         else
                         {
-                            string tap = Regex.Replace(trimtext, @"a deed for\s(an?|some|several)", " ");
+                            string tap = Regex.Replace(trimtext, @"a deed for\s(an?|some)", " ");
 
                             if (tap[tap.Length - 1] == '.')
                                 tap = tap.TrimEnd('.');
@@ -507,13 +498,13 @@ namespace InventoryView
                             string tap = trimtext.Replace("Attached: ", "");
                             if (tap[tap.Length - 1] == '.')
                                 tap = tap.TrimEnd('.');
-                            tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
+                            tap = Regex.Replace(tap, @"^(an?|some)\s", "");
                             lastItem = (lastItem.parent != null ? lastItem.parent : lastItem).AddItem(new ItemData() { tap = tap });
                         }
                         else // Otherwise, it is a piece of furniture.
                         {
                             string tap = trimtext.Substring(trimtext.IndexOf(":") + 2);
-                            tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
+                            tap = Regex.Replace(tap, @"^(an?|some)\s", "");
                             lastItem = currentData.AddItem(new ItemData() { tap = tap, storage = true });
                         }
                         break; //end of Home
@@ -595,7 +586,7 @@ namespace InventoryView
                             // remove the - from the beginning if it exists.
                             if (tap.StartsWith("-")) tap = tap.Remove(0, 1);
                             if (tap[tap.Length - 1] == '.') tap = tap.TrimEnd('.');
-                            tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
+                            tap = Regex.Replace(tap, @"^(an?|some)\s", "");
 
                             // The logic below builds a tree of inventory items.
                             if (newlevel == 1) // If the item is in the first level, add to the root item list
@@ -763,7 +754,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.1.5"; }
+            get { return "2.1.6"; }
         }
 
         public string Description
