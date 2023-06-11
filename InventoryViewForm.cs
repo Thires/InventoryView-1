@@ -659,7 +659,7 @@ namespace InventoryView
                 doc.Load(xmlPath);
 
                 // Find all CharacterData elements
-                XmlNodeList characterNodes = doc.SelectNodes("/ArrayOfCharacterData/CharacterData");
+                XmlNodeList characterNodes = doc.SelectNodes("/Root/ArrayOfCharacterData/ArrayOfCharacterData/CharacterData");
 
                 // Create a list to store the character names
                 List<string> characterNames = new List<string>();
