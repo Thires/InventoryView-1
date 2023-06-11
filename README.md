@@ -19,6 +19,7 @@
 * Fixed to handle new updated registry and sorting
 * Added tabs for characters
 * Fixed a parsing issue for some getting stuck on house
+* Added dark mode and multiline tabs
 
 This plugin will record the items that each of your characters has in their inventory, vault (if you have a vault book), and home (if you have one) and make them searchable in a form.
 
