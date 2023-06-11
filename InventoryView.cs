@@ -53,7 +53,7 @@ namespace InventoryView
             _form = new InventoryViewForm();
 
             // Load inventory from the XML config if available.
-            LoadSettings(initial: true);
+            LoadSettings();
         }
 
 
@@ -99,14 +99,14 @@ namespace InventoryView
                         else
                         {
                             // The first level of inventory has a padding of 2 spaces to the left, and each level adds an additional 3 spaces.
-                            // 2, 5, 8, 11, 14, etc..
+                            // 2, 5, 8, 11, 14, 17...
                             int spaces = text.Length - text.TrimStart().Length;
                             int newlevel = (spaces + 1) / 3;
                             string tap = trimtext;
                             // remove the - from the beginning if it exists.
                             if (tap.StartsWith("-")) tap = tap.Remove(0, 1);
                             if (tap[tap.Length - 1] == '.') tap = tap.TrimEnd('.');
-                            tap = Regex.Replace(tap, @"^(an?|some)\s", "");
+                            tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
 
                             // The logic below builds a tree of inventory items.
                             if (newlevel == 1) // If the item is in the first level, add to the root item list
@@ -182,34 +182,34 @@ namespace InventoryView
                             // Determine how many levels down an item is based on the number of spaces before it.
                             // Anything greater than 4 levels down shows up at the same level as its parent.
                             int spaces = text.Length - text.TrimStart().Length;
-                            int newlevel = 1;
-                            if (spaces > 4)
-                                newlevel += (spaces - 4) / 2;
+                            spaces = (spaces >= 4 && spaces <= 14 && spaces % 2 == 0) ? spaces / 2 - 1 : (spaces == 15) ? 7 : 1;
+
                             string tap = trimtext;
+
                             if (tap.StartsWith("-")) tap = tap.Remove(0, 1);
                             if (tap[tap.Length - 1] == '.') tap = tap.TrimEnd('.');
-                            tap = Regex.Replace(tap, @"^(an?|some)\s", "");
-                            if (newlevel == 1)
+                            tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
+                            if (spaces == 1)
                             {
                                 lastItem = currentData.AddItem(new ItemData() { tap = tap, storage = true });
                             }
-                            else if (newlevel == level)
+                            else if (spaces == level)
                             {
                                 lastItem = lastItem.parent.AddItem(new ItemData() { tap = tap });
                             }
-                            else if (newlevel == level + 1)
+                            else if (spaces == level + 1)
                             {
                                 lastItem = lastItem.AddItem(new ItemData() { tap = tap });
                             }
                             else
                             {
-                                for (int i = newlevel; i <= level; i++)
+                                for (int i = spaces; i <= level; i++)
                                 {
                                     lastItem = lastItem.parent;
                                 }
                                 lastItem = lastItem.AddItem(new ItemData() { tap = tap });
                             }
-                            level = newlevel;
+                            level = spaces;
                         }
                         break; //end of Vault
                     case "StandardStart":
@@ -239,31 +239,13 @@ namespace InventoryView
                         else
                         {
                             // Determine how many levels down an item is based on the number of spaces before it.
-                            // Anything greater than 4 levels down shows up at the same level as its parent.
                             int spaces = text.Length - text.TrimStart().Length;
-                            switch (spaces)
-                            {
-                                case 5:
-                                    spaces = 1;
-                                    break;
-                                case 10:
-                                    spaces = 2;
-                                    break;
-                                case 15:
-                                    spaces = 3;
-                                    break;
-                                case 20:
-                                    spaces = 4;
-                                    break;
-                                default:
-                                    spaces = 1;
-                                    break;
-                            }
+                            spaces = (spaces >= 5 && spaces <= 25 && spaces % 5 == 0) ? spaces / 5 : 1;
 
                             string tap = trimtext;
                             if (tap[tap.Length - 1] == '.') tap = tap.TrimEnd('.');
-                            tap = Regex.Replace(tap, @"^(an?|some)\s", "");
-                            tap = Regex.Replace(tap, @"\)\s{1,4}(an?|some)\s", ") ");
+                            tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
+                            tap = Regex.Replace(tap, @"\)\s{1,4}(an?|some|several)\s", ") ");
                             if (spaces == 1)
                             {
                                 lastItem = currentData.AddItem(new ItemData() { tap = tap, storage = true });
@@ -329,30 +311,13 @@ namespace InventoryView
                         else
                         {
                             // Determine how many levels down an item is based on the number of spaces before it.
-                            // Anything greater than 4 levels down shows up at the same level as its parent.
                             int spaces = text.Length - text.TrimStart().Length;
-                            switch (spaces)
-                            {
-                                case 5:
-                                    spaces = 1;
-                                    break;
-                                case 10:
-                                    spaces = 2;
-                                    break;
-                                case 15:
-                                    spaces = 3;
-                                    break;
-                                case 20:
-                                    spaces = 4;
-                                    break;
-                                default:
-                                    spaces = 1;
-                                    break;
-                            }
+                            spaces = (spaces >= 5 && spaces <= 20 && spaces % 5 == 0) ? spaces / 5 : 1;
+
                             string tap = trimtext;
-                            tap = Regex.Replace(tap, @"^(an?|some)\s", "");
-                            tap = Regex.Replace(tap, @"\)\s{1,4}(an?|some)\s", ") ");
-                            tap = Regex.Replace(tap, @"^(an?|some)\s", "");
+                            tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
+                            tap = Regex.Replace(tap, @"\)\s{1,4}(an?|some|several)\s", ") ");
+                            tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
                             if (spaces == 1)
                             {
                                 lastItem = currentData.AddItem(new ItemData() { tap = tap, storage = true });
@@ -430,7 +395,7 @@ namespace InventoryView
                         }
                         else
                         {
-                            string tap = Regex.Replace(trimtext, @"a deed for\s(an?|some)", " ");
+                            string tap = Regex.Replace(trimtext, @"a deed for\s(an?|some|several)", " ");
 
                             if (tap[tap.Length - 1] == '.')
                                 tap = tap.TrimEnd('.');
@@ -498,13 +463,13 @@ namespace InventoryView
                             string tap = trimtext.Replace("Attached: ", "");
                             if (tap[tap.Length - 1] == '.')
                                 tap = tap.TrimEnd('.');
-                            tap = Regex.Replace(tap, @"^(an?|some)\s", "");
-                            lastItem = (lastItem.parent != null ? lastItem.parent : lastItem).AddItem(new ItemData() { tap = tap });
+                            tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
+                            lastItem = (lastItem.parent ?? lastItem).AddItem(new ItemData() { tap = tap });
                         }
                         else // Otherwise, it is a piece of furniture.
                         {
                             string tap = trimtext.Substring(trimtext.IndexOf(":") + 2);
-                            tap = Regex.Replace(tap, @"^(an?|some)\s", "");
+                            tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
                             lastItem = currentData.AddItem(new ItemData() { tap = tap, storage = true });
                         }
                         break; //end of Home
@@ -561,55 +526,34 @@ namespace InventoryView
                         else
                         {
                             // Determine how many levels down an item is based on the number of spaces before it.
-                            // Anything greater than 4 levels down shows up at the same level as its parent
                             int spaces = text.Length - text.TrimStart().Length;
-                            int newlevel = (spaces + 1) / 3;
-                            switch (spaces)
-                            {
-                                case 4:
-                                    newlevel = 1;
-                                    break;
-                                case 6:
-                                    newlevel = 2;
-                                    break;
-                                case 8:
-                                    newlevel = 3;
-                                    break;
-                                case 12:
-                                    newlevel = 4;
-                                    break;
-                                default:
-                                    newlevel = 1;
-                                    break;
-                            }
+                            spaces = (spaces >= 4 && spaces <= 14 && spaces % 2 == 0) ? spaces / 2 - 1 : (spaces == 15) ? 7 : 1;
+
                             string tap = trimtext;
-                            // remove the - from the beginning if it exists.
-                            if (tap.StartsWith("-")) tap = tap.Remove(0, 1);
-                            if (tap[tap.Length - 1] == '.') tap = tap.TrimEnd('.');
-                            tap = Regex.Replace(tap, @"^(an?|some)\s", "");
+                            tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
 
                             // The logic below builds a tree of inventory items.
-                            if (newlevel == 1) // If the item is in the first level, add to the root item list
+                            if (spaces == 1) // If the item is in the first level, add to the root item list
                             {
                                 lastItem = currentData.AddItem(new ItemData() { tap = tap });
                             }
-                            else if (newlevel == level) // If this is the same level as the previous item, add to the previous item's parent's item list.
+                            else if (spaces == level) // If this is the same level as the previous item, add to the previous item's parent's item list.
                             {
                                 lastItem = lastItem.parent.AddItem(new ItemData() { tap = tap });
                             }
-                            else if (newlevel == level + 1) // If this item is down a level from the previous, add it to the previous item's item list.
+                            else if (spaces == level + 1) // If this item is down a level from the previous, add it to the previous item's item list.
                             {
                                 lastItem = lastItem.AddItem(new ItemData() { tap = tap });
                             }
                             else // Else, if the item is up a level, loop back until you reach the correct level.
                             {
-                                for (int i = newlevel; i <= level; i++)
+                                for (int i = spaces; i <= level; i++)
                                 {
                                     lastItem = lastItem.parent;
                                 }
                                 lastItem = lastItem.AddItem(new ItemData() { tap = tap });
                             }
-                            level = newlevel;
+                            level = spaces;
                         }
                     break; //end of Trader
                     default:
@@ -754,7 +698,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.1.6"; }
+            get { return "2.2.0"; }
         }
 
         public string Description
@@ -774,48 +718,6 @@ namespace InventoryView
             set { _enabled = value; }
         }
 
-        public static void LoadSettings(bool initial = false)
-        {
-            string configFile = Path.Combine(basePath, "InventoryView.xml");
-            if (File.Exists(configFile))
-            {
-                try
-                {
-                    File.SetLastWriteTime(configFile, DateTime.Now);
-
-                    // Load the XML file into an XmlDocument
-                    XmlDocument doc = new XmlDocument();
-                    doc.Load(configFile);
-
-                    // Get the CheckBoxState element
-                    XmlNode checkBoxStateNode = doc.DocumentElement.SelectSingleNode("CheckBoxState");
-
-                    // Restore the state of the CheckBox from the value of the CheckBoxState element
-                    if (checkBoxStateNode != null)
-                    {
-                        ((InventoryViewForm)_form).chkMultilineTabs.Checked = bool.Parse(checkBoxStateNode.InnerText);
-                    }
-
-                    using (Stream stream = File.Open(configFile, FileMode.Open))
-                    {
-                        XmlSerializer serializer = new XmlSerializer(typeof(List<CharacterData>));
-                        characterData = (List<CharacterData>)serializer.Deserialize(stream);
-                    }
-                    foreach (var cData in characterData)
-                    {
-                        AddParents(cData.items, null);
-                    }
-                    //if (!initial)
-                    //    _host.EchoText("Inventory data loaded.");
-                }
-                catch (IOException ex)
-                {
-                    _host.EchoText("Error reading InventoryView file: " + ex.Message);
-                }
-            }
-        }
-
-
         public static void SaveSettings()
         {
             string configFile = Path.Combine(basePath, "InventoryView.xml");
@@ -831,22 +733,92 @@ namespace InventoryView
                 XmlSerializer serializer = new XmlSerializer(typeof(List<CharacterData>));
 
                 // Serialize the characterData list to a StringWriter
-                StringWriter writer = new StringWriter();
-                serializer.Serialize(writer, characterData);
+                StringWriter stringWriter = new StringWriter();
+                serializer.Serialize(stringWriter, characterData);
 
-                // Load the serialized characterData XML into an XmlDocument
+                // Create a new XmlDocument
                 XmlDocument doc = new XmlDocument();
-                doc.LoadXml(writer.ToString());
 
-                // Create a new CheckBoxState element and set its value to the state of the checkBox1 control
-                XmlElement checkBoxStateElement = doc.CreateElement("CheckBoxState");
-                checkBoxStateElement.InnerText = ((InventoryViewForm)_form).chkMultilineTabs.Checked.ToString();
+                // If the configFile exists, load the existing XML data into the XmlDocument
+                if (File.Exists(configFile))
+                    doc.Load(configFile);
+                else
+                {
+                    // Otherwise, create a new root element for the XmlDocument with a custom name
+                    XmlElement rootElement = doc.CreateElement("Root");
+                    doc.AppendChild(rootElement);
+                }
 
-                // Append the CheckBoxState element to the root element of the XmlDocument
-                doc.DocumentElement.AppendChild(checkBoxStateElement);
+                // Remove any existing ArrayOfCharacterData elements from ArrayOfCharacterData element.
+                XmlNode arrayOfCharacterDataNode = doc.DocumentElement.SelectSingleNode("ArrayOfCharacterData");
+                if (arrayOfCharacterDataNode != null)
+                {
+                    XmlNodeList arrayOfCharacterDataNodes = arrayOfCharacterDataNode.SelectNodes("ArrayOfCharacterData");
+                    foreach (XmlNode innerArrayOfCharacterDataNode in arrayOfCharacterDataNodes)
+                    {
+                        innerArrayOfCharacterDataNode.ParentNode.RemoveChild(innerArrayOfCharacterDataNode);
+                    }
+                }
 
-                // Save the changes to the XML file
-                doc.Save(configFile);
+                // If characterData list is not empty, import serialized character data into XmlDocument.
+                if (characterData.Count > 0)
+                {
+                    // Create a new ArrayOfCharacterData element and append it to the root element if it doesn't exist
+                    if (arrayOfCharacterDataNode == null)
+                    {
+                        arrayOfCharacterDataNode = doc.CreateElement("ArrayOfCharacterData");
+                        doc.DocumentElement.AppendChild(arrayOfCharacterDataNode);
+                    }
+
+                    // Remove XML declaration from serialized character data.
+                    string characterDataXml = stringWriter.ToString();
+                    if (characterDataXml.StartsWith("<?xml"))
+                    {
+                        int endOfDeclaration = characterDataXml.IndexOf("?>") + 2;
+                        characterDataXml = characterDataXml.Substring(endOfDeclaration);
+                    }
+
+                    // Set InnerXml property of ArrayOfCharacterData element to serialized character data.
+                    arrayOfCharacterDataNode.InnerXml += characterDataXml;
+                }
+
+                // Get CheckBoxState element.
+                XmlNode multilinetabsNode = doc.SelectSingleNode("/Root/MultilineTabs");
+
+                // If CheckBoxState element exists, update its value.
+                if (multilinetabsNode != null)
+                    multilinetabsNode.InnerText = ((InventoryViewForm)_form).chkMultilineTabs.Checked.ToString();
+                else
+                {
+                    // Otherwise, create new CheckBoxState element and set its value to state of checkBox1 control.
+                    XmlElement multilineTabsElemnt = doc.CreateElement("MultilineTabs");
+                    multilineTabsElemnt.InnerText = ((InventoryViewForm)_form).chkMultilineTabs.Checked.ToString();
+
+                    // Append CheckBoxState element to root element of XmlDocument.
+                    doc.DocumentElement.AppendChild(multilineTabsElemnt);
+                }
+
+                // Get DarkModeState element.
+                XmlNode darkModeNode = doc.SelectSingleNode("/Root/DarkMode");
+
+                // If DarkModeState element exists, update its value.
+                if (darkModeNode != null)
+                    darkModeNode.InnerText = ((InventoryViewForm)_form).chkDarkMode.Checked.ToString();
+                else
+                {
+                    // Otherwise, create new DarkModeState element and set its value to state of chkDarkMode control.
+                    XmlElement darkModeElement = doc.CreateElement("DarkMode");
+                    darkModeElement.InnerText = ((InventoryViewForm)_form).chkDarkMode.Checked.ToString();
+
+                    // Append DarkModeState element to root element of XmlDocument.
+                    doc.DocumentElement.AppendChild(darkModeElement);
+                }
+
+                // Save changes to XML file.
+                using (var writer = XmlWriter.Create(configFile, new XmlWriterSettings { Encoding = Encoding.UTF8, Indent = true }))
+                {
+                    doc.Save(writer);
+                }
 
                 // ..and add them back again afterwards.
                 foreach (var cData in characterData)
@@ -860,5 +832,96 @@ namespace InventoryView
             }
         }
 
+        public static void LoadSettings()
+        {
+            string configFile = Path.Combine(basePath, "InventoryView.xml");
+            try
+            {
+                if (File.Exists(configFile))
+                {
+                    // Load the XML data into an XmlDocument
+                    XmlDocument doc = new XmlDocument();
+                    doc.Load(configFile);
+
+                    // Check if the XML file starts with the <Root> element
+                    XmlNode rootNode = doc.SelectSingleNode("/Root");
+                    if (rootNode == null)
+                    {
+                        // Create a new root element with a custom name
+                        XmlElement newRootNode = doc.CreateElement("Root");
+
+                        // Create a new ArrayOfCharacterData element and append it to the new root element
+                        XmlElement arrayOfCharacterDataElement = doc.CreateElement("ArrayOfCharacterData");
+                        arrayOfCharacterDataElement.SetAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+                        arrayOfCharacterDataElement.SetAttribute("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
+                        newRootNode.AppendChild(arrayOfCharacterDataElement);
+
+                        // Append the old XML data to the ArrayOfCharacterData element
+                        arrayOfCharacterDataElement.InnerXml = doc.DocumentElement.OuterXml;
+
+                        // Create a new CheckBoxState element and set its value to False
+                        XmlElement multilineTabsElement = doc.CreateElement("MultilineTabs");
+                        multilineTabsElement.InnerText = "False";
+                        newRootNode.AppendChild(multilineTabsElement);
+
+                        // Create a new DarkModeState element and set its value to False
+                        XmlElement darkModeElement = doc.CreateElement("DarkMode");
+                        darkModeElement.InnerText = "False";
+                        newRootNode.AppendChild(darkModeElement);
+
+                        // Replace the old root node with the new root node
+                        doc.ReplaceChild(newRootNode, doc.DocumentElement);
+
+                        // Save changes to XML file
+                        doc.Save(configFile);
+                    }
+                    else
+                    {
+                    }
+                    // Select all CharacterData elements from the XmlDocument
+                    XmlNodeList characterDataNodes = doc.SelectNodes("/Root/ArrayOfCharacterData/ArrayOfCharacterData/CharacterData");
+
+                    // Clear the existing characterData list
+                    characterData.Clear();
+
+                    // Iterate over each CharacterData element and deserialize it into a CharacterData object
+                    foreach (XmlNode characterDataNode in characterDataNodes)
+                    {
+                        // Create a new XmlSerializer for the CharacterData type
+                        XmlSerializer serializer = new XmlSerializer(typeof(CharacterData));
+
+                        // Deserialize the CharacterData element into a CharacterData object
+                        using (StringReader reader = new StringReader(characterDataNode.OuterXml))
+                        {
+                            CharacterData cData = (CharacterData)serializer.Deserialize(reader);
+
+                            // Add the deserialized CharacterData object to the characterData list
+                            characterData.Add(cData);
+                        }
+                    }
+                    // ..and add them back again afterwards.
+                    foreach (var cData in characterData)
+                    {
+                        AddParents(cData.items, null);
+                    }
+
+                    // Load CheckBox state.
+                    XmlNode multilineTabsNode = doc.SelectSingleNode("/Root/MultilineTabs");
+                    if (multilineTabsNode != null)
+                        ((InventoryViewForm)_form).chkMultilineTabs.Checked = bool.Parse(multilineTabsNode.InnerText);
+
+                    // Load DarkMode state.
+                    XmlNode darkModeNode = doc.SelectSingleNode("/Root/DarkMode");
+                    if (darkModeNode != null)
+                        ((InventoryViewForm)_form).chkDarkMode.Checked = bool.Parse(darkModeNode.InnerText);
+                }
+                else
+                    _host.EchoText("File does not exist");
+            }
+            catch (IOException ex)
+            {
+                _host.EchoText("Error reading from InventoryView file: " + ex.Message);
+            }
+        }
     }
 }
