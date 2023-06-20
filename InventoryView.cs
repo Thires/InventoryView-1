@@ -363,12 +363,12 @@ namespace InventoryView
                         {
                             ScanStart("Deed");
                         }
-                        // If you don't have a deed register or it is empty, it skips to checking your house.
+                        // If you don't have a deed register or it is empty, it skips to checking for tool catalog.
                         else if (Regex.IsMatch(text, "^What were you referring to\\?"))
                         {
                             _host.EchoText("Skipping Deed Register.");
-                            ScanMode = "HomeStart";
-                            _host.SendText("home recall");
+                            ScanMode = "CatalogStart";
+                            _host.SendText("get my tool catalog");
                         }
                         else if (IsDenied(trimtext))
                         {
@@ -389,9 +389,9 @@ namespace InventoryView
                                 _host.SendText("stow my deed register");
                             else
                                 _host.SendText("put my deed register in my " + bookContainer);
-                            ScanMode = "HomeStart";
+                            ScanMode = "CatalogStart";
                             bookContainer = "";
-                            _host.SendText("home recall");
+                            _host.SendText("get my tool catalog");
                         }
                         else
                         {
@@ -403,6 +403,70 @@ namespace InventoryView
                             lastItem = currentData.AddItem(new ItemData() { tap = tap, storage = false });
                         }
                         break;//end of Deed
+
+                    case "CatalogStart":
+                        if (text.StartsWith("Roundtime:"))
+                        {
+                            PauseForRoundtime(trimtext);
+                            ScanMode = "CatalogStart";
+                            _host.SendText("get my tool catalog");
+                        }
+                        // Get the catalog & read it.
+                        Match match = Regex.Match(trimtext, @"^You get a.*tool catalog.*from");
+                        if (match.Success || trimtext == "You are already holding that.")
+                        {
+                            Match match2 = Regex.Match(trimtext, "^You get a.*tool catalog.*from.+your (.+)\\.");
+                            bookContainer = string.Format("{0}", match2.Groups[1]);
+                            _host.EchoText("Scanning tool catalog.");
+                            _host.SendText("turn my tool catalog to contents");
+                            _host.SendText("read my tool catalog");
+                        }
+
+                        else if (text.StartsWith("   Page -- Tool")) // This text appears at the beginning of the tool catalog.
+                        {
+                            ScanStart("Catalog");
+                        }
+                        // If you don't have a tool catalog or it is empty, it skips to checking your house.
+                        else if (Regex.IsMatch(text, "^What were you referring to\\?"))
+                        {
+                            _host.EchoText("Skipping Tool Catalog.");
+                            ScanMode = "HomeStart";
+                            _host.SendText("home recall");
+                        }
+                        else if (IsDenied(trimtext))
+                        {
+                            _host.EchoText("Skipping Tool Catalog.");
+                            if (bookContainer == "")
+                                _host.SendText("stow my tool catalog");
+                            else
+                                _host.SendText("put my tool catalog in my " + bookContainer);
+                            ScanMode = "HomeStart";
+                            bookContainer = "";
+                            _host.SendText("home recall");
+                        }
+                        break; //end of CatalogStart 
+                    case "Catalog":
+                        if (trimtext.StartsWith("Currently stored:"))
+                        {
+                            if (bookContainer == "")
+                                _host.SendText("stow my tool catalog");
+                            else
+                                _host.SendText("put my tool catalog in my " + bookContainer);
+                            ScanMode = "HomeStart";
+                            bookContainer = "";
+                            _host.SendText("home recall");
+                        }
+                        else
+                        {
+                            string tap = Regex.Replace(trimtext, @" -- (an?|some|several)", " -- ");
+
+                            if (tap[tap.Length - 1] == '.')
+                                tap = tap.TrimEnd('.');
+
+                            lastItem = currentData.AddItem(new ItemData() { tap = tap, storage = false });
+                        }
+                        break;//end of Catalog
+
                     case "HomeStart":
                         if (trimtext == "The home contains:") // This text appears at the beginning of the home list.
                         {
@@ -573,6 +637,8 @@ namespace InventoryView
                 mode = "Family Vault";
             if (mode == "Trader")
                 mode = "Trader Storage";
+            if (mode == "Catalog")
+                mode = "Tool Catalog";
             currentData = new CharacterData() { name = _host.get_Variable("charactername"), source = mode};
             characterData.Add(currentData);
             level = 1;
@@ -602,7 +668,9 @@ namespace InventoryView
                 || text == "You haven't stored any deeds in this register."
                 || text == "You shouldn't do that to somebody eles's deed book."
                 || text == "You shouldn't read somebody else's deed book."
+                || text == "You shouldn't read somebody else's tool catalog."
                 || text == "The storage book is filled with complex lists of inventory that make little sense to you."
+                || Regex.IsMatch(text, "^You haven't documented any stored tools in the catalog\\.  You could note \\d+ in total\\.")
                 || Regex.IsMatch(text, "^You shouldn't do that while inside of a home\\.  Step outside if you need to check something\\.")
                 || Regex.IsMatch(text, "^\\[You don't have access to advanced vault urchins because you don't have a subscription\\.")
                 || Regex.IsMatch(text, "^You haven't stored any deeds in this register\\.  It can hold \\d+ deeds in total\\.");
@@ -698,7 +766,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.2.1"; }
+            get { return "2.2.2"; }
         }
 
         public string Description
