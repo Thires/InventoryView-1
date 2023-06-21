@@ -48,7 +48,6 @@ namespace InventoryView
         private SplitContainer splitContainer1;
         private ComboBox cboCharacters;
         private Button btnRemoveCharacter;
-        private CheckedListBox chkCharacters;
 
         private Label infolabel;
         public CheckBox chkMultilineTabs;
@@ -93,8 +92,10 @@ namespace InventoryView
                 tabControl1.TabPages.Add(tabPage);
 
                 // Create a new TreeView control
-                var tv = new TreeView();
-                tv.Dock = DockStyle.Fill;
+                var tv = new TreeView
+                {
+                    Dock = DockStyle.Fill
+                };
 
                 if (chkDarkMode.Checked)
                 {
@@ -1052,7 +1053,6 @@ namespace InventoryView
             this.cboCharacters = new System.Windows.Forms.ComboBox();
             this.btnRemoveCharacter = new System.Windows.Forms.Button();
             this.btnFindPrev = new System.Windows.Forms.Button();
-            this.chkCharacters = new System.Windows.Forms.CheckedListBox();
             this.txtSearch = new System.Windows.Forms.TextBox();
             this.lblFound = new System.Windows.Forms.Label();
             this.lblSearch = new System.Windows.Forms.Label();
@@ -1077,8 +1077,8 @@ namespace InventoryView
             // 
             // tv
             // 
-            this.tv.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
+            this.tv.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tv.Location = new System.Drawing.Point(2, 2);
             this.tv.Name = "tv";
@@ -1171,7 +1171,6 @@ namespace InventoryView
             this.panel1.Controls.Add(this.cboCharacters);
             this.panel1.Controls.Add(this.btnRemoveCharacter);
             this.panel1.Controls.Add(this.btnFindPrev);
-            this.panel1.Controls.Add(this.chkCharacters);
             this.panel1.Controls.Add(this.txtSearch);
             this.panel1.Controls.Add(this.lblFound);
             this.panel1.Controls.Add(this.lblSearch);
@@ -1253,16 +1252,6 @@ namespace InventoryView
             this.btnFindPrev.UseVisualStyleBackColor = true;
             this.btnFindPrev.Visible = false;
             this.btnFindPrev.Click += new System.EventHandler(this.BtnFindPrev_Click);
-            // 
-            // chkCharacters
-            // 
-            this.chkCharacters.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.chkCharacters.FormattingEnabled = true;
-            this.chkCharacters.Location = new System.Drawing.Point(207, 1);
-            this.chkCharacters.Name = "chkCharacters";
-            this.chkCharacters.Size = new System.Drawing.Size(93, 19);
-            this.chkCharacters.TabIndex = 9;
-            this.chkCharacters.Visible = false;
             // 
             // txtSearch
             // 
