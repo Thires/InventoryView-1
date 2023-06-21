@@ -669,6 +669,7 @@ namespace InventoryView
                 || text == "You shouldn't do that to somebody eles's deed book."
                 || text == "You shouldn't read somebody else's deed book."
                 || text == "You shouldn't read somebody else's tool catalog."
+                || text == "This storage book doesn't seem to belong to you."
                 || text == "The storage book is filled with complex lists of inventory that make little sense to you."
                 || Regex.IsMatch(text, "^You haven't documented any stored tools in the catalog\\.  You could note \\d+ in total\\.")
                 || Regex.IsMatch(text, "^You shouldn't do that while inside of a home\\.  Step outside if you need to check something\\.")
