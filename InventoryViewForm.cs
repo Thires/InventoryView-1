@@ -1141,6 +1141,7 @@ namespace InventoryView
             this.lblMatches.ContextMenuStrip = this.listBox_Menu;
             this.lblMatches.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lblMatches.FormattingEnabled = true;
+            this.lblMatches.HorizontalScrollbar = true;
             this.lblMatches.Location = new System.Drawing.Point(0, 0);
             this.lblMatches.Name = "lblMatches";
             this.lblMatches.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;

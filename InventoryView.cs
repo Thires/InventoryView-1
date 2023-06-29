@@ -403,7 +403,6 @@ namespace InventoryView
                             lastItem = currentData.AddItem(new ItemData() { tap = tap, storage = false });
                         }
                         break;//end of Deed
-
                     case "CatalogStart":
                         if (text.StartsWith("Roundtime:"))
                         {
@@ -767,7 +766,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.2.2"; }
+            get { return "2.2.3"; }
         }
 
         public string Description
