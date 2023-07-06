@@ -247,16 +247,6 @@ namespace InventoryView
                     // Select the tab page if it's visible
                     if (tabControl1.TabPages.Contains(tabPage))
                         tabControl1.SelectedTab = tabPage;
-                    if (chkDarkMode.Checked)
-                    {
-                        this.tabControl1.ForeColor = Color.White;
-                        this.tabControl1.BackColor = Color.Black;
-                    }
-                    else
-                    {
-                        this.tabControl1.ForeColor = Color.Black;
-                        this.tabControl1.BackColor = Color.White;
-                    }
 
                     // Get the TreeView control on the tab page
                     var tv = tabPage.Controls[0] as TreeView;
@@ -275,16 +265,16 @@ namespace InventoryView
 
                     // Update the tab page text with the search count if greater than zero
                     if (searchCount > 0)
-                        tabPage.Text = $"{tabPage.Text.Split(' ')[0]} (M: {searchCount})";
+                        tabPage.Text = new StringBuilder(tabPage.Text.Split(' ')[0]).Append($" (M: {searchCount})").ToString();
                     else
                     {
-                        tabPage.Text = $"{tabPage.Text.Split(' ')[0]} (T: {totalCount})";
+                        tabPage.Text = new StringBuilder(tabPage.Text.Split(' ')[0]).Append($" (T: {totalCount})").ToString();
 
-                        // Remove the tab page from the TabControl if no matching items were found and it's not already hidden
+                        // Hide the tab page if no matching items were found and it's not already hidden
                         if (tabControl1.TabPages.Contains(tabPage) && !hiddenTabPages.Any(x => x.tabPage == tabPage))
                         {
                             hiddenTabPages.Add((tabPage, tabControl1.TabPages.IndexOf(tabPage)));
-                            tabControl1.TabPages.Remove(tabPage);
+                            tabPage.Visible = false;
                         }
                     }
                 }
@@ -316,25 +306,16 @@ namespace InventoryView
         private bool SearchTree(TreeView treeView, TreeNodeCollection nodes, List<TreeNode> searchMatches, ref int searchCount, ref int totalCount)
         {
             bool isMatchFound = false;
+
             foreach (TreeNode node in nodes)
             {
                 totalCount++;
 
-                // Reset the node's background color
-                if (chkDarkMode.Checked)
-                {
-                    node.BackColor = Color.Black;
-                    node.ForeColor = Color.White;
-                }
-                else
-                {
-                    node.BackColor = Color.White;
-                    node.ForeColor = Color.Black;
-                }
-                // Reset the node's foreground color
-                //node.ForeColor = treeView.ForeColor;
+                // Reset the node's background color and foreground color based on the dark mode
+                node.BackColor = chkDarkMode.Checked ? Color.Black : Color.White;
+                node.ForeColor = chkDarkMode.Checked ? Color.White : Color.Black;
 
-                // Search the node's child nodes
+                // Search the node's child nodes and update the match status
                 if (SearchTree(treeView, node.Nodes, searchMatches, ref searchCount, ref totalCount))
                 {
                     // Expand the node if a match was found in its child nodes
@@ -351,36 +332,32 @@ namespace InventoryView
                 if (node.Text.Contains(txtSearch.Text))
                 {
                     // Highlight the node and add it to the list of search matches
-                    if (chkDarkMode.Checked)
-                        node.BackColor = Color.LightBlue;
-                    else
-                        node.BackColor = Color.Yellow;
+                    node.BackColor = chkDarkMode.Checked ? Color.LightBlue : Color.Yellow;
                     node.ForeColor = Color.Black;
                     searchMatches.Add(node);
-                    ++searchCount;
+                    searchCount++;
                     isMatchFound = true;
 
                     // Add the node's text to the lblMatches ListBox control
                     if (tabControl1.SelectedTab.Controls[0] == treeView)
                     {
-
                         // Get the character name from the tab page's Text property
                         string characterName = tabControl1.SelectedTab.Text;
 
                         if (!lblMatches.Items.Contains(" --- " + characterName + " --- "))
                         {
                             // Add a space after the last item if this is not the first character
-                            if (lblMatches.Items.Count > 0)
+                            if (lblMatches.Items.Count > 0 && lblMatches.Items[lblMatches.Items.Count - 1].ToString() != " ")
                             {
                                 lblMatches.Items.Add(" ");
                             }
+
                             // Add the character name to the ListBox
                             lblMatches.Items.Add(" --- " + characterName + " --- ");
                         }
-                        string nodeText = node.Text;
-                        if (nodeText[nodeText.Length - 1] == '.')
-                            nodeText = nodeText.TrimEnd('.');
-                        nodeText = Regex.Replace(nodeText, @"\(\d+\)\s", "");
+
+                        // Add the node's text to the ListBox
+                        string nodeText = Regex.Replace(node.Text.TrimEnd('.'), @"\(\d+\)\s", "");
                         lblMatches.Items.Add(nodeText);
                     }
                 }
@@ -389,6 +366,7 @@ namespace InventoryView
                     // Change the color of non-matching nodes
                     node.ForeColor = Color.LightGray;
 
+                    // Check if any child node is a matching node and update its color
                     foreach (TreeNode childNode in node.Nodes)
                     {
                         if (childNode.BackColor == Color.LightBlue || childNode.BackColor == Color.Yellow)
@@ -399,6 +377,7 @@ namespace InventoryView
                     }
                 }
             }
+
             return isMatchFound;
         }
 
@@ -934,73 +913,57 @@ namespace InventoryView
             Color lightModeForeColor = Color.Black;
             Color lightModeBackColor = Color.White;
 
-            // Set the ForeColor and BackColor properties of each element depending on whether the CheckBox is checked
+            Color foreColor, backColor;
             if (chkDarkMode.Checked)
             {
-                this.ForeColor = darkModeForeColor;
-                this.BackColor = darkModeBackColor;
-                this.lblMatches.ForeColor = darkModeForeColor;
-                this.lblMatches.BackColor = darkModeBackColor;
-                this.panel1.ForeColor = darkModeForeColor;
-                this.panel1.BackColor = darkModeBackColor;
-                this.splitContainer1.ForeColor = darkModeForeColor;
-                this.splitContainer1.BackColor = darkModeBackColor;
-                this.splitContainer1.Panel1.ForeColor = darkModeForeColor;
-                this.splitContainer1.Panel1.BackColor = darkModeBackColor;
-                this.splitContainer1.Panel2.ForeColor = darkModeForeColor;
-                this.splitContainer1.Panel2.BackColor = darkModeBackColor;
-                this.tabControl1.ForeColor = darkModeForeColor;
-                this.tabControl1.BackColor = darkModeBackColor;
-                this.tableLayoutPanel1.ForeColor = darkModeForeColor;
-                this.tableLayoutPanel1.BackColor = darkModeBackColor;
-
-                // Loop through all the TabPage controls in the tabControl1 control
-                foreach (TabPage tabPage in tabControl1.TabPages)
-                {
-                    // Get the TreeView control on the tab page
-                    TreeView tv = tabPage.Controls[0] as TreeView;
-
-                    // Update the colors of the TreeView control
-                    tv.ForeColor = darkModeForeColor;
-                    tv.BackColor = darkModeBackColor;
-
-                    // Loop through all the nodes in the TreeView control
-                    UpdateNodeColors(tv.Nodes, darkModeForeColor, darkModeBackColor);
-                }
+                foreColor = darkModeForeColor;
+                backColor = darkModeBackColor;
             }
             else
             {
-                this.ForeColor = lightModeForeColor;
-                this.BackColor = lightModeBackColor;
-                this.lblMatches.ForeColor = lightModeForeColor;
-                this.lblMatches.BackColor = lightModeBackColor;
-                this.panel1.ForeColor = lightModeForeColor;
-                this.panel1.BackColor = lightModeBackColor;
-                this.splitContainer1.ForeColor = lightModeForeColor;
-                this.splitContainer1.BackColor = lightModeBackColor;
-                this.splitContainer1.Panel1.ForeColor = lightModeForeColor;
-                this.splitContainer1.Panel1.BackColor = lightModeBackColor;
-                this.splitContainer1.Panel2.ForeColor = lightModeForeColor;
-                this.splitContainer1.Panel2.BackColor = lightModeBackColor;
-                this.tabControl1.ForeColor = lightModeForeColor;
-                this.tabControl1.BackColor = lightModeBackColor;
-                this.tableLayoutPanel1.ForeColor = lightModeForeColor;
-                this.tableLayoutPanel1.BackColor = lightModeBackColor;
-
-                // Loop through all the TabPage controls in the tabControl1 control
-                foreach (TabPage tabPage in tabControl1.TabPages)
-                {
-                    // Get the TreeView control on the tab page
-                    TreeView tv = tabPage.Controls[0] as TreeView;
-
-                    // Update the colors of the TreeView control
-                    tv.ForeColor = lightModeForeColor;
-                    tv.BackColor = lightModeBackColor;
-
-                    // Loop through all the nodes in the TreeView control
-                    UpdateNodeColors(tv.Nodes, lightModeForeColor, lightModeBackColor);
-                }
+                foreColor = lightModeForeColor;
+                backColor = lightModeBackColor;
             }
+
+            // List of controls to update
+            Control[] controlsToUpdate = new Control[]
+            {
+        this,
+        this.lblMatches,
+        this.panel1,
+        this.splitContainer1,
+        this.splitContainer1.Panel1,
+        this.splitContainer1.Panel2,
+        this.tabControl1,
+        this.tableLayoutPanel1
+            };
+
+            foreach (Control control in controlsToUpdate)
+            {
+                if (control.ForeColor != foreColor)
+                    control.ForeColor = foreColor;
+
+                if (control.BackColor != backColor)
+                    control.BackColor = backColor;
+            }
+
+            // Loop through all the TabPage controls in the tabControl1 control
+            foreach (TabPage tabPage in tabControl1.TabPages)
+            {
+                // Get the TreeView control on the tab page
+                TreeView tv = tabPage.Controls[0] as TreeView;
+
+                // Update the colors of the TreeView control
+                if (tv.ForeColor != foreColor)
+                    tv.ForeColor = foreColor;
+
+                if (tv.BackColor != backColor)
+                    tv.BackColor = backColor;
+
+                // Loop through all the nodes in the TreeView control
+                UpdateNodeColors(tv.Nodes, foreColor, backColor);
+            }
+
             Class1.SaveSettings();
         }
 
