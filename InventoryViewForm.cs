@@ -274,7 +274,7 @@ namespace InventoryView
                         if (tabControl1.TabPages.Contains(tabPage) && !hiddenTabPages.Any(x => x.tabPage == tabPage))
                         {
                             hiddenTabPages.Add((tabPage, tabControl1.TabPages.IndexOf(tabPage)));
-                            tabPage.Visible = false;
+                            tabControl1.TabPages.Remove(tabPage);
                         }
                     }
                 }
