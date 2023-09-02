@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -53,6 +52,9 @@ namespace InventoryView
         public CheckBox chkMultilineTabs;
         public CheckBox chkDarkMode;
         private static string basePath = Application.StartupPath;
+        private ToolTip toolTip1;
+
+        private readonly Dictionary<string, List<MatchedItemInfo>> matchedItemsDictionary = new Dictionary<string, List<MatchedItemInfo>>();
 
         public InventoryViewForm() => InitializeComponent();
 
@@ -73,8 +75,9 @@ namespace InventoryView
             // Add the character names to the cboCharacters control
             cboCharacters.Items.Clear();
             cboCharacters.Items.AddRange(characterNames.ToArray());
-        }
 
+            lblMatches.MouseDoubleClick += LblMatches_MouseDoubleClick;
+        }
 
         private void BindData()
         {
@@ -122,6 +125,9 @@ namespace InventoryView
 
                 // Update the tab page text with the total item count
                 tabPage.Text = $"{character} (T: {totalCount})";
+
+                toolTip1.SetToolTip(lblMatches, null);
+
             }
         }
 
@@ -216,7 +222,7 @@ namespace InventoryView
         {
             // Reset the found count value
             lblFound.Text = "Found: 0";
-
+            ClearMatchedItemPaths();
             // Clear existing search matches
             searchMatches.Clear();
             treeViewSearchMatchesList.Clear();
@@ -303,6 +309,14 @@ namespace InventoryView
             txtSearch.Focus();
         }
 
+        private void ClearMatchedItemPaths()
+        {
+            foreach (var matchedItem in matchedItemsDictionary.Values)
+            {
+                matchedItem.Clear();
+            }
+        }
+
         private bool SearchTree(TreeView treeView, TreeNodeCollection nodes, List<TreeNode> searchMatches, ref int searchCount, ref int totalCount)
         {
             bool isMatchFound = false;
@@ -359,6 +373,16 @@ namespace InventoryView
                         // Add the node's text to the ListBox
                         string nodeText = Regex.Replace(node.Text.TrimEnd('.'), @"\(\d+\)\s", "");
                         lblMatches.Items.Add(nodeText);
+
+                        if (!matchedItemsDictionary.ContainsKey(nodeText))
+                        {
+                            matchedItemsDictionary[nodeText] = new List<MatchedItemInfo>();
+                        }
+
+                        matchedItemsDictionary[nodeText].Add(new MatchedItemInfo
+                        {
+                            FullPath = Regex.Replace(node.FullPath.TrimEnd('.'), @"\(\d+\)\s", "")
+                        });
                     }
                 }
                 else
@@ -379,6 +403,33 @@ namespace InventoryView
             }
 
             return isMatchFound;
+        }
+
+        private void LblMatches_MouseDown(object sender, MouseEventArgs e)
+        {
+            ListBox listBox = (ListBox)sender;
+            toolTip1.SetToolTip(listBox, null);
+        }
+
+        private void LblMatches_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            ListBox listBox = (ListBox)sender;
+            int selectedIndex = listBox.SelectedIndex;
+
+            if (selectedIndex >= 0 && selectedIndex < listBox.Items.Count)
+            {
+                string selectedItemText = listBox.Items[selectedIndex].ToString();
+
+                if (matchedItemsDictionary.ContainsKey(selectedItemText))
+                {
+                    List<MatchedItemInfo> matchedItems = matchedItemsDictionary[selectedItemText];
+                    toolTip1.SetToolTip(listBox, string.Join(Environment.NewLine, matchedItems.Select(item => $"{item.FullPath}\r\n")));
+                }
+                else
+                {
+                    toolTip1.SetToolTip(listBox, null); // Clear the tooltip
+                }
+            }
         }
 
         private void BtnExpand_Click(object sender, EventArgs e)
@@ -602,9 +653,9 @@ namespace InventoryView
             }
         }
 
-
         private void BtnReset_Click(object sender, EventArgs e)
         {
+            ClearMatchedItemPaths();
             // Reload the data
             ReloadData();
 
@@ -693,7 +744,6 @@ namespace InventoryView
             txtSearch.Focus();
         }
 
-
         private void ExportBranchToFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
             List<string> branchText = new List<string>
@@ -767,36 +817,6 @@ namespace InventoryView
                     buffer.Append("\n");
                 }
                 Clipboard.SetText(buffer.ToString());
-            }
-        }
-
-        private void Lb1_MouseDown(object sender, MouseEventArgs e)
-        {
-            if (Control.ModifierKeys == Keys.Control || (Control.ModifierKeys == Keys.Control || Control.ModifierKeys == Keys.ShiftKey || e.Button == MouseButtons.Left))
-            {
-                lblMatches.SelectionMode = SelectionMode.MultiExtended;
-            }
-            else if (e.Button == MouseButtons.Left)
-            {
-                lblMatches.SelectionMode = SelectionMode.One;
-            }
-        }
-
-        private void Lb1_MouseUp(object sender, MouseEventArgs e)
-        {
-            if (e.Button != MouseButtons.Right)
-                return;
-
-            if (lblMatches.SelectedItem != null)
-            {
-                if (Control.ModifierKeys == Keys.Control || (Control.ModifierKeys == Keys.Control || Control.ModifierKeys == Keys.ShiftKey || e.Button == MouseButtons.Right))
-                {
-                    lblMatches.SelectionMode = SelectionMode.MultiExtended;
-                }
-                else if (e.Button == MouseButtons.Right)
-                {
-                    lblMatches.SelectionMode = SelectionMode.One;
-                }
             }
         }
 
@@ -1029,6 +1049,7 @@ namespace InventoryView
             this.btnFindNext = new System.Windows.Forms.Button();
             this.btnReset = new System.Windows.Forms.Button();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.listBox_Menu.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.panel1.SuspendLayout();
@@ -1110,6 +1131,8 @@ namespace InventoryView
             this.lblMatches.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
             this.lblMatches.Size = new System.Drawing.Size(425, 408);
             this.lblMatches.TabIndex = 17;
+            this.lblMatches.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.LblMatches_MouseDoubleClick);
+            this.lblMatches.MouseDown += new System.Windows.Forms.MouseEventHandler(this.LblMatches_MouseDown);
             // 
             // tableLayoutPanel1
             // 
@@ -1368,6 +1391,15 @@ namespace InventoryView
             this.splitContainer1.Size = new System.Drawing.Size(1019, 408);
             this.splitContainer1.SplitterDistance = 590;
             this.splitContainer1.TabIndex = 19;
+            // 
+            // toolTip1
+            // 
+            this.toolTip1.AutoPopDelay = 5000;
+            this.toolTip1.BackColor = System.Drawing.Color.Black;
+            this.toolTip1.ForeColor = System.Drawing.Color.White;
+            this.toolTip1.InitialDelay = 100;
+            this.toolTip1.IsBalloon = true;
+            this.toolTip1.ReshowDelay = 100;
             // 
             // InventoryViewForm
             // 

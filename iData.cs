@@ -49,4 +49,10 @@ namespace InventoryView
             return newItem;
         }
     }
+
+    public class MatchedItemInfo
+    {
+        public string CharacterName { get; set; }
+        public string FullPath { get; set; }
+    }
 }
