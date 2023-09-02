@@ -6,6 +6,8 @@
 
 ![image](https://github.com/Thires/InventoryView-1/assets/28072996/c2b05f8b-38bc-4c35-b3b6-3315f208fa46)
 
+![image](https://github.com/Thires/InventoryView-1/assets/28072996/e23950b2-3ad7-4d5b-b84e-5ece8826a5a1)
+
 
 # InventoryView
 * Added family vault
@@ -25,6 +27,7 @@
 * Fixed a parsing issue for some getting stuck on house
 * Added dark mode and multiline tabs
 * Added handling for tool catalogs
+* Added tooltips when double clicking a found item
 
 This plugin will record the items that each of your characters has in their inventory, vault (if you have a vault book), and home (if you have one) and make them searchable in a form.
 
