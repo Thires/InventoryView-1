@@ -674,8 +674,8 @@ namespace InventoryView
                 || Regex.IsMatch(text, "^You shouldn't do that while inside of a home\\.  Step outside if you need to check something\\.")
                 || Regex.IsMatch(text, "^\\[You don't have access to advanced vault urchins because you don't have a subscription\\.")
                 || Regex.IsMatch(text, "^You haven't stored any deeds in this register\\.  It can hold \\d+ deeds in total\\.")
-                || Regex.IsMatch(text, "^You currently do not have access to VAULT FAMILY.  You will need to use VAULT PAY CONVERT to convert an urchin runner for this purpose\\.")
-                || Regex.IsMatch(text, "^You currently do not have access to VAULT STANDARD.  You will need to use VAULT PAY CONVERT to convert an urchin runner for this purpose\\.");
+                || Regex.IsMatch(text, "^You currently do not have access to VAULT FAMILY\\.  You will need to use VAULT PAY CONVERT to convert an urchin runner for this purpose\\.")
+                || Regex.IsMatch(text, "^You currently do not have access to VAULT STANDARD\\.  You will need to use VAULT PAY CONVERT to convert an urchin runner for this purpose\\.");
         }
 
         public string ParseInput(string text)
