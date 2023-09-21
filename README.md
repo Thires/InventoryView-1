@@ -6,7 +6,8 @@
 
 ![image](https://github.com/Thires/InventoryView-1/assets/28072996/c2b05f8b-38bc-4c35-b3b6-3315f208fa46)
 
-![image](https://github.com/Thires/InventoryView-1/assets/28072996/e23950b2-3ad7-4d5b-b84e-5ece8826a5a1)
+![image](https://github.com/Thires/InventoryView-1/assets/28072996/ee41bca4-0f47-42c0-aabf-b120feaa0c91)
+
 
 
 # InventoryView
