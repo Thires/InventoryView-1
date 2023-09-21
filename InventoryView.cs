@@ -653,29 +653,37 @@ namespace InventoryView
 
         bool IsDenied(string text)
         {
-            return text == "You currently do not have access to VAULT STANDARD or VAULT FAMILY.  You will need to use VAULT PAY CONVERT to convert an urchin runner for this purpose."
-                || text == "You currently have no contract with the representative of the local Traders' Guild for this service."
-                || text == "You have no arrangements with the local Traders' Guild representative for urchin runners."
-                || text == "Now may not be the best time for that."
-                || text == "You look around, but cannot find a nearby urchin to send to effect the transfer."
-                || text == "You can't access the family vault at this time."
-                || text == "You can't access your vault at this time.  Rent is due."
-                || text == "You can't access your vault at this time."
-                || text == "You currently do not have a vault rented."
-                || text == "The script that the vault book is written in is unfamiliar to you.  You are unable to read it."
-                || text == "The vault book is filled with blank pages pre-printed with branch office letterhead.  An advertisement touting the services of Rundmolen Bros. Storage Co. is pasted on the inside cover."
-                || text == "You haven't stored any deeds in this register."
-                || text == "You shouldn't do that to somebody eles's deed book."
-                || text == "You shouldn't read somebody else's deed book."
-                || text == "You shouldn't read somebody else's tool catalog."
-                || text == "This storage book doesn't seem to belong to you."
-                || text == "The storage book is filled with complex lists of inventory that make little sense to you."
-                || Regex.IsMatch(text, "^You haven't documented any stored tools in the catalog\\.  You could note \\d+ in total\\.")
-                || Regex.IsMatch(text, "^You shouldn't do that while inside of a home\\.  Step outside if you need to check something\\.")
-                || Regex.IsMatch(text, "^\\[You don't have access to advanced vault urchins because you don't have a subscription\\.")
-                || Regex.IsMatch(text, "^You haven't stored any deeds in this register\\.  It can hold \\d+ deeds in total\\.")
-                || Regex.IsMatch(text, "^You currently do not have access to VAULT FAMILY\\.  You will need to use VAULT PAY CONVERT to convert an urchin runner for this purpose\\.")
-                || Regex.IsMatch(text, "^You currently do not have access to VAULT STANDARD\\.  You will need to use VAULT PAY CONVERT to convert an urchin runner for this purpose\\.");
+            var deniedPatterns = new List<string>
+            {
+                "^The script that the vault book is written in is unfamiliar to you\\.  You are unable to read it\\.",
+                "^The storage book is filled with complex lists of inventory that make little sense to you\\.",
+                "^This storage book doesn't seem to belong to you\\.",
+                "^You can't access [A-z ]+ vault at this time[A-z \\.]+",
+                "^You currently do not have access to VAULT STANDARD or VAULT FAMILY\\.  You will need to use VAULT PAY CONVERT to convert an urchin runner for this purpose\\.",
+                "^You currently do not have a vault rented\\.",
+                "^You currently do not have access to VAULT \\w+\\.  You will need to use VAULT PAY CONVERT to convert an urchin runner for this purpose\\.",
+                "^You currently have no contract with the representative of the local Traders' Guild for this service\\.",
+                "^You haven't documented any stored tools in the catalog\\.  You could note \\d+ in total\\.",
+                "^You haven't stored any deeds in this register\\.  It can hold \\d+ deeds in total\\.",
+                "^You haven't stored any deeds in this register\\.",
+                "^You have no arrangements with the local Traders' Guild representative for urchin runners\\.",
+                "^You look around, but cannot find a nearby urchin to send to effect the transfer\\.",
+                "^You shouldn't do that to somebody else's deed book\\.",
+                "^You shouldn't do that while inside of a home\\.  Step outside if you need to check something\\.",
+                "^You shouldn't read somebody else's \\w+ \\w+\\.",
+                "^Now may not be the best time for that\\.",
+                "^\\[You don't have access to advanced vault urchins because you don't have a subscription\\.  To sign up for one, please visit https\\://www\\.play\\.net/dr/signup/subscribe\\.asp \\.\\]"
+            };
+
+            foreach (var pattern in deniedPatterns)
+	        {
+		        if (Regex.IsMatch(text, pattern))
+		        {
+			        return true;
+		        }
+	        }
+
+	        return false;
         }
 
         public string ParseInput(string text)
@@ -768,7 +776,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.2.6"; }
+            get { return "2.2.7"; }
         }
 
         public string Description

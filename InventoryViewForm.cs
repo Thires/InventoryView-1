@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Security.Policy;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
@@ -77,6 +78,7 @@ namespace InventoryView
             cboCharacters.Items.AddRange(characterNames.ToArray());
 
             lblMatches.MouseDoubleClick += LblMatches_MouseDoubleClick;
+            InitializeTooltipTimer();
         }
 
         private void BindData()
@@ -220,6 +222,11 @@ namespace InventoryView
 
         private void BtnSearch_Click(object sender, EventArgs e)
         {
+            if (customTooltip != null && !customTooltip.IsDisposed)
+            {
+                customTooltip.Close();
+                tooltipTimer.Stop(); // Stop the timer
+            }
             // Reset the found count value
             lblFound.Text = "Found: 0";
             ClearMatchedItemPaths();
@@ -405,10 +412,49 @@ namespace InventoryView
             return isMatchFound;
         }
 
-        private void LblMatches_MouseDown(object sender, MouseEventArgs e)
+        private void LblMatches_MouseLeave(object sender, EventArgs e)
         {
             ListBox listBox = (ListBox)sender;
             toolTip1.SetToolTip(listBox, null);
+        }
+
+        private void LblMatches_MouseDown(object sender, MouseEventArgs e)
+        {
+            // Close the custom tooltip if it's open
+            if (customTooltip != null && !customTooltip.IsDisposed)
+            {
+                customTooltip.Close();
+                tooltipTimer.Stop();
+            }
+        }
+
+        private void InventoryViewForm_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            if (customTooltip != null && !customTooltip.IsDisposed)
+            {
+                customTooltip.Close();
+                tooltipTimer.Stop();
+            }
+        }
+
+        private Form customTooltip = null;
+        private readonly Timer tooltipTimer = new Timer(); // Create a timer for hiding the tooltip
+
+        private void InitializeTooltipTimer()
+        {
+            // Set the interval for the timer (6000 milliseconds = 6 seconds)
+            tooltipTimer.Interval = 10000;
+
+            // Subscribe to the Tick event of the timer
+            tooltipTimer.Tick += (sender, e) =>
+            {
+                if (customTooltip != null && !customTooltip.IsDisposed)
+                {
+                    customTooltip.Close();
+                }
+
+                tooltipTimer.Stop(); // Stop the timer
+            };
         }
 
         private void LblMatches_MouseDoubleClick(object sender, MouseEventArgs e)
@@ -423,13 +469,85 @@ namespace InventoryView
                 if (matchedItemsDictionary.ContainsKey(selectedItemText))
                 {
                     List<MatchedItemInfo> matchedItems = matchedItemsDictionary[selectedItemText];
-                    toolTip1.SetToolTip(listBox, string.Join(Environment.NewLine, matchedItems.Select(item => $"{item.FullPath}\r\n")));
-                }
-                else
-                {
-                    toolTip1.SetToolTip(listBox, null); // Clear the tooltip
+
+                    // Close the old tooltip if it's open
+                    if (customTooltip != null && !customTooltip.IsDisposed)
+                    {
+                        customTooltip.Close();
+                        tooltipTimer.Stop();
+                    }
+
+                    // Create a new custom tooltip form
+                    customTooltip = new Form
+                    {
+                        // Set the form's properties
+                        FormBorderStyle = FormBorderStyle.Fixed3D, // Remove title bar
+                        MaximizeBox = false,
+                        MinimizeBox = false,
+                        ControlBox = false,
+                        AutoScroll = true,
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                        BackColor = Color.Black,
+                        ForeColor = Color.White,
+                        TopMost = true // Keep the form on top of all other windows
+                    };
+
+                    // Create a label to display the tooltip text
+                    Label label = new Label
+                    {
+                        AutoSize = true,
+                        Text = string.Join(Environment.NewLine + Environment.NewLine, matchedItems.Select(item => FormatPath(item.FullPath))),
+                        //Text = string.Join(Environment.NewLine, matchedItems.Select(item => $"{item.FullPath}\r\n")),
+                        ForeColor = Color.Black,
+                        BackColor = Color.Beige,
+                        Font = new Font("System", 10, FontStyle.Bold), // Set the desired font and size
+                    };
+
+                    // Add the label to the form
+                    customTooltip.Controls.Add(label);
+
+                    // Show the custom tooltip
+                    tooltipTimer.Start(); // Start or restart the timer
+                    tooltipTimer.Tick += (s, args) =>
+                    {
+                        customTooltip.Close();
+                        tooltipTimer.Stop(); // Stop the timer
+                    };
+
+                    // Calculate the tooltip position near the center of the screen
+                    int screenWidth = Screen.PrimaryScreen.WorkingArea.Width;
+                    int screenHeight = Screen.PrimaryScreen.WorkingArea.Height;
+                    int tooltipX = (screenWidth - customTooltip.Width) / 2;
+                    int tooltipY = (screenHeight - customTooltip.Height) / 2;
+
+                    // Show the custom tooltip
+                    customTooltip.StartPosition = FormStartPosition.Manual;
+                    customTooltip.Location = new Point(tooltipX, tooltipY + 4);
+                    customTooltip.Show();
                 }
             }
+        }
+
+        // Add this method to format the path with hyphen indentation
+        private string FormatPath(string fullPath)
+        {
+            string[] parts = fullPath.Split('\\');
+            if (parts.Length == 0)
+            {
+                return fullPath;
+            }
+
+            string itemName = parts[parts.Length - 1];
+            string indentation = new string('-', parts.Length - 1);
+
+            if (parts.Length > 1)
+            {
+                string parentPath = FormatPath(string.Join("\\", parts.Take(parts.Length - 1)));
+                return $"{parentPath}{Environment.NewLine}{indentation} {itemName}";
+            }
+
+            return $"{indentation} {itemName}";
         }
 
         private void BtnExpand_Click(object sender, EventArgs e)
@@ -655,6 +773,12 @@ namespace InventoryView
 
         private void BtnReset_Click(object sender, EventArgs e)
         {
+            if (customTooltip != null && !customTooltip.IsDisposed)
+            {
+                customTooltip.Close();
+                tooltipTimer.Stop();
+            }
+
             ClearMatchedItemPaths();
             // Reload the data
             ReloadData();
@@ -1398,7 +1522,6 @@ namespace InventoryView
             this.toolTip1.BackColor = System.Drawing.Color.Black;
             this.toolTip1.ForeColor = System.Drawing.Color.White;
             this.toolTip1.InitialDelay = 100;
-            this.toolTip1.IsBalloon = true;
             this.toolTip1.ReshowDelay = 100;
             // 
             // InventoryViewForm
@@ -1413,6 +1536,7 @@ namespace InventoryView
             this.Name = "InventoryViewForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Inventory View";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.InventoryViewForm_FormClosed);
             this.Load += new System.EventHandler(this.InventoryViewForm_Load);
             this.listBox_Menu.ResumeLayout(false);
             this.tableLayoutPanel1.ResumeLayout(false);
