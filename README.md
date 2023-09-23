@@ -4,7 +4,7 @@
 
 ![image](https://github.com/Thires/InventoryView-1/assets/28072996/d121b19b-460c-4f7d-88fa-370725763b58)
 
-![image](https://github.com/Thires/InventoryView-1/assets/28072996/c2b05f8b-38bc-4c35-b3b6-3315f208fa46)
+![image](https://github.com/Thires/InventoryView-1/assets/28072996/44e1de3b-4dce-420c-898c-ccba3ae6e33d)
 
 ![image](https://github.com/Thires/InventoryView-1/assets/28072996/ee41bca4-0f47-42c0-aabf-b120feaa0c91)
 
@@ -29,6 +29,7 @@
 * Added dark mode and multiline tabs
 * Added handling for tool catalogs
 * Added tooltips when double clicking a found item
+* Made it handle both toggle craft modes
 
 This plugin will record the items that each of your characters has in their inventory, vault (if you have a vault book), and home (if you have one) and make them searchable in a form.
 
