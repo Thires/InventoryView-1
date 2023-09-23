@@ -361,22 +361,12 @@ namespace InventoryView
                             _host.SendText("turn my deed register to contents");
                             _host.SendText("read my deed register");
                         }
-
-                        if (trimtext.Equals("+-----+-------------+-----------------------------------+-----------------------------------------------------+"))
-                        {
-                            //needs improvement
-                        }
-                        if (Regex.IsMatch(text, @"^\|\s*Page\s*\|\s*Type\s*\|\s*Deed\s*\|\s*Notes\s*\|"))
-                        {
-                            //needs improvement
-                        }
-                        if (Regex.IsMatch(text, @"\+-----\+-------------\+-----------------------------------\+-----------------------------------------------------\+"))
+                        else if (Regex.IsMatch(trimtext, @"^\|\s*Page\s*\|\s*Type\s*\|\s*Deed\s*\|\s*Notes\s*\|")) // This text appears at the beginning of the deed register list when Toggle Craft is active
                         {
                             togglecraft = true;
                             ScanStart("Deed");
-                        }
-                            
-                        else if (text.StartsWith("   Page -- [Type]       Deed")) // This text appears at the beginning of the deed register list.
+                        }   
+                        else if (text.StartsWith("   Page -- [Type]       Deed")) // This text appears at the beginning of the deed register list when Toggle Craft is not active
                         {
                             togglecraft = false;
                             ScanStart("Deed");
@@ -420,7 +410,6 @@ namespace InventoryView
                                     trimtext = trimtext.Trim();
                                     string outputLine;
 
-                                    // Split the line into parts based on the pipe character (|)
                                     string[] parts = trimtext.Split('|');
 
                                     if (parts.Length >= 4)
@@ -430,7 +419,6 @@ namespace InventoryView
                                         string deed = Regex.Replace(parts[3], @"\s(an?|some|several)\s", " ").Trim();
                                         string notes = parts[4].Trim();
                                         
-                                        // Format the output line as desired
                                         if (notes != "")
                                             outputLine = $"{pageNumber} -- [{type}]     {deed}  ({notes})";
                                         else
@@ -442,17 +430,14 @@ namespace InventoryView
                             }
                             else
                             {
-
                                 string tap = Regex.Replace(trimtext, @"a deed for\s(an?|some|several)", " ");
 
                                 if (tap[tap.Length - 1] == '.')
                                     tap = tap.TrimEnd('.');
 
                                 lastItem = currentData.AddItem(new ItemData() { tap = tap, storage = false });
-
                             }
                         }
-
                         break;//end of Deed
                     case "CatalogStart":
                         if (text.StartsWith("Roundtime:"))
