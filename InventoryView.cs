@@ -431,10 +431,6 @@ namespace InventoryView
                             else
                             {
                                 string tap = Regex.Replace(trimtext, @"a deed for\s(an?|some|several)", " ");
-
-                                if (tap[tap.Length - 1] == '.')
-                                    tap = tap.TrimEnd('.');
-
                                 lastItem = currentData.AddItem(new ItemData() { tap = tap, storage = false });
                             }
                         }
