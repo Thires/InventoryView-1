@@ -515,19 +515,15 @@ namespace InventoryView
                         tooltipTimer.Stop(); // Stop the timer
                     };
 
-                    // Calculate the tooltip position near the center of the screen
-                    int screenWidth = Screen.PrimaryScreen.WorkingArea.Width;
-                    int screenHeight = Screen.PrimaryScreen.WorkingArea.Height;
-                    int tooltipX = (screenWidth - customTooltip.Width) / 2;
-                    int tooltipY = (screenHeight - customTooltip.Height) / 2;
-
-                    // Show the custom tooltip
+                    // Calculate the tooltip position near the click location
+                    Point screenClickLocation = listBox.PointToScreen(e.Location);
                     customTooltip.StartPosition = FormStartPosition.Manual;
-                    customTooltip.Location = new Point(tooltipX, tooltipY + 4);
+                    customTooltip.Location = new Point(screenClickLocation.X + 10, screenClickLocation.Y + 10);
                     customTooltip.Show();
                 }
             }
         }
+
 
         // Add this method to format the path with hyphen indentation
         private string FormatPath(string fullPath)

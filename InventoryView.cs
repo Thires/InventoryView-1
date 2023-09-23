@@ -10,6 +10,8 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using static System.Windows.Forms.LinkLabel;
 
 namespace InventoryView
 {
@@ -42,6 +44,7 @@ namespace InventoryView
         private bool Debug = false;
         private string LastText = "";
 	    private string bookContainer;
+        private bool togglecraft = false;
 
         public void Initialize(IHost host)
         {
@@ -359,8 +362,23 @@ namespace InventoryView
                             _host.SendText("read my deed register");
                         }
 
+                        if (trimtext.Equals("+-----+-------------+-----------------------------------+-----------------------------------------------------+"))
+                        {
+                            //needs improvement
+                        }
+                        if (Regex.IsMatch(text, @"^\|\s*Page\s*\|\s*Type\s*\|\s*Deed\s*\|\s*Notes\s*\|"))
+                        {
+                            //needs improvement
+                        }
+                        if (Regex.IsMatch(text, @"\+-----\+-------------\+-----------------------------------\+-----------------------------------------------------\+"))
+                        {
+                            togglecraft = true;
+                            ScanStart("Deed");
+                        }
+                            
                         else if (text.StartsWith("   Page -- [Type]       Deed")) // This text appears at the beginning of the deed register list.
                         {
+                            togglecraft = false;
                             ScanStart("Deed");
                         }
                         // If you don't have a deed register or it is empty, it skips to checking for tool catalog.
@@ -377,13 +395,13 @@ namespace InventoryView
                                 _host.SendText("stow my deed register");
                             else
                                 _host.SendText("put my deed register in my " + bookContainer);
-                            ScanMode = "HomeStart";
+                            ScanMode = "CatalogStart";
                             bookContainer = "";
-                            _host.SendText("home recall");
+                            _host.SendText("get my tool catalog");
                         }
                         break;//end if DeedStart
                     case "Deed":
-                        if (trimtext.StartsWith("Currently stored"))
+                        if (Regex.IsMatch(trimtext, @"^Currently [S|s]tored"))
                         {
                             if (bookContainer == "")
                                 _host.SendText("stow my deed register");
@@ -395,13 +413,46 @@ namespace InventoryView
                         }
                         else
                         {
-                            string tap = Regex.Replace(trimtext, @"a deed for\s(an?|some|several)", " ");
+                            if (togglecraft)
+                            {
+                                if (!Regex.IsMatch(trimtext, @"\| Page\| Type"))
+                                {
+                                    trimtext = trimtext.Trim();
+                                    string outputLine;
 
-                            if (tap[tap.Length - 1] == '.')
-                                tap = tap.TrimEnd('.');
+                                    // Split the line into parts based on the pipe character (|)
+                                    string[] parts = trimtext.Split('|');
 
-                            lastItem = currentData.AddItem(new ItemData() { tap = tap, storage = false });
+                                    if (parts.Length >= 4)
+                                    {
+                                        string pageNumber = parts[1].Trim();
+                                        string type = parts[2].Trim();
+                                        string deed = Regex.Replace(parts[3], @"\s(an?|some|several)\s", " ").Trim();
+                                        string notes = parts[4].Trim();
+                                        
+                                        // Format the output line as desired
+                                        if (notes != "")
+                                            outputLine = $"{pageNumber} -- [{type}]     {deed}  ({notes})";
+                                        else
+                                            outputLine = $"{pageNumber} -- [{type}]     {deed}";
+
+                                        lastItem = currentData.AddItem(new ItemData() { tap = outputLine, storage = false });
+                                    }
+                                }
+                            }
+                            else
+                            {
+
+                                string tap = Regex.Replace(trimtext, @"a deed for\s(an?|some|several)", " ");
+
+                                if (tap[tap.Length - 1] == '.')
+                                    tap = tap.TrimEnd('.');
+
+                                lastItem = currentData.AddItem(new ItemData() { tap = tap, storage = false });
+
+                            }
                         }
+
                         break;//end of Deed
                     case "CatalogStart":
                         if (text.StartsWith("Roundtime:"))
@@ -776,7 +827,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.2.7"; }
+            get { return "2.2.8"; }
         }
 
         public string Description
