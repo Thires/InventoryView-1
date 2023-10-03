@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Security.Policy;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
@@ -53,7 +52,6 @@ namespace InventoryView
         public CheckBox chkMultilineTabs;
         public CheckBox chkDarkMode;
         private static string basePath = Application.StartupPath;
-        private ToolTip toolTip1;
 
         private readonly Dictionary<string, List<MatchedItemInfo>> matchedItemsDictionary = new Dictionary<string, List<MatchedItemInfo>>();
 
@@ -127,9 +125,6 @@ namespace InventoryView
 
                 // Update the tab page text with the total item count
                 tabPage.Text = $"{character} (T: {totalCount})";
-
-                toolTip1.SetToolTip(lblMatches, null);
-
             }
         }
 
@@ -350,7 +345,7 @@ namespace InventoryView
                 }
 
                 // Check if the node's text contains the search text
-                if (node.Text.Contains(txtSearch.Text))
+                if (node.Text.IndexOf(txtSearch.Text, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     // Highlight the node and add it to the list of search matches
                     node.BackColor = chkDarkMode.Checked ? Color.LightBlue : Color.Yellow;
@@ -412,12 +407,6 @@ namespace InventoryView
             return isMatchFound;
         }
 
-        private void LblMatches_MouseLeave(object sender, EventArgs e)
-        {
-            ListBox listBox = (ListBox)sender;
-            toolTip1.SetToolTip(listBox, null);
-        }
-
         private void LblMatches_MouseDown(object sender, MouseEventArgs e)
         {
             // Close the custom tooltip if it's open
@@ -438,14 +427,14 @@ namespace InventoryView
         }
 
         private Form customTooltip = null;
-        private readonly Timer tooltipTimer = new Timer(); // Create a timer for hiding the tooltip
+        private readonly Timer tooltipTimer = new Timer();
 
         private void InitializeTooltipTimer()
         {
-            // Set the interval for the timer (6000 milliseconds = 6 seconds)
+            // Set the interval for the timer
             tooltipTimer.Interval = 10000;
 
-            // Subscribe to the Tick event of the timer
+            // Tick event of the timer
             tooltipTimer.Tick += (sender, e) =>
             {
                 if (customTooltip != null && !customTooltip.IsDisposed)
@@ -488,8 +477,7 @@ namespace InventoryView
                         AutoScroll = true,
                         AutoSize = true,
                         AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                        BackColor = Color.Black,
-                        ForeColor = Color.White,
+                        MaximumSize = new Size(int.MaxValue, 420),
                         TopMost = true // Keep the form on top of all other windows
                     };
 
@@ -498,7 +486,6 @@ namespace InventoryView
                     {
                         AutoSize = true,
                         Text = string.Join(Environment.NewLine + Environment.NewLine, matchedItems.Select(item => FormatPath(item.FullPath))),
-                        //Text = string.Join(Environment.NewLine, matchedItems.Select(item => $"{item.FullPath}\r\n")),
                         ForeColor = Color.Black,
                         BackColor = Color.Beige,
                         Font = new Font("System", 10, FontStyle.Bold), // Set the desired font and size
@@ -523,7 +510,6 @@ namespace InventoryView
                 }
             }
         }
-
 
         // Add this method to format the path with hyphen indentation
         private string FormatPath(string fullPath)
@@ -1169,7 +1155,6 @@ namespace InventoryView
             this.btnFindNext = new System.Windows.Forms.Button();
             this.btnReset = new System.Windows.Forms.Button();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.listBox_Menu.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.panel1.SuspendLayout();
@@ -1511,14 +1496,6 @@ namespace InventoryView
             this.splitContainer1.Size = new System.Drawing.Size(1019, 408);
             this.splitContainer1.SplitterDistance = 590;
             this.splitContainer1.TabIndex = 19;
-            // 
-            // toolTip1
-            // 
-            this.toolTip1.AutoPopDelay = 5000;
-            this.toolTip1.BackColor = System.Drawing.Color.Black;
-            this.toolTip1.ForeColor = System.Drawing.Color.White;
-            this.toolTip1.InitialDelay = 100;
-            this.toolTip1.ReshowDelay = 100;
             // 
             // InventoryViewForm
             // 

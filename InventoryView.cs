@@ -1,17 +1,13 @@
-using System;
 using System.Collections.Generic;
 using GeniePlugin.Interfaces;
 using System.Windows.Forms;
 using System.Xml.Serialization;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using static System.Windows.Forms.LinkLabel;
 
 namespace InventoryView
 {
@@ -490,10 +486,6 @@ namespace InventoryView
                         else
                         {
                             string tap = Regex.Replace(trimtext, @" -- (an?|some|several)", " -- ");
-
-                            if (tap[tap.Length - 1] == '.')
-                                tap = tap.TrimEnd('.');
-
                             lastItem = currentData.AddItem(new ItemData() { tap = tap, storage = false });
                         }
                         break;//end of Catalog
@@ -808,7 +800,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.2.8"; }
+            get { return "2.2.9"; }
         }
 
         public string Description
