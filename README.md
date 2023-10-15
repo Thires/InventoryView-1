@@ -8,6 +8,7 @@
 
 ![image](https://github.com/Thires/InventoryView-1/assets/28072996/ee41bca4-0f47-42c0-aabf-b120feaa0c91)
 
+![image](https://github.com/Thires/InventoryView-1/assets/28072996/80202ae5-17d7-43d8-a420-bcbbb3584b9c)
 
 
 # InventoryView
@@ -30,6 +31,7 @@
 * Added handling for tool catalogs
 * Added tooltips when double clicking a found item
 * Made it handle both toggle craft modes
+* Added new search commands, /iv search and /iv path to search from command line
 
 This plugin will record the items that each of your characters has in their inventory, vault (if you have a vault book), and home (if you have one) and make them searchable in a form.
 
@@ -54,6 +56,8 @@ At the end it will send "Scan Complete" to the screen. If for some reason the pr
 /InventoryView command  (/iv command for short)
 /InventoryView scan  -- scan the items on the current character.
 /InventoryView open  -- open the InventoryView Window to see items.
+/InventoryView search keyword -- Will search xml for matches from command line.
+/InvenotryView path tap -- Will show the path from command line.
 
 Along with sending "Scan Complete" to the screen, the phrase "InventoryView scan complete" is sent to the parser at the end allowing you to do an inventory scan from a login or other script if desired.
 
