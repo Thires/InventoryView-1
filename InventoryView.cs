@@ -19,6 +19,8 @@ namespace InventoryView
         // Plugin Form.
         public static Form _form;
 
+        readonly InventoryText inventorytext = new InventoryText();
+
         // This contains all the of the inventory data.
         public static List<CharacterData> characterData = new List<CharacterData>();
 
@@ -486,7 +488,7 @@ namespace InventoryView
                         else
                         {
                             string tap = Regex.Replace(trimtext, @" -- (an?|some|several)", " -- ");
-                            lastItem = currentData.AddItem(new ItemData() { tap = tap, storage = false });
+                            lastItem = currentData.AddItem(new ItemData() { tap = trimtext, storage = false });
                         }
                         break;//end of Catalog
 
@@ -750,9 +752,30 @@ namespace InventoryView
                     Debug = !Debug;
                     _host.EchoText("InventoryView Debug Last Text: " + LastText);
                 }
-                else
-                    Help();
+                else if (SplitText[1].ToLower() == "search" && SplitText.Length > 2)
+                {
+                    if (SplitText.Length > 3)
+                    {
+                        _host.EchoText("Search text should be a single word.");
+                        return text;
+                    }
 
+                    string searchText = SplitText[2];
+                    string style = "line";
+                    inventorytext.PerformSearch(searchText, style);
+                }
+                else if (SplitText[1].ToLower() == "path" && SplitText.Length > 1)
+                {
+                    if (SplitText.Length < 3)
+                    {
+                        _host.EchoText("Search text should be full tap for the 'path' command.");
+                        return text;
+                    }
+
+                    string searchText = string.Join(" ", SplitText, 2, SplitText.Length - 2);
+                    string style = "path";
+                    inventorytext.PerformSearch(searchText, style);
+                }
                 return string.Empty;
             }
             return text;
@@ -763,6 +786,9 @@ namespace InventoryView
             _host.EchoText("Inventory View plugin options:");
             _host.EchoText("/InventoryView scan  -- scan the items on the current character.");
             _host.EchoText("/InventoryView open  -- open the InventoryView Window to see items.");
+            _host.EchoText("/InventoryView search keyword -- Will search xml for matches from command line.");
+            _host.EchoText("/InvenotryView path tap -- Will show the path from command line.");
+            _host.EchoText("All of these can also be done using /IV as well.");
         }
 
         public static void RemoveParents(List<ItemData> iList)
@@ -800,7 +826,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.2.9"; }
+            get { return "2.2.10"; }
         }
 
         public string Description
