@@ -42,6 +42,7 @@ namespace InventoryView
         private bool Debug = false;
         private string LastText = "";
 	    private string bookContainer;
+        private string guild = "";
         private bool togglecraft = false;
 
         public void Initialize(IHost host)
@@ -78,6 +79,16 @@ namespace InventoryView
                 LastText = trimtext;
                 if (trimtext.StartsWith("XML") && trimtext.EndsWith("XML")) return ""; // Skip XML parser lines
                 else if (string.IsNullOrEmpty(trimtext)) return ""; // Skip blank lines
+
+                if (Regex.IsMatch(trimtext, "^Name: .*\\s*Race: [A-z\\'\\`\\-]+\\s*Guild: [A-z ]+$"))
+                {
+                    Match match = Regex.Match(trimtext, "Guild: ([A-z ]+)$");
+                    guild = match.Groups[1].Value;
+
+                    _host.set_Variable("guild", guild);
+                    _host.SendText("inventory list");
+                }
+
                 switch (ScanMode)
                 {
                     case "Start":
@@ -138,10 +149,32 @@ namespace InventoryView
                         if (Regex.Match(trimtext, "^You get a.*vault book.*from").Success || trimtext == "You are already holding that.")
                         {
                             Match match2 = Regex.Match(trimtext, "^You get a.*vault book.*from.+your (.+)\\.");
-                            bookContainer = string.Format("{0}", match2.Groups[1]);
-                            _host.EchoText("Scanning Book Vault.");
-                            _host.SendText("read my vault book");
+                            bookContainer = match2.Success ? match2.Groups[1].Value : "";
+
+                            if (!string.IsNullOrEmpty(bookContainer))
+                            {
+                                string[] words = bookContainer.Split(' ');
+                                string formattedContainer;
+
+                                if (words.Length == 3)
+                                {
+                                    formattedContainer = $"{words[0]} {words[2]}";
+                                }
+                                else if (words.Length == 2)
+                                {
+                                    formattedContainer = $"{words[0]} {words[1]}";
+                                }
+                                else
+                                {
+                                    formattedContainer = words[0];
+                                }
+
+                                _host.EchoText("Scanning Book Vault.");
+                                _host.SendText("read my vault book");
+                                bookContainer = formattedContainer;
+                            }
                         }
+
                         else if (trimtext == "Vault Inventory:") // This text appears at the beginning of the vault list.
                         {
                             ScanStart("Vault");
@@ -213,6 +246,7 @@ namespace InventoryView
                             level = spaces;
                         }
                         break; //end of Vault
+                    
                     case "StandardStart":
                         if (Regex.Match(text, @"^You flag down a local you know works with the Estate Holders' Council and send \w+ to the nearest carousel.").Success || trimtext == "You are already holding that.")
                         {
@@ -270,6 +304,7 @@ namespace InventoryView
                             level = spaces;
                         }
                         break; //end of Standard Vault
+                    
                     case "FamilyStart":
                         if (text.StartsWith("Roundtime:"))
                         {
@@ -292,7 +327,7 @@ namespace InventoryView
                             if (text.StartsWith("Roundtime:"))
                             {
                                 PauseForRoundtime(trimtext);
-                                this.ScanMode = "DeedStart";
+                                ScanMode = "DeedStart";
                                 _host.SendText("get my deed register");
                             }
                             else
@@ -342,6 +377,7 @@ namespace InventoryView
                             level = spaces;
                         }
                         break; //end of Family Vault
+                    
                     case "DeedStart":
                         if (text.StartsWith("Roundtime:"))
                         {
@@ -350,14 +386,34 @@ namespace InventoryView
                             _host.SendText("get my deed register");
                         }
                         // Get the register & read it.
-                        Match match1 = Regex.Match(trimtext, @"^You get a.*deed register.*from");
-                        if (match1.Success || trimtext == "You are already holding that.")
+                        if (Regex.Match(trimtext, "^You get a.*deed register.*from").Success || trimtext == "You are already holding that.")
                         {
                             Match match2 = Regex.Match(trimtext, "^You get a.*deed register.*from.+your (.+)\\.");
-                            bookContainer = string.Format("{0}", match2.Groups[1]);
-                            _host.EchoText("Scanning Deed Register.");
-                            _host.SendText("turn my deed register to contents");
-                            _host.SendText("read my deed register");
+                            bookContainer = match2.Success ? match2.Groups[1].Value : "";
+
+                            if (!string.IsNullOrEmpty(bookContainer))
+                            {
+                                string[] words = bookContainer.Split(' ');
+                                string formattedContainer;
+
+                                if (words.Length == 3)
+                                {
+                                    formattedContainer = $"{words[0]} {words[2]}";
+                                }
+                                else if (words.Length == 2)
+                                {
+                                    formattedContainer = $"{words[0]} {words[1]}";
+                                }
+                                else
+                                {
+                                    formattedContainer = words[0];
+                                }
+
+                                _host.EchoText("Scanning Deed Register.");
+                                _host.SendText("turn my deed register to contents");
+                                _host.SendText("read my deed register");
+                                bookContainer = formattedContainer;
+                            }
                         }
                         else if (Regex.IsMatch(trimtext, @"^\|\s*Page\s*\|\s*Type\s*\|\s*Deed\s*\|\s*Notes\s*\|")) // This text appears at the beginning of the deed register list when Toggle Craft is active
                         {
@@ -433,6 +489,7 @@ namespace InventoryView
                             }
                         }
                         break;//end of Deed
+                    
                     case "CatalogStart":
                         if (text.StartsWith("Roundtime:"))
                         {
@@ -441,16 +498,35 @@ namespace InventoryView
                             _host.SendText("get my tool catalog");
                         }
                         // Get the catalog & read it.
-                        Match match = Regex.Match(trimtext, @"^You get a.*tool catalog.*from");
-                        if (match.Success || trimtext == "You are already holding that.")
+                        if (Regex.Match(trimtext, "^You get a.*tool catalog.*from").Success || trimtext == "You are already holding that.")
                         {
                             Match match2 = Regex.Match(trimtext, "^You get a.*tool catalog.*from.+your (.+)\\.");
-                            bookContainer = string.Format("{0}", match2.Groups[1]);
-                            _host.EchoText("Scanning tool catalog.");
-                            _host.SendText("turn my tool catalog to contents");
-                            _host.SendText("read my tool catalog");
-                        }
+                            bookContainer = match2.Success ? match2.Groups[1].Value : "";
 
+                            if (!string.IsNullOrEmpty(bookContainer))
+                            {
+                                string[] words = bookContainer.Split(' ');
+                                string formattedContainer;
+
+                                if (words.Length == 3)
+                                {
+                                    formattedContainer = $"{words[0]} {words[2]}";
+                                }
+                                else if (words.Length == 2)
+                                {
+                                    formattedContainer = $"{words[0]} {words[1]}";
+                                }
+                                else
+                                {
+                                    formattedContainer = words[0];
+                                }
+
+                                _host.EchoText("Scanning tool catalog.");
+                                _host.SendText("turn my tool catalog to contents");
+                                _host.SendText("read my tool catalog");
+                                bookContainer = formattedContainer;
+                            }
+                        }
                         else if (text.StartsWith("   Page -- Tool")) // This text appears at the beginning of the tool catalog.
                         {
                             ScanStart("Catalog");
@@ -487,7 +563,7 @@ namespace InventoryView
                         }
                         else
                         {
-                            string tap = Regex.Replace(trimtext, @" -- (an?|some|several)", " -- ");
+                            _ = Regex.Replace(trimtext, @" -- (an?|some|several)", " -- ");
                             lastItem = currentData.AddItem(new ItemData() { tap = trimtext, storage = false });
                         }
                         break;//end of Catalog
@@ -502,49 +578,105 @@ namespace InventoryView
                         else if (trimtext.StartsWith("Your documentation filed with the Estate Holders"))
                         {
                             _host.EchoText("Skipping Home.");
-                            if (_host.get_Variable("guild") == "Trader")
+
+                            switch (guild)
                             {
-                                ScanMode = "TraderStart";
-                                _host.SendText("get my storage book");
-                            }
-                            else
-                            {
-                                ScanMode = null;
-                                _host.EchoText("Scan Complete.");
-                                _host.SendText("#parse InventoryView scan complete");
-                                SaveSettings();
+                                case "Trader":
+                                    ScanMode = "TraderStart";
+                                    _host.SendText("get my storage book");
+                                    break;
+
+                                case "Moon Mage":
+                                    string shadow = _host.get_Variable("roomobjs");
+                                    if (shadow.Contains("Shadow Servant"))
+                                    {
+                                        _host.SendText("prep pg 5");
+                                        ScanMode = "MoonMageStart";
+                                    }
+                                    else
+                                    {
+                                        ScanMode = null;
+                                        _host.EchoText("Scan Complete.");
+                                        _host.SendText("#parse InventoryView scan complete");
+                                        SaveSettings();
+                                    }
+                                    break;
+
+                                default:
+                                    ScanMode = null;
+                                    _host.EchoText("Scan Complete.");
+                                    _host.SendText("#parse InventoryView scan complete");
+                                    SaveSettings();
+                                    break;
                             }
                         }
                         else if (IsDenied(trimtext))
                         {
-                            if (_host.get_Variable("guild") == "Trader")
+                            switch (guild)
                             {
-                                ScanMode = "TraderStart";
-                                _host.SendText("get my storage book");
-                            }
-                            else
-                            {
-                                ScanMode = null;
-                                _host.EchoText("Scan Complete.");
-                                _host.SendText("#parse InventoryView scan complete");
-                                SaveSettings();
+                                case "Trader":
+                                    ScanMode = "TraderStart";
+                                    _host.SendText("get my storage book");
+                                    break;
+
+                                case "Moon Mage":
+                                    string shadow = _host.get_Variable("roomobjs");
+                                    if (shadow.Contains("Shadow Servant"))
+                                    {
+                                        ScanMode = "MoonMageStart";
+                                        _host.SendText("prep pg 5");
+                                    }
+                                    else
+                                    {
+                                        ScanMode = null;
+                                        _host.EchoText("Scan Complete.");
+                                        _host.SendText("#parse InventoryView scan complete");
+                                        SaveSettings();
+                                    }
+                                    break;
+
+                                default:
+                                    ScanMode = null;
+                                    _host.EchoText("Scan Complete.");
+                                    _host.SendText("#parse InventoryView scan complete");
+                                    SaveSettings();
+                                    break;
                             }
                         }
                         break; //end of HomeStart
                     case "Home":
                         if (Regex.IsMatch(trimtext, @"\^[^>]*>|[^>]*\>|>|\^\>")) // There is no text after the home list, so watch for the next >
                         {
-                            if (_host.get_Variable("guild") == "Trader")
+                            switch (guild)
                             {
-                                ScanMode = "TraderStart";
-                                _host.SendText("get my storage book");
-                            }
-                            else
-                            {
-                                ScanMode = null;
-                                _host.EchoText("Scan Complete.");
-                                _host.SendText("#parse InventoryView scan complete");
-                                SaveSettings();
+                                case "Trader":
+                                    ScanMode = "TraderStart";
+                                    _host.SendText("get my storage book");
+                                    break;
+
+                                case "Moon Mage":
+                                    //string shadow = _host.get_Variable("SpellTimer.ShadowServant.active");
+                                    string shadow = _host.get_Variable("roomobjs"); 
+                                    if (shadow.Contains("Shadow Servant"))
+                                    {
+                                        ScanMode = "MoonMageStart";
+                                        _host.SendText("prep pg 5");
+                                    }
+                                    else 
+                                    {
+                                        ScanMode = null;
+                                        _host.EchoText("Scan Complete.");
+                                        _host.SendText("#parse InventoryView scan complete");
+                                        SaveSettings(); 
+                                    }
+                                    break;
+
+                                default:
+                                    ScanMode = null;
+                                    _host.EchoText("Scan Complete.");
+                                    _host.SendText("#parse InventoryView scan complete");
+                                    SaveSettings();
+                                    break;
                             }
                         }
                         else if (trimtext.StartsWith("Attached:")) // If the item is attached, it is in/on/under/behind a piece of furniture.
@@ -562,14 +694,36 @@ namespace InventoryView
                             lastItem = currentData.AddItem(new ItemData() { tap = tap, storage = true });
                         }
                         break; //end of Home
+                   
                     case "TraderStart":
                         // Get the storage book & read it.
                         if (Regex.Match(trimtext, "^You get a.*storage book.*from").Success || trimtext == "You are already holding that.")
                         {
-                            Match match3 = Regex.Match(trimtext, "^You get a.*storage book.*from.+your (.+)\\.");
-                            bookContainer = string.Format("{0}", match3.Groups[1]);
-                            _host.EchoText("Scanning Trader Storage.");
-                            _host.SendText("read my storage book");
+                            Match match2 = Regex.Match(trimtext, "^You get a.*storage book.*from.+your (.+)\\.");
+                            bookContainer = match2.Success ? match2.Groups[1].Value : "";
+
+                            if (!string.IsNullOrEmpty(bookContainer))
+                            {
+                                string[] words = bookContainer.Split(' ');
+                                string formattedContainer;
+
+                                if (words.Length == 3)
+                                {
+                                    formattedContainer = $"{words[0]} {words[2]}";
+                                }
+                                else if (words.Length == 2)
+                                {
+                                    formattedContainer = $"{words[0]} {words[1]}";
+                                }
+                                else
+                                {
+                                    formattedContainer = words[0];
+                                }
+
+                                _host.EchoText("Scanning Trader Storage.");
+                                _host.SendText("read my storage book");
+                                bookContainer = formattedContainer;
+                            }
                         }
                         else if (trimtext == "in the known realms since 402.") // This text appears at the beginning of the storage book list.
                         {
@@ -599,7 +753,7 @@ namespace InventoryView
                         }
                         break; // end of trader start
                     case "Trader":
-                        // This text indicates the end of the vault inventory list.
+                        // This text indicates the end of the storage box inventory list.
                         if (text.StartsWith("A notation at the bottom indicates"))
                         {
                             ScanMode = null;
@@ -645,6 +799,67 @@ namespace InventoryView
                             level = spaces;
                         }
                     break; //end of Trader
+                    
+                    case "MoonMageStart":
+                        if (Regex.Match(trimtext, "^You feel fully prepared to cast your spell\\.").Success)
+                        {
+                            _host.EchoText("Scanning Shadow Servant.");
+                            _host.SendText("cast servant");
+                        }
+                        else if (trimtext == "Within the belly of the Shadow Servant you see:") // Shadow Servant start of the list.
+                        {
+                            ScanStart("MoonMage");
+                        }
+                        else if (IsDenied(trimtext))
+                        {
+                            ScanMode = null;
+                            _host.EchoText("Skipping Servant, Piercing Gaze required.");
+                            _host.EchoText("Scan Complete.");
+                            _host.SendText("#parse InventoryView scan complete");
+                            SaveSettings();
+                        }
+                        break;
+                    case "MoonMage":
+                        if (text.StartsWith("Your Servant is holding"))
+                        {
+                            ScanMode = null;
+                            _host.EchoText("Scan Complete.");
+                            _host.SendText("#parse InventoryView scan complete");
+                            SaveSettings();
+                        }
+                        else
+                        {
+                            // Determine how many levels down an item is based on the number of spaces before it.
+                            int spaces = text.Length - text.TrimStart().Length;
+                            spaces = (spaces >= 4 && spaces <= 14 && spaces % 2 == 0) ? spaces / 2 - 1 : (spaces == 15) ? 7 : 1;
+
+                            string tap = trimtext;
+                            tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
+
+                            if (spaces == 1)
+                            {
+                                lastItem = currentData.AddItem(new ItemData() { tap = tap });
+                            }
+                            else if (spaces == level)
+                            {
+                                lastItem = lastItem.parent.AddItem(new ItemData() { tap = tap });
+                            }
+                            else if (spaces == level + 1)
+                            {
+                                lastItem = lastItem.AddItem(new ItemData() { tap = tap });
+                            }
+                            else
+                            {
+                                for (int i = spaces; i <= level; i++)
+                                {
+                                    lastItem = lastItem.parent;
+                                }
+                                lastItem = lastItem.AddItem(new ItemData() { tap = tap });
+                            }
+                            level = spaces;
+                        }
+                        break; // end of moon mage
+
                     default:
                         ScanMode = null;
                         break;
@@ -664,6 +879,8 @@ namespace InventoryView
                 mode = "Trader Storage";
             if (mode == "Catalog")
                 mode = "Tool Catalog";
+            if (mode == "MoonMage")
+                mode = "Shadow Servant";
             currentData = new CharacterData() { name = _host.get_Variable("charactername"), source = mode};
             characterData.Add(currentData);
             level = 1;
@@ -689,6 +906,7 @@ namespace InventoryView
                 "^You currently do not have a vault rented\\.",
                 "^You currently do not have access to VAULT \\w+\\.  You will need to use VAULT PAY CONVERT to convert an urchin runner for this purpose\\.",
                 "^You currently have no contract with the representative of the local Traders' Guild for this service\\.",
+                "^You have no idea how to cast that spell\\.",
                 "^You haven't documented any stored tools in the catalog\\.  You could note \\d+ in total\\.",
                 "^You haven't stored any deeds in this register\\.  It can hold \\d+ deeds in total\\.",
                 "^You haven't stored any deeds in this register\\.",
@@ -735,7 +953,8 @@ namespace InventoryView
                         {
                             characterData.Remove(characterData.Where(tbl => tbl.name == _host.get_Variable("charactername")).First());
                         }
-                        _host.SendText("inventory list");
+                        _host.SendText("info");
+                        //_host.SendText("inventory list");
                     }
                 }
                 else if (SplitText[1].ToLower() == "open")
@@ -754,13 +973,12 @@ namespace InventoryView
                 }
                 else if (SplitText[1].ToLower() == "search" && SplitText.Length > 2)
                 {
-                    if (SplitText.Length > 3)
+                    string searchText = SplitText[2];
+                    if (SplitText.Length > 3 || searchText.Length < 3)
                     {
-                        _host.EchoText("Search text should be a single word.");
+                        _host.EchoText("Search text should be a single word and larger than 2 charcters.");
                         return text;
                     }
-
-                    string searchText = SplitText[2];
                     string style = "line";
                     inventorytext.PerformSearch(searchText, style);
                 }
@@ -826,7 +1044,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.2.10"; }
+            get { return "2.2.11"; }
         }
 
         public string Description
@@ -959,7 +1177,6 @@ namespace InventoryView
                 _host.EchoText("Error writing to InventoryView file: " + ex.Message);
             }
         }
-
         public static void LoadSettings()
         {
             string configFile = Path.Combine(basePath, "InventoryView.xml");
