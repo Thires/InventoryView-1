@@ -954,7 +954,6 @@ namespace InventoryView
                             characterData.Remove(characterData.Where(tbl => tbl.name == _host.get_Variable("charactername")).First());
                         }
                         _host.SendText("info");
-                        //_host.SendText("inventory list");
                     }
                 }
                 else if (SplitText[1].ToLower() == "open")
