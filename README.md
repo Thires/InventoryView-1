@@ -32,7 +32,7 @@
 * Added tooltips when double clicking a found item
 * Made it handle both toggle craft modes
 * Added text searching for matches and full paths of items
-* Added Shadow Servant inventory using percing gaze
+* Added Shadow Servant inventory using Piercing Gaze
 * Added check for guild
 
 This plugin will record the items that each of your characters has in their inventory, vault (if you have a vault book), and home (if you have one) and make them searchable in a form.
