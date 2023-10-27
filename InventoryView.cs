@@ -80,7 +80,7 @@ namespace InventoryView
                 if (trimtext.StartsWith("XML") && trimtext.EndsWith("XML")) return ""; // Skip XML parser lines
                 else if (string.IsNullOrEmpty(trimtext)) return ""; // Skip blank lines
 
-                if (Regex.IsMatch(trimtext, "^Name: .*\\s*Race: [A-z\\'\\`\\-]+\\s*Guild: [A-z ]+$"))
+                if (Regex.IsMatch(trimtext, "Guild: [A-z ]+$"))
                 {
                     Match match = Regex.Match(trimtext, "Guild: ([A-z ]+)$");
                     guild = match.Groups[1].Value;
