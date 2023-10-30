@@ -19,7 +19,7 @@ namespace InventoryView
         // Plugin Form.
         public static Form _form;
 
-        readonly InventoryText inventorytext = new InventoryText();
+        readonly InventoryTextSearch inventorytext = new InventoryTextSearch();
 
         // This contains all the of the inventory data.
         public static List<CharacterData> characterData = new List<CharacterData>();
@@ -84,8 +84,6 @@ namespace InventoryView
                 {
                     Match match = Regex.Match(trimtext, "Guild: ([A-z ]+)$");
                     guild = match.Groups[1].Value;
-
-                    _host.set_Variable("guild", guild);
                     _host.SendText("inventory list");
                 }
 
@@ -1043,7 +1041,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.2.11"; }
+            get { return "2.2.12"; }
         }
 
         public string Description
