@@ -52,7 +52,6 @@ namespace InventoryView
         public CheckBox chkMultilineTabs;
         public CheckBox chkDarkMode;
         private static string basePath = Application.StartupPath;
-
         private readonly Dictionary<string, List<MatchedItemInfo>> matchedItemsDictionary = new Dictionary<string, List<MatchedItemInfo>>();
 
         public InventoryViewForm() => InitializeComponent();
@@ -192,7 +191,7 @@ namespace InventoryView
             copyTextToolStripMenuItem.Click += (sender, e) =>
             {
                 if (tv.SelectedNode != null)
-                    Clipboard.SetText(Regex.Replace(tv.SelectedNode.Text, @"\(\d+\)\s", ""));
+                    Clipboard.SetText(Regex.Replace(tv.SelectedNode.Text, @"\(\d+\)\s|^(an?|some|several)\s", ""));
             };
             contextMenuStrip.Items.Add(copyTextToolStripMenuItem);
 
@@ -204,7 +203,7 @@ namespace InventoryView
                 {
                     List<string> branchText = new List<string>
                     {
-                        Regex.Replace(tv.SelectedNode.Text, @"\(\d+\)\s", "")
+                        Regex.Replace(tv.SelectedNode.Text, @"\(\d+\)\s|^(an?|some|several)\s", "")
                     };
                     CopyBranchText(tv.SelectedNode.Nodes, branchText, 1);
                     Clipboard.SetText(string.Join("\r\n", branchText.ToArray()));
@@ -373,7 +372,7 @@ namespace InventoryView
                         }
 
                         // Add the node's text to the ListBox
-                        string nodeText = Regex.Replace(node.Text.TrimEnd('.'), @"\(\d+\)\s", "");
+                        string nodeText = Regex.Replace(node.Text.TrimEnd('.'), @"\(\d+\)\s|^(an?|some|several)\s", "");
                         lblMatches.Items.Add(nodeText);
 
                         if (!matchedItemsDictionary.ContainsKey(nodeText))
@@ -383,7 +382,7 @@ namespace InventoryView
 
                         matchedItemsDictionary[nodeText].Add(new MatchedItemInfo
                         {
-                            FullPath = Regex.Replace(node.FullPath.TrimEnd('.'), @"\(\d+\)\s", "")
+                            FullPath = Regex.Replace(node.FullPath.TrimEnd('.'), @"\(\d+\)\s|^(an?|some|several)\s", "")
                         });
                     }
                 }
@@ -605,9 +604,9 @@ namespace InventoryView
         private void OpenWikiPage(string text)
         {
             if (Class1._host.InterfaceVersion == 4)
-                Class1._host.SendText(string.Format("#browser https://elanthipedia.play.net/index.php?search={0}", Uri.EscapeDataString(Regex.Replace(text, @"\(\d+\)\s|\s\(closed\)", ""))));
+                Class1._host.SendText(string.Format("#browser https://elanthipedia.play.net/index.php?search={0}", Uri.EscapeDataString(Regex.Replace(text, @"\(\d+\)\s|\s\(closed\)|^(an?|some|several)\s", ""))));
             else
-                Process.Start(new ProcessStartInfo(string.Format("https://elanthipedia.play.net/index.php?search={0}", Regex.Replace(text, @"\(\d+\)\s|\s\(closed\)", ""))) { UseShellExecute = true });
+                Process.Start(new ProcessStartInfo(string.Format("https://elanthipedia.play.net/index.php?search={0}", Regex.Replace(text, @"\(\d+\)\s|\s\(closed\)|(^an?|some|several)\s", ""))) { UseShellExecute = true });
         }
 
         private void BtnFindNext_Click(object sender, EventArgs e)
@@ -854,7 +853,7 @@ namespace InventoryView
         {
             List<string> branchText = new List<string>
             {
-                Regex.Replace(tv.SelectedNode.Text, @"\(\d+\)\s", "")
+                Regex.Replace(tv.SelectedNode.Text, @"\(\d+\)\s|(an?|some|several)\s", "")
             };
             CopyBranchText(tv.SelectedNode.Nodes, branchText, 1);
             Clipboard.SetText(string.Join("\r\n", branchText.ToArray()));
@@ -864,7 +863,7 @@ namespace InventoryView
         {
             foreach (TreeNode node in nodes)
             {
-                branchText.Add(new string('\t', level) + Regex.Replace(node.Text, @"\(\d+\)\s", ""));
+                branchText.Add(new string('\t', level) + Regex.Replace(node.Text, @"\(\d+\)\s|^(an?|some|several)\s", ""));
                 CopyBranchText(node.Nodes, branchText, level + 1);
             }
         }
