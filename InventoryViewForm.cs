@@ -76,8 +76,17 @@ namespace InventoryView
 
             lblMatches.MouseDoubleClick += LblMatches_MouseDoubleClick;
             InitializeTooltipTimer();
-        }
 
+            if (tabControl1.SelectedTab?.Controls.Count > 0 && tabControl1.SelectedTab.Controls[0] is TreeView tv)
+            {
+                // Expand root nodes for the selected tab
+                foreach (TreeNode rootNode in tv.Nodes)
+                {
+                    rootNode.Expand();
+                }
+            }
+        }
+       
         private void BindData()
         {
             // Clear existing data
@@ -124,6 +133,11 @@ namespace InventoryView
 
                 // Update the tab page text with the total item count
                 tabPage.Text = $"{character} (T: {totalCount})";
+
+                foreach (TreeNode rootNode in tv.Nodes)
+                {
+                    rootNode.Expand();
+                }
             }
         }
 

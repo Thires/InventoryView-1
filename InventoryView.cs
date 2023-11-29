@@ -84,6 +84,7 @@ namespace InventoryView
                 {
                     Match match = Regex.Match(trimtext, "Guild: ([A-z ]+)$");
                     guild = match.Groups[1].Value;
+					_host.set_Variable("guild", guild);
                     _host.SendText("inventory list");
                 }
 
@@ -1041,7 +1042,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.2.13"; }
+            get { return "2.2.14"; }
         }
 
         public string Description
