@@ -8,6 +8,8 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
+using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace InventoryView
 {
@@ -43,6 +45,7 @@ namespace InventoryView
         private string LastText = "";
 	    private string bookContainer;
         private string guild = "";
+        private string accountName = "";
         private bool togglecraft = false;
 
         public void Initialize(IHost host)
@@ -73,18 +76,27 @@ namespace InventoryView
 
         public string ParseText(string text, string window)
         {
-            if (ScanMode != null) // If a scan isn't in progress, do nothing here.
+            if (ScanMode != null)
             {
                 string trimtext = text.Trim(new char[] { '\n', '\r', ' ' }); // Trims spaces and newlines.
                 LastText = trimtext;
                 if (trimtext.StartsWith("XML") && trimtext.EndsWith("XML")) return ""; // Skip XML parser lines
                 else if (string.IsNullOrEmpty(trimtext)) return ""; // Skip blank lines
 
+                if (((InventoryViewForm)_form).chkFamily.Checked)
+                {
+                    if (Regex.IsMatch(trimtext, "^Account Info for\\s+(.+):"))
+                    {
+                        Match accountNameMatch = Regex.Match(trimtext, "^Account Info for\\s+(.+):");
+                        accountName = accountNameMatch.Groups[1].Value;
+                    }
+                }
+
                 if (Regex.IsMatch(trimtext, "Guild: [A-z ]+$"))
                 {
                     Match match = Regex.Match(trimtext, "Guild: ([A-z ]+)$");
                     guild = match.Groups[1].Value;
-					_host.set_Variable("guild", guild);
+                    _host.set_Variable("guild", guild);
                     _host.SendText("inventory list");
                 }
 
@@ -202,13 +214,26 @@ namespace InventoryView
                         // This text indicates the end of the vault inventory list.
                         if (text.StartsWith("The last note in your book indicates that your vault contains"))
                         {
-                            ScanMode = "FamilyStart";
-                            if (bookContainer == "")
+                            if (((InventoryViewForm)_form).chkFamily.Checked) 
+                            {
+                                ScanMode = "FamilyStart";
+                                if (bookContainer == "")
                                 _host.SendText("stow my vault book");
-                            else
+                                else
                                 _host.SendText("put my vault book in my " + bookContainer);
-                            bookContainer = "";
-                            _host.SendText("vault family");
+                                bookContainer = "";
+                                _host.SendText("vault family");
+                            }
+                            else
+                            {
+                                ScanMode = "DeedStart";
+                                _host.SendText("Skipping Family vault");
+                                if (bookContainer == "")
+                                    _host.SendText("stow my vault book");
+                                else
+                                    _host.SendText("put my vault book in my " + bookContainer);
+                                bookContainer = "";
+                            }
                         }
                         else
                         {
@@ -259,16 +284,28 @@ namespace InventoryView
                         // If you don't have access to vault standard, it skips to checking for family vault.
                         else if (IsDenied(trimtext))
                         {
-                            _host.EchoText("Skipping Standard Vault.");
-                            ScanMode = "FamilyStart";
-                            _host.SendText("vault family");
+                            if (((InventoryViewForm)_form).chkFamily.Checked)
+                            {
+                                _host.EchoText("Skipping Standard Vault.");
+                                ScanMode = "FamilyStart";
+                                _host.SendText("vault family");
+                            }
+                            else
+                            {
+                                ScanMode = "DeedStart";
+                                _host.EchoText("Skipping Family Vault");
+                                _host.SendText("get my deed register");
+                            }
                         }
                         break; //end of VaultStandardStart
                     case "Standard":
                         // This text indicates the end of the vault inventory list.
                         if (text.StartsWith("The last note indicates that your vault contains"))
                         {
-                            ScanMode = "FamilyStart";
+                            if (((InventoryViewForm)_form).chkFamily.Checked)
+                                ScanMode = "FamilyStart";
+                            else
+                                ScanMode = "DeedStart";
                         }
                         else
                         {
@@ -870,19 +907,29 @@ namespace InventoryView
         void ScanStart(string mode)
         {
             ScanMode = mode;
-            if (mode == "Standard")
-                mode = "Vault";
             if (mode == "FamilyVault")
-                mode = "Family Vault";
-            if (mode == "Trader")
-                mode = "Trader Storage";
-            if (mode == "Catalog")
-                mode = "Tool Catalog";
-            if (mode == "MoonMage")
-                mode = "Shadow Servant";
-            currentData = new CharacterData() { name = _host.get_Variable("charactername"), source = mode};
-            characterData.Add(currentData);
-            level = 1;
+            {
+                if (!characterData.Any(cd => cd.name == "Family Vault(s)" && cd.source == accountName))
+                {
+                    currentData = new CharacterData() { name = "Family Vault(s)", source = accountName };
+                    characterData.Add(currentData);
+                    level = 1;
+                }
+            }
+            else
+            {
+                if (mode == "Standard")
+                    mode = "Vault";
+                if (mode == "Trader")
+                    mode = "Trader Storage";
+                if (mode == "Catalog")
+                    mode = "Tool Catalog";
+                if (mode == "MoonMage")
+                    mode = "Shadow Servant";
+                currentData = new CharacterData() { name = _host.get_Variable("charactername"), source = mode };
+                characterData.Add(currentData);
+                level = 1;
+            }
         }
 
         private void PauseForRoundtime(string text)
@@ -952,6 +999,8 @@ namespace InventoryView
                         {
                             characterData.Remove(characterData.Where(tbl => tbl.name == _host.get_Variable("charactername")).First());
                         }
+                        if (((InventoryViewForm)_form).chkFamily.Checked)
+                            _host.SendText("played");
                         _host.SendText("info");
                     }
                 }
@@ -1042,7 +1091,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.2.14"; }
+            get { return "2.2.15"; }
         }
 
         public string Description
@@ -1158,6 +1207,22 @@ namespace InventoryView
                     doc.DocumentElement.AppendChild(darkModeElement);
                 }
 
+                XmlNode familyNode = doc.SelectSingleNode("/Root/Family");
+
+                // If DarkModeState element exists, update its value.
+                if (familyNode != null)
+                    familyNode.InnerText = ((InventoryViewForm)_form).chkFamily.Checked.ToString();
+                else
+                {
+                    // Otherwise, create new DarkModeState element and set its value to state of chkDarkMode control.
+                    XmlElement familyElement = doc.CreateElement("Family");
+                    familyElement.InnerText = ((InventoryViewForm)_form).chkFamily.Checked.ToString();
+
+                    // Append DarkModeState element to root element of XmlDocument.
+                    doc.DocumentElement.AppendChild(familyElement);
+                }
+
+
                 // Save changes to XML file.
                 using (var writer = XmlWriter.Create(configFile, new XmlWriterSettings { Encoding = Encoding.UTF8, Indent = true }))
                 {
@@ -1212,6 +1277,11 @@ namespace InventoryView
                         darkModeElement.InnerText = "False";
                         newRootNode.AppendChild(darkModeElement);
 
+                        // Create a new DarkModeState element and set its value to False
+                        XmlElement familyElement = doc.CreateElement("Family");
+                        familyElement.InnerText = "False";
+                        newRootNode.AppendChild(familyElement);
+
                         // Replace the old root node with the new root node
                         doc.ReplaceChild(newRootNode, doc.DocumentElement);
 
@@ -1257,6 +1327,11 @@ namespace InventoryView
                     XmlNode darkModeNode = doc.SelectSingleNode("/Root/DarkMode");
                     if (darkModeNode != null)
                         ((InventoryViewForm)_form).chkDarkMode.Checked = bool.Parse(darkModeNode.InnerText);
+
+                    // Load Family Vault state.
+                    XmlNode familyNode = doc.SelectSingleNode("/Root/Family");
+                    if (familyNode != null)
+                        ((InventoryViewForm)_form).chkFamily.Checked = bool.Parse(familyNode.InnerText);
                 }
                 else
                     _host.EchoText("File does not exist");

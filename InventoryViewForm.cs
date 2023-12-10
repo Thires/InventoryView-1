@@ -51,7 +51,9 @@ namespace InventoryView
         private Label infolabel;
         public CheckBox chkMultilineTabs;
         public CheckBox chkDarkMode;
+        public CheckBox chkFamily;
         private static string basePath = Application.StartupPath;
+
         private readonly Dictionary<string, List<MatchedItemInfo>> matchedItemsDictionary = new Dictionary<string, List<MatchedItemInfo>>();
 
         public InventoryViewForm() => InitializeComponent();
@@ -1044,6 +1046,13 @@ namespace InventoryView
             chkMultilineTabs.Enabled = true;
         }
 
+        public void ChkFamily_CheckedChanged(object sender, EventArgs e)
+        {
+            chkFamily.Enabled = false;
+            Class1.SaveSettings();
+            chkFamily.Enabled = true;
+        }
+
         public void ChkDarkMode_CheckedChanged(object sender, EventArgs e)
         {
             // Define the color values for dark mode and light mode
@@ -1168,6 +1177,7 @@ namespace InventoryView
             this.btnFindNext = new System.Windows.Forms.Button();
             this.btnReset = new System.Windows.Forms.Button();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.chkFamily = new System.Windows.Forms.CheckBox();
             this.listBox_Menu.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.panel1.SuspendLayout();
@@ -1270,6 +1280,7 @@ namespace InventoryView
             // 
             // panel1
             // 
+            this.panel1.Controls.Add(this.chkFamily);
             this.panel1.Controls.Add(this.chkDarkMode);
             this.panel1.Controls.Add(this.chkMultilineTabs);
             this.panel1.Controls.Add(this.infolabel);
@@ -1304,6 +1315,17 @@ namespace InventoryView
             this.chkDarkMode.Text = "Dark Mode";
             this.chkDarkMode.UseVisualStyleBackColor = true;
             this.chkDarkMode.CheckedChanged += new System.EventHandler(this.ChkDarkMode_CheckedChanged);
+            // 
+            // chkFamily
+            // 
+            this.chkFamily.AutoSize = true;
+            this.chkFamily.Location = new System.Drawing.Point(112, 0);
+            this.chkFamily.Name = "chkFamily";
+            this.chkFamily.Size = new System.Drawing.Size(82, 17);
+            this.chkFamily.TabIndex = 19;
+            this.chkFamily.Text = "Family Vault";
+            this.chkFamily.UseVisualStyleBackColor = true;
+            this.chkFamily.CheckedChanged += new System.EventHandler(this.ChkFamily_CheckedChanged);
             // 
             // chkMultilineTabs
             // 
