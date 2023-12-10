@@ -10,6 +10,7 @@ using System.Threading;
 using System.Xml;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using System;
 
 namespace InventoryView
 {
@@ -910,12 +911,22 @@ namespace InventoryView
             ScanMode = mode;
             if (mode == "FamilyVault")
             {
-                if (!characterData.Any(cd => cd.name == "Family Vault(s)" && cd.source == accountName))
+                // Find the index of the CharacterData with the specified source
+                int sourceIndex = characterData.FindIndex(cd => cd.name == "Family Vault(s)" && cd.source == accountName);
+
+                if (sourceIndex != -1)
                 {
-                    currentData = new CharacterData() { name = "Family Vault(s)", source = accountName };
-                    characterData.Add(currentData);
-                    level = 1;
+                    characterData.RemoveAt(sourceIndex);
                 }
+
+                // Create a new CharacterData
+                currentData = new CharacterData() { name = "Family Vault(s)", source = accountName };
+
+                // Insert the new CharacterData in alphabetical order
+                characterData.Add(currentData);
+                characterData = characterData.OrderBy(cd => cd.source).ToList();
+
+                level = 1;
             }
             else
             {
@@ -1001,7 +1012,12 @@ namespace InventoryView
                             characterData.Remove(characterData.Where(tbl => tbl.name == _host.get_Variable("charactername")).First());
                         }
                         if (((InventoryViewForm)_form).chkFamily.Checked)
-                            _host.SendText("played");
+                        {
+                            if (_host.get_Variable("account") != "")
+                                accountName = _host.get_Variable("account");
+                            else
+                                _host.SendText("played");
+                        }
                         _host.SendText("info");
                     }
                 }
@@ -1092,7 +1108,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.2.16"; }
+            get { return "2.2.17"; }
         }
 
         public string Description
