@@ -214,25 +214,26 @@ namespace InventoryView
                         // This text indicates the end of the vault inventory list.
                         if (text.StartsWith("The last note in your book indicates that your vault contains"))
                         {
-                            if (((InventoryViewForm)_form).chkFamily.Checked) 
+                            if (((InventoryViewForm)_form).chkFamily.Checked)
                             {
                                 ScanMode = "FamilyStart";
-                                if (bookContainer == "")
-                                _host.SendText("stow my vault book");
-                                else
-                                _host.SendText("put my vault book in my " + bookContainer);
-                                bookContainer = "";
-                                _host.SendText("vault family");
-                            }
-                            else
-                            {
-                                ScanMode = "DeedStart";
-                                _host.SendText("Skipping Family vault");
                                 if (bookContainer == "")
                                     _host.SendText("stow my vault book");
                                 else
                                     _host.SendText("put my vault book in my " + bookContainer);
                                 bookContainer = "";
+                                _host.SendText("vault family");
+                            }
+                            else
+                            {
+                                if (bookContainer == "")
+                                    _host.SendText("stow my vault book");
+                                else
+                                    _host.SendText("put my vault book in my " + bookContainer);
+                                bookContainer = "";
+                            ScanMode = "DeedStart";
+                            _host.EchoText("Skipping Family Vault");
+                            _host.SendText("get my deed register");
                             }
                         }
                         else
@@ -1091,7 +1092,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.2.15"; }
+            get { return "2.2.16"; }
         }
 
         public string Description
