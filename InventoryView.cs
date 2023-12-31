@@ -1,15 +1,9 @@
 using System.Collections.Generic;
 using GeniePlugin.Interfaces;
 using System.Windows.Forms;
-using System.Xml.Serialization;
 using System.Linq;
-using System.Text;
-using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Xml;
-using System.Net.Sockets;
-using System.Threading.Tasks;
 using System;
 
 namespace InventoryView
@@ -27,8 +21,8 @@ namespace InventoryView
         // This contains all the of the inventory data.
         public static List<CharacterData> characterData = new List<CharacterData>();
 
-        // Path to Genie config.
-        private static string basePath = Application.StartupPath;
+        private static readonly List<string> surfacesEncountered = new List<string>();
+        private readonly string[] surfaces = { "a jewelry case", "an ammunition box", "a bottom drawer", "a middle drawer", "a top drawer", "a shoe tree", "a weapon rack", "a steel wire rack", "a small shelf", "a large shelf", "a brass hook" };
 
         // Whether or not InventoryView is currently scanning data, and what state it is in.
         private string ScanMode = null;
@@ -48,20 +42,18 @@ namespace InventoryView
         private string guild = "";
         private string accountName = "";
         private bool togglecraft = false;
+        private string currentSurface = "";
 
         public void Initialize(IHost host)
         {
             _host = host;
 
-            basePath = _host.get_Variable("PluginPath");
-
             // Create a new instance of the InventoryViewForm class
             _form = new InventoryViewForm();
 
             // Load inventory from the XML config if available.
-            LoadSettings();
+            LoadSave.LoadSettings();
         }
-
 
         public void Show()
         {
@@ -85,18 +77,12 @@ namespace InventoryView
                 else if (string.IsNullOrEmpty(trimtext)) return ""; // Skip blank lines
 
                 if (((InventoryViewForm)_form).chkFamily.Checked)
-                {
                     if (Regex.IsMatch(trimtext, "^Account Info for\\s+(.+):"))
-                    {
-                        Match accountNameMatch = Regex.Match(trimtext, "^Account Info for\\s+(.+):");
-                        accountName = accountNameMatch.Groups[1].Value;
-                    }
-                }
+                        accountName = Regex.Match(trimtext, "^Account Info for\\s+(.+):").Groups[1].Value;
 
                 if (Regex.IsMatch(trimtext, "Guild: [A-z ]+$"))
                 {
-                    Match match = Regex.Match(trimtext, "Guild: ([A-z ]+)$");
-                    guild = match.Groups[1].Value;
+                    guild = Regex.Match(trimtext, "Guild: ([A-z ]+)$").Groups[1].Value;
                     _host.set_Variable("guild", guild);
                     _host.SendText("inventory list");
                 }
@@ -115,8 +101,19 @@ namespace InventoryView
                         {
                             // Inventory List has a RT based on the number of items, so grab the number and pause the thread for that length.
                             PauseForRoundtime(trimtext);
-                            ScanMode = "VaultStart";
-                            _host.SendText("get my vault book");
+                            if (_host.get_Variable("roomname").Contains("Carousel Chamber"))
+                            {
+                                ScanMode = "InVault";
+                                _host.EchoText("Rummaging Vault.");
+                                ScanStart("InVault");
+                                _host.SendText("open vault");
+                                _host.SendText("rummage vault");
+                            }
+                            else
+                            {
+                                ScanMode = "VaultStart";
+                                _host.SendText("get my vault book");
+                            }
                         }
                         else if (trimtext.StartsWith("[Use"))
                             return "";
@@ -156,6 +153,98 @@ namespace InventoryView
                             level = newlevel;
                         }
                         break; //end of Inventory
+                    case "InVault":
+                        if (Regex.IsMatch(trimtext, "^You rummage through a secure vault and see (.+)\\."))
+                        {
+                            string vaultInv = Regex.Match(trimtext, "^You rummage through a secure vault and see (.+)\\.").Groups[1].Value;
+
+                            if (Regex.Match(vaultInv, @"\b\sand\s(?:a|an|some|several)\s\b").Success) 
+                            {
+                                vaultInv = Regex.Replace(vaultInv, @"\b\sand\s(?:a|an|some|several)\s\b", ", ");
+                            }
+                            List<string> items = new List<string>(vaultInv.Split(','));
+
+                            if (Regex.IsMatch(items[items.Count - 1], @"\b\s(?:a|an|some|several)\s\b"))
+                            {
+                                // Split the last item by "and" and articles
+                                string[] lastItemSplit = Regex.Split(items[items.Count - 1], @"\b\s(?:a|an|some|several)\s\b");
+
+                                items.RemoveAt(items.Count - 1);
+
+                                if (!Regex.IsMatch(lastItemSplit[0], @"\band\s(?:a|an|some|several)\s\b"))
+                                {
+                                    items[items.Count - 1] += " " + lastItemSplit[0];
+                                    Array.Copy(lastItemSplit, 1, lastItemSplit, 0, lastItemSplit.Length - 1);
+                                }
+
+                                items.AddRange(lastItemSplit);
+                            }
+
+
+                            foreach (string itemText in items)
+                            {
+                                string tap = itemText.Trim();
+                                if (surfaces.Contains(tap))
+                                {
+                                    tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
+                                    surfacesEncountered.Add(tap);
+                                }
+                                else
+                                {
+                                    tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
+                                    lastItem = currentData.AddItem(new ItemData() { tap = tap });
+                                }
+                            }
+                            ScanMode = "Surface";
+                            break;
+                        }
+                        break;
+                    case "Surface":
+                        currentSurface = surfacesEncountered[0];
+                        if (currentSurface == "steel wire rack")
+                            currentSurface = "wire rack";
+                        if (!trimtext.StartsWith("You rummage"))
+                            _host.SendText("rummage " + currentSurface);
+                        ScanMode = "SurfaceRummage";
+                        break;
+                    case "SurfaceRummage":
+                        if (currentSurface == "wire rack")
+                            currentSurface = "steel wire rack";
+                        for (int i = 0; i < surfacesEncountered.Count; i++)
+                        {
+                            trimtext = text;
+
+                            if (!trimtext.StartsWith("You rummage"))
+                            {
+                                Thread.Sleep(200);
+                                ScanMode = "Surface";
+                                break;
+                            }
+                            if (Regex.IsMatch(trimtext, $"^You rummage(?: through| around on) (?:a|an) {Regex.Escape(currentSurface)} and see (.+\\.?)")) 
+                            {
+                                SurfaceRummage(surfacesEncountered[i], trimtext);
+                                surfacesEncountered.RemoveAt(i); // Remove the surface
+
+                                Thread.Sleep(100);
+
+                                ScanMode = "Surface";
+                                break;
+                            }
+                        }
+
+                        if (surfacesEncountered.Count == 0)
+                        {
+                            Thread.Sleep(500);
+                            _host.SendText("close vault");
+                            Thread.Sleep(500);
+                            _host.SendText("go door");
+                            Thread.Sleep(500);
+                            _host.SendText("go arch");
+                            Thread.Sleep(2000);
+                            ScanMode = "DeedStart";
+                            _host.SendText("get my deed register");
+                        }
+                        break;
                     case "VaultStart":
                         // Get the vault book & read it.
                         if (Regex.Match(trimtext, "^You get a.*vault book.*from").Success || trimtext == "You are already holding that.")
@@ -636,7 +725,7 @@ namespace InventoryView
                                         ScanMode = null;
                                         _host.EchoText("Scan Complete.");
                                         _host.SendText("#parse InventoryView scan complete");
-                                        SaveSettings();
+                                        LoadSave.SaveSettings();
                                     }
                                     break;
 
@@ -644,7 +733,7 @@ namespace InventoryView
                                     ScanMode = null;
                                     _host.EchoText("Scan Complete.");
                                     _host.SendText("#parse InventoryView scan complete");
-                                    SaveSettings();
+                                    LoadSave.SaveSettings();
                                     break;
                             }
                         }
@@ -669,7 +758,7 @@ namespace InventoryView
                                         ScanMode = null;
                                         _host.EchoText("Scan Complete.");
                                         _host.SendText("#parse InventoryView scan complete");
-                                        SaveSettings();
+                                        LoadSave.SaveSettings();
                                     }
                                     break;
 
@@ -677,7 +766,7 @@ namespace InventoryView
                                     ScanMode = null;
                                     _host.EchoText("Scan Complete.");
                                     _host.SendText("#parse InventoryView scan complete");
-                                    SaveSettings();
+                                    LoadSave.SaveSettings();
                                     break;
                             }
                         }
@@ -693,7 +782,6 @@ namespace InventoryView
                                     break;
 
                                 case "Moon Mage":
-                                    //string shadow = _host.get_Variable("SpellTimer.ShadowServant.active");
                                     string shadow = _host.get_Variable("roomobjs"); 
                                     if (shadow.Contains("Shadow Servant"))
                                     {
@@ -705,7 +793,7 @@ namespace InventoryView
                                         ScanMode = null;
                                         _host.EchoText("Scan Complete.");
                                         _host.SendText("#parse InventoryView scan complete");
-                                        SaveSettings(); 
+                                        LoadSave.SaveSettings(); 
                                     }
                                     break;
 
@@ -713,7 +801,7 @@ namespace InventoryView
                                     ScanMode = null;
                                     _host.EchoText("Scan Complete.");
                                     _host.SendText("#parse InventoryView scan complete");
-                                    SaveSettings();
+                                    LoadSave.SaveSettings();
                                     break;
                             }
                         }
@@ -774,20 +862,16 @@ namespace InventoryView
                             _host.EchoText("Skipping Trader Storage.");
                             _host.EchoText("Scan Complete.");
                             _host.SendText("#parse InventoryView scan complete");
-                            SaveSettings();
+                            LoadSave.SaveSettings();
                         }
                         else if (Regex.IsMatch(text, "^What were you referring to\\?"))
                         {
                             ScanMode = null;
                             _host.EchoText("Skipping Trader Storage.");
                             _host.EchoText("Scan Complete.");
-                            if (bookContainer == "")
-                                _host.SendText("stow my storage book");
-                            else
-                                _host.SendText("put my storage book in my " + bookContainer);
                             _host.SendText("#parse InventoryView scan complete");
                             bookContainer = "";
-                            SaveSettings();
+                            LoadSave.SaveSettings();
                         }
                         break; // end of trader start
                     case "Trader":
@@ -795,14 +879,14 @@ namespace InventoryView
                         if (text.StartsWith("A notation at the bottom indicates"))
                         {
                             ScanMode = null;
-                            _host.EchoText("Scan Complete.");
+                            _host.EchoText("Scan Complete.");   
                             if (bookContainer == "")
                                 _host.SendText("stow my storage book");
                             else
                                 _host.SendText("put my storage book in my " + bookContainer);
                                 _host.SendText("#parse InventoryView scan complete");
                                 bookContainer = "";
-                            SaveSettings();
+                            LoadSave.SaveSettings();
                         }
                         else
                         {
@@ -854,7 +938,7 @@ namespace InventoryView
                             _host.EchoText("Skipping Servant, Piercing Gaze required.");
                             _host.EchoText("Scan Complete.");
                             _host.SendText("#parse InventoryView scan complete");
-                            SaveSettings();
+                            LoadSave.SaveSettings();
                         }
                         break;
                     case "MoonMage":
@@ -863,7 +947,7 @@ namespace InventoryView
                             ScanMode = null;
                             _host.EchoText("Scan Complete.");
                             _host.SendText("#parse InventoryView scan complete");
-                            SaveSettings();
+                            LoadSave.SaveSettings();
                         }
                         else
                         {
@@ -930,6 +1014,8 @@ namespace InventoryView
             }
             else
             {
+                if (mode == "InVault")
+                    mode = "Vault";
                 if (mode == "Standard")
                     mode = "Vault";
                 if (mode == "Trader")
@@ -950,6 +1036,41 @@ namespace InventoryView
             int roundtime = int.Parse(match.Groups[1].Value);
             _host.EchoText($"Pausing {roundtime} seconds for RT.");
             Thread.Sleep(roundtime * 1000);
+        }
+
+        private void SurfaceRummage(string surfaceType, string rummageText)
+        {
+            lastItem = currentData.AddItem(new ItemData() { tap = surfaceType, storage = true });
+            if (Regex.Match(rummageText, $"^You rummage(?: through| around on) (?:a|an) {Regex.Escape(surfaceType)} and see (.+\\.?)").Success)
+            {
+                string itemsMatch = Regex.Match(rummageText, $"^You rummage(?: through| around on) (?:a|an) {Regex.Escape(surfaceType)} and see (.+\\.?)").Groups[1].Value;
+
+                List<string> items = new List<string>(itemsMatch.Split(','));
+
+                if (Regex.IsMatch(items[items.Count - 1], @"\band\s(?:a|an|some|several)\b"))
+                {
+                    string[] lastItemSplit = Regex.Split(items[items.Count - 1], @"\band\s(?:an?|some|several)\b");
+                    items.RemoveAt(items.Count - 1);
+
+                    // Combine the last two items if the first part doesn't end with an article
+                    if (!Regex.IsMatch(lastItemSplit[0], @"\b(?:an?|some|several)\b"))
+                    {
+                        items[items.Count - 1] += " " + lastItemSplit[0];
+                        Array.Copy(lastItemSplit, 1, lastItemSplit, 0, lastItemSplit.Length - 1);
+                    }
+                    items.AddRange(lastItemSplit);
+                }
+
+                foreach (string itemText in items)
+                {
+                    string tap = itemText.Trim();
+
+                    if (tap[tap.Length - 1] == '.')
+                        tap = tap.TrimEnd('.');
+                    tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
+                    lastItem = (lastItem.parent ?? lastItem).AddItem(new ItemData() { tap = tap });
+                }
+            }
         }
 
         bool IsDenied(string text)
@@ -1005,19 +1126,14 @@ namespace InventoryView
                     }
                     else
                     {
-                        LoadSettings();
+                        LoadSave.LoadSettings();
                         ScanMode = "Start";
                         while (characterData.Where(tbl => tbl.name == _host.get_Variable("charactername")).Count() > 0)
                         {
                             characterData.Remove(characterData.Where(tbl => tbl.name == _host.get_Variable("charactername")).First());
                         }
                         if (((InventoryViewForm)_form).chkFamily.Checked)
-                        {
-                            if (_host.get_Variable("account") != "")
-                                accountName = _host.get_Variable("account");
-                            else
-                                _host.SendText("played");
-                        }
+                            _host.SendText("played");
                         _host.SendText("info");
                     }
                 }
@@ -1073,24 +1189,6 @@ namespace InventoryView
             _host.EchoText("All of these can also be done using /IV as well.");
         }
 
-        public static void RemoveParents(List<ItemData> iList)
-        {
-            foreach (var iData in iList)
-            {
-                iData.parent = null;
-                RemoveParents(iData.items);
-            }
-        }
-
-        public static void AddParents(List<ItemData> iList, ItemData parent)
-        {
-            foreach (var iData in iList)
-            {
-                iData.parent = parent;
-                AddParents(iData.items, iData);
-            }
-        }
-
         public void ParseXML(string xml)
         {
 
@@ -1108,7 +1206,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.2.17"; }
+            get { return "2.2.18"; }
         }
 
         public string Description
@@ -1126,237 +1224,6 @@ namespace InventoryView
         {
             get { return _enabled; }
             set { _enabled = value; }
-        }
-
-        public static void SaveSettings()
-        {
-            string configFile = Path.Combine(basePath, "InventoryView.xml");
-            try
-            {
-                // Can't serialize a class with circular references, so I have to remove the parent links first.
-                foreach (var cData in characterData)
-                {
-                    RemoveParents(cData.items);
-                }
-
-                // Create a new XmlSerializer for the CharacterData type
-                XmlSerializer serializer = new XmlSerializer(typeof(List<CharacterData>));
-
-                // Serialize the characterData list to a StringWriter
-                StringWriter stringWriter = new StringWriter();
-                serializer.Serialize(stringWriter, characterData);
-
-                // Create a new XmlDocument
-                XmlDocument doc = new XmlDocument();
-
-                // If the configFile exists, load the existing XML data into the XmlDocument
-                if (File.Exists(configFile))
-                    doc.Load(configFile);
-                else
-                {
-                    // Otherwise, create a new root element for the XmlDocument with a custom name
-                    XmlElement rootElement = doc.CreateElement("Root");
-                    doc.AppendChild(rootElement);
-                }
-
-                // Remove any existing ArrayOfCharacterData elements from ArrayOfCharacterData element.
-                XmlNode arrayOfCharacterDataNode = doc.DocumentElement.SelectSingleNode("ArrayOfCharacterData");
-                if (arrayOfCharacterDataNode != null)
-                {
-                    XmlNodeList arrayOfCharacterDataNodes = arrayOfCharacterDataNode.SelectNodes("ArrayOfCharacterData");
-                    foreach (XmlNode innerArrayOfCharacterDataNode in arrayOfCharacterDataNodes)
-                    {
-                        innerArrayOfCharacterDataNode.ParentNode.RemoveChild(innerArrayOfCharacterDataNode);
-                    }
-                }
-
-                // If characterData list is not empty, import serialized character data into XmlDocument.
-                if (characterData.Count > 0)
-                {
-                    // Create a new ArrayOfCharacterData element and append it to the root element if it doesn't exist
-                    if (arrayOfCharacterDataNode == null)
-                    {
-                        arrayOfCharacterDataNode = doc.CreateElement("ArrayOfCharacterData");
-                        doc.DocumentElement.AppendChild(arrayOfCharacterDataNode);
-                    }
-
-                    // Remove XML declaration from serialized character data.
-                    string characterDataXml = stringWriter.ToString();
-                    if (characterDataXml.StartsWith("<?xml"))
-                    {
-                        int endOfDeclaration = characterDataXml.IndexOf("?>") + 2;
-                        characterDataXml = characterDataXml.Substring(endOfDeclaration);
-                    }
-
-                    // Set InnerXml property of ArrayOfCharacterData element to serialized character data.
-                    arrayOfCharacterDataNode.InnerXml += characterDataXml;
-                }
-
-                // Get CheckBoxState element.
-                XmlNode multilinetabsNode = doc.SelectSingleNode("/Root/MultilineTabs");
-
-                // If CheckBoxState element exists, update its value.
-                if (multilinetabsNode != null)
-                    multilinetabsNode.InnerText = ((InventoryViewForm)_form).chkMultilineTabs.Checked.ToString();
-                else
-                {
-                    // Otherwise, create new CheckBoxState element and set its value to state of checkBox1 control.
-                    XmlElement multilineTabsElemnt = doc.CreateElement("MultilineTabs");
-                    multilineTabsElemnt.InnerText = ((InventoryViewForm)_form).chkMultilineTabs.Checked.ToString();
-
-                    // Append CheckBoxState element to root element of XmlDocument.
-                    doc.DocumentElement.AppendChild(multilineTabsElemnt);
-                }
-
-                // Get DarkModeState element.
-                XmlNode darkModeNode = doc.SelectSingleNode("/Root/DarkMode");
-
-                // If DarkModeState element exists, update its value.
-                if (darkModeNode != null)
-                    darkModeNode.InnerText = ((InventoryViewForm)_form).chkDarkMode.Checked.ToString();
-                else
-                {
-                    // Otherwise, create new DarkModeState element and set its value to state of chkDarkMode control.
-                    XmlElement darkModeElement = doc.CreateElement("DarkMode");
-                    darkModeElement.InnerText = ((InventoryViewForm)_form).chkDarkMode.Checked.ToString();
-
-                    // Append DarkModeState element to root element of XmlDocument.
-                    doc.DocumentElement.AppendChild(darkModeElement);
-                }
-
-                XmlNode familyNode = doc.SelectSingleNode("/Root/Family");
-
-                // If DarkModeState element exists, update its value.
-                if (familyNode != null)
-                    familyNode.InnerText = ((InventoryViewForm)_form).chkFamily.Checked.ToString();
-                else
-                {
-                    // Otherwise, create new DarkModeState element and set its value to state of chkDarkMode control.
-                    XmlElement familyElement = doc.CreateElement("Family");
-                    familyElement.InnerText = ((InventoryViewForm)_form).chkFamily.Checked.ToString();
-
-                    // Append DarkModeState element to root element of XmlDocument.
-                    doc.DocumentElement.AppendChild(familyElement);
-                }
-
-
-                // Save changes to XML file.
-                using (var writer = XmlWriter.Create(configFile, new XmlWriterSettings { Encoding = Encoding.UTF8, Indent = true }))
-                {
-                    doc.Save(writer);
-                }
-
-                // ..and add them back again afterwards.
-                foreach (var cData in characterData)
-                {
-                    AddParents(cData.items, null);
-                }
-            }
-            catch (IOException ex)
-            {
-                _host.EchoText("Error writing to InventoryView file: " + ex.Message);
-            }
-        }
-        public static void LoadSettings()
-        {
-            string configFile = Path.Combine(basePath, "InventoryView.xml");
-            try
-            {
-                if (File.Exists(configFile))
-                {
-                    // Load the XML data into an XmlDocument
-                    XmlDocument doc = new XmlDocument();
-                    doc.Load(configFile);
-
-                    // Check if the XML file starts with the <Root> element
-                    XmlNode rootNode = doc.SelectSingleNode("/Root");
-                    if (rootNode == null)
-                    {
-                        // Create a new root element with a custom name
-                        XmlElement newRootNode = doc.CreateElement("Root");
-
-                        // Create a new ArrayOfCharacterData element and append it to the new root element
-                        XmlElement arrayOfCharacterDataElement = doc.CreateElement("ArrayOfCharacterData");
-                        arrayOfCharacterDataElement.SetAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
-                        arrayOfCharacterDataElement.SetAttribute("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
-                        newRootNode.AppendChild(arrayOfCharacterDataElement);
-
-                        // Append the old XML data to the ArrayOfCharacterData element
-                        arrayOfCharacterDataElement.InnerXml = doc.DocumentElement.OuterXml;
-
-                        // Create a new CheckBoxState element and set its value to False
-                        XmlElement multilineTabsElement = doc.CreateElement("MultilineTabs");
-                        multilineTabsElement.InnerText = "False";
-                        newRootNode.AppendChild(multilineTabsElement);
-
-                        // Create a new DarkModeState element and set its value to False
-                        XmlElement darkModeElement = doc.CreateElement("DarkMode");
-                        darkModeElement.InnerText = "False";
-                        newRootNode.AppendChild(darkModeElement);
-
-                        // Create a new DarkModeState element and set its value to False
-                        XmlElement familyElement = doc.CreateElement("Family");
-                        familyElement.InnerText = "False";
-                        newRootNode.AppendChild(familyElement);
-
-                        // Replace the old root node with the new root node
-                        doc.ReplaceChild(newRootNode, doc.DocumentElement);
-
-                        // Save changes to XML file
-                        doc.Save(configFile);
-                    }
-                    else
-                    {
-                    }
-                    // Select all CharacterData elements from the XmlDocument
-                    XmlNodeList characterDataNodes = doc.SelectNodes("/Root/ArrayOfCharacterData/ArrayOfCharacterData/CharacterData");
-
-                    // Clear the existing characterData list
-                    characterData.Clear();
-
-                    // Iterate over each CharacterData element and deserialize it into a CharacterData object
-                    foreach (XmlNode characterDataNode in characterDataNodes)
-                    {
-                        // Create a new XmlSerializer for the CharacterData type
-                        XmlSerializer serializer = new XmlSerializer(typeof(CharacterData));
-
-                        // Deserialize the CharacterData element into a CharacterData object
-                        using (StringReader reader = new StringReader(characterDataNode.OuterXml))
-                        {
-                            CharacterData cData = (CharacterData)serializer.Deserialize(reader);
-
-                            // Add the deserialized CharacterData object to the characterData list
-                            characterData.Add(cData);
-                        }
-                    }
-                    // ..and add them back again afterwards.
-                    foreach (var cData in characterData)
-                    {
-                        AddParents(cData.items, null);
-                    }
-
-                    // Load CheckBox state.
-                    XmlNode multilineTabsNode = doc.SelectSingleNode("/Root/MultilineTabs");
-                    if (multilineTabsNode != null)
-                        ((InventoryViewForm)_form).chkMultilineTabs.Checked = bool.Parse(multilineTabsNode.InnerText);
-
-                    // Load DarkMode state.
-                    XmlNode darkModeNode = doc.SelectSingleNode("/Root/DarkMode");
-                    if (darkModeNode != null)
-                        ((InventoryViewForm)_form).chkDarkMode.Checked = bool.Parse(darkModeNode.InnerText);
-
-                    // Load Family Vault state.
-                    XmlNode familyNode = doc.SelectSingleNode("/Root/Family");
-                    if (familyNode != null)
-                        ((InventoryViewForm)_form).chkFamily.Checked = bool.Parse(familyNode.InnerText);
-                }
-                else
-                    _host.EchoText("File does not exist");
-            }
-            catch (IOException ex)
-            {
-                _host.EchoText("Error reading from InventoryView file: " + ex.Message);
-            }
         }
     }
 }

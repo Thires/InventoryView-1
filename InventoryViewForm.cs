@@ -49,9 +49,9 @@ namespace InventoryView
         private Button btnRemoveCharacter;
 
         private Label infolabel;
-        public CheckBox chkMultilineTabs;
-        public CheckBox chkDarkMode;
-        public CheckBox chkFamily;
+        internal CheckBox chkMultilineTabs;
+        internal CheckBox chkDarkMode;
+        internal CheckBox chkFamily;
         private static string basePath = Application.StartupPath;
 
         private readonly Dictionary<string, List<MatchedItemInfo>> matchedItemsDictionary = new Dictionary<string, List<MatchedItemInfo>>();
@@ -64,7 +64,7 @@ namespace InventoryView
             basePath = Class1._host.get_Variable("PluginPath");
 
             // Load the character data
-            Class1.LoadSettings();
+            LoadSave.LoadSettings();
 
             // Get a list of distinct character names from the characterData list
             List<string> characterNames = Class1.characterData.Select(c => c.name).Distinct().ToList();
@@ -792,7 +792,7 @@ namespace InventoryView
 
         private void ReloadData()
         {
-            Class1.LoadSettings();
+            LoadSave.LoadSettings();
             //Class1._host.EchoText("Inventory reloaded.");
             BindData();
             UpdateCboCharacters();
@@ -1042,14 +1042,14 @@ namespace InventoryView
         {
             tabControl1.Multiline = chkMultilineTabs.Checked;
             chkMultilineTabs.Enabled = false;
-            Class1.SaveSettings();
+            LoadSave.SaveSettings();
             chkMultilineTabs.Enabled = true;
         }
 
         public void ChkFamily_CheckedChanged(object sender, EventArgs e)
         {
             chkFamily.Enabled = false;
-            Class1.SaveSettings();
+            LoadSave.SaveSettings();
             chkFamily.Enabled = true;
         }
 
@@ -1112,7 +1112,7 @@ namespace InventoryView
                 UpdateNodeColors(tv.Nodes, foreColor, backColor);
             }
 
-            Class1.SaveSettings();
+            LoadSave.SaveSettings();
         }
 
         private void UpdateNodeColors(TreeNodeCollection nodes, Color foreColor, Color backColor)

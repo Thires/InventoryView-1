@@ -29,7 +29,6 @@ namespace InventoryView
 
                 foreach (var item in matchingItems)
                 {
-                    //Class1._host.EchoText(item);
                     if (style == "path") Class1._host.EchoText(item);
                     else Class1._host.SendText("#link {" + item + "} {#put /iv path " + Regex.Replace(item, @"\w+ - ", "") + "}");
                 }
