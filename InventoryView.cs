@@ -43,6 +43,8 @@ namespace InventoryView
         private string accountName = "";
         private bool togglecraft = false;
         private string currentSurface = "";
+        private bool InFamVault = false;
+        private bool FamilyCheck = false;
 
         public void Initialize(IHost host)
         {
@@ -84,7 +86,14 @@ namespace InventoryView
                 {
                     guild = Regex.Match(trimtext, "Guild: ([A-z ]+)$").Groups[1].Value;
                     _host.set_Variable("guild", guild);
-                    _host.SendText("inventory list");
+                    if (((InventoryViewForm)_form).chkFamily.Checked && _host.get_Variable("roomname").Contains("Family Vault"))
+                    {
+                        Thread.Sleep(500);
+                        ScanMode = "InFamilyCheck";
+
+                    }
+                    else
+                        _host.SendText("inventory list");
                 }
 
                 switch (ScanMode)
@@ -154,11 +163,11 @@ namespace InventoryView
                         }
                         break; //end of Inventory
                     case "InVault":
-                        if (Regex.IsMatch(trimtext, "^You rummage through a secure vault and see (.+)\\."))
+                        if (Regex.IsMatch(trimtext, "^You rummage through a(?: secure)? vault and see (.+)\\."))
                         {
-                            string vaultInv = Regex.Match(trimtext, "^You rummage through a secure vault and see (.+)\\.").Groups[1].Value;
+                            string vaultInv = Regex.Match(trimtext, "^You rummage through a(?: secure)? vault and see (.+)\\.").Groups[1].Value;
 
-                            if (Regex.Match(vaultInv, @"\b\sand\s(?:a|an|some|several)\s\b").Success) 
+                            if (Regex.Match(vaultInv, @"\b\sand\s(?:a|an|some|several)\s\b").Success)
                             {
                                 vaultInv = Regex.Replace(vaultInv, @"\b\sand\s(?:a|an|some|several)\s\b", ", ");
                             }
@@ -171,7 +180,7 @@ namespace InventoryView
 
                                 items.RemoveAt(items.Count - 1);
 
-                                if (!Regex.IsMatch(lastItemSplit[0], @"\band\s(?:a|an|some|several)\s\b"))
+                                if (Regex.IsMatch(lastItemSplit[0], @"\band\s(?:a|an|some|several)\s\b"))
                                 {
                                     items[items.Count - 1] += " " + lastItemSplit[0];
                                     Array.Copy(lastItemSplit, 1, lastItemSplit, 0, lastItemSplit.Length - 1);
@@ -179,7 +188,6 @@ namespace InventoryView
 
                                 items.AddRange(lastItemSplit);
                             }
-
 
                             foreach (string itemText in items)
                             {
@@ -215,12 +223,8 @@ namespace InventoryView
                             trimtext = text;
 
                             if (!trimtext.StartsWith("You rummage"))
-                            {
-                                Thread.Sleep(200);
-                                ScanMode = "Surface";
                                 break;
-                            }
-                            if (Regex.IsMatch(trimtext, $"^You rummage(?: through| around on) (?:a|an) {Regex.Escape(currentSurface)} and see (.+\\.?)")) 
+                            if (RummageCheck(trimtext, currentSurface, out _))
                             {
                                 SurfaceRummage(surfacesEncountered[i], trimtext);
                                 surfacesEncountered.RemoveAt(i); // Remove the surface
@@ -234,15 +238,39 @@ namespace InventoryView
 
                         if (surfacesEncountered.Count == 0)
                         {
-                            Thread.Sleep(500);
-                            _host.SendText("close vault");
-                            Thread.Sleep(500);
-                            _host.SendText("go door");
-                            Thread.Sleep(500);
-                            _host.SendText("go arch");
-                            Thread.Sleep(2000);
-                            ScanMode = "DeedStart";
-                            _host.SendText("get my deed register");
+                            if (InFamVault)
+                            {
+                                _host.SendText("close vault");
+                                Thread.Sleep(6000);
+                                _host.SendText("go arch");
+                                Thread.Sleep(500);
+                                ScanMode = null;
+                            }
+                            else
+                            {
+                                Thread.Sleep(500);
+                                _host.SendText("close vault");
+                                Thread.Sleep(500);
+                                _host.SendText("go door");
+                                Thread.Sleep(500);
+                                _host.SendText("go arch");
+                                Thread.Sleep(2000);
+
+                                ScanMode = "DeedStart";
+                                _host.SendText("get my deed register");
+                            }
+                        }
+                        break;
+                    case "InFamilyCheck":
+                        if (!InFamVault)
+                        {
+                            InFamVault = true;
+                            ScanStart("FamilyVault");
+                            _host.SendText("turn vault");
+                            _host.SendText("open vault");
+                            Thread.Sleep(6000);
+                            _host.SendText("rummage vault");
+                            ScanMode = "InVault";
                         }
                         break;
                     case "VaultStart":
@@ -987,6 +1015,7 @@ namespace InventoryView
                         break;
                 }
             }
+
             return text;
         }
 
@@ -1038,6 +1067,25 @@ namespace InventoryView
             Thread.Sleep(roundtime * 1000);
         }
 
+        private bool RummageCheck(string trimtext, string currentSurface, out string resultText)
+        {
+            resultText = null;
+
+            if (Regex.IsMatch(trimtext, $"^You rummage(?: through| around on) (?:a|an) {Regex.Escape(currentSurface)} but there is nothing in there\\."))
+            {
+                resultText = trimtext;
+                return true;
+            }
+            else if (Regex.IsMatch(trimtext, $"^You rummage(?: through| around on) (?:a|an) {Regex.Escape(currentSurface)} and see (.+\\.?)"))
+            {
+                resultText = trimtext;
+                return true;
+            }
+
+            return false;
+        }
+
+
         private void SurfaceRummage(string surfaceType, string rummageText)
         {
             lastItem = currentData.AddItem(new ItemData() { tap = surfaceType, storage = true });
@@ -1077,6 +1125,7 @@ namespace InventoryView
         {
             var deniedPatterns = new List<string>
             {
+                "^A Dwarven attendant steps in front of you, barring your path\\.  \"Wait a bit, \\S+\\.  You were just in there not too long ago\\.\"",
                 "^The script that the vault book is written in is unfamiliar to you\\.  You are unable to read it\\.",
                 "^The storage book is filled with complex lists of inventory that make little sense to you\\.",
                 "^This storage book doesn't seem to belong to you\\.",
@@ -1206,7 +1255,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.2.18"; }
+            get { return "2.2.19"; }
         }
 
         public string Description
