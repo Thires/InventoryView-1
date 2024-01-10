@@ -34,6 +34,7 @@
 * Added text searching for matches and full paths of items
 * Added Shadow Servant inventory using Piercing Gaze
 * Added check for guild
+* Added rummaging of vault and/or family vault, vault, both need to be inside the vault. Family vault is stand alone, just be inside of it and it will just do it. Both are only top level grabs
 
 This plugin will record the items that each of your characters has in their inventory, vault (if you have a vault book), and home (if you have one) and make them searchable in a form.
 
