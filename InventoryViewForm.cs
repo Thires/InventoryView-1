@@ -55,7 +55,33 @@ namespace InventoryView
         private static string basePath = Application.StartupPath;
         private readonly Dictionary<string, List<MatchedItemInfo>> matchedItemsDictionary = new Dictionary<string, List<MatchedItemInfo>>();
 
-        public InventoryViewForm() => InitializeComponent();
+        public InventoryViewForm()
+        {
+            InitializeComponent();
+            AutoScaleMode = AutoScaleMode.Dpi;
+        }
+
+        /*protected override void OnDpiChanged(DpiChangedEventArgs e)
+        {
+            base.OnDpiChanged(e);
+            const int DefaultDpi = 96;
+            // Set a maximum size for the form
+            int maxWidth = 800; // Adjust this value as needed
+            int maxHeight = 600; // Adjust this value as needed
+
+
+            //float scaleFactor = (float)e.DeviceDpiNew / 96f;
+            var scaleFactor = (float)DeviceDpi / DefaultDpi;
+
+            int newWidth = (int)(Width * scaleFactor);
+            int newHeight = (int)(Height * scaleFactor);
+
+            // Ensure the new size does not exceed the maximum specified size
+            newWidth = Math.Min(newWidth, maxWidth);
+            newHeight = Math.Min(newHeight, maxHeight);
+
+            Size = new Size(newWidth, newHeight);
+        }*/
 
         private void InventoryViewForm_Load(object sender, EventArgs e)
         {
@@ -446,7 +472,7 @@ namespace InventoryView
         private void InitializeTooltipTimer()
         {
             // Set the interval for the timer
-            tooltipTimer.Interval = 10000;
+            tooltipTimer.Interval = 5000;
 
             // Tick event of the timer
             tooltipTimer.Tick += (sender, e) =>
@@ -1243,7 +1269,7 @@ namespace InventoryView
             this.tabControl1.Location = new System.Drawing.Point(0, 0);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(590, 408);
+            this.tabControl1.Size = new System.Drawing.Size(561, 408);
             this.tabControl1.TabIndex = 16;
             // 
             // lblMatches
@@ -1256,7 +1282,7 @@ namespace InventoryView
             this.lblMatches.Location = new System.Drawing.Point(0, 0);
             this.lblMatches.Name = "lblMatches";
             this.lblMatches.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
-            this.lblMatches.Size = new System.Drawing.Size(425, 408);
+            this.lblMatches.Size = new System.Drawing.Size(454, 408);
             this.lblMatches.TabIndex = 17;
             this.lblMatches.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.LblMatches_MouseDoubleClick);
             this.lblMatches.MouseDown += new System.Windows.Forms.MouseEventHandler(this.LblMatches_MouseDown);
@@ -1528,7 +1554,7 @@ namespace InventoryView
             // 
             this.splitContainer1.Panel2.Controls.Add(this.lblMatches);
             this.splitContainer1.Size = new System.Drawing.Size(1019, 408);
-            this.splitContainer1.SplitterDistance = 590;
+            this.splitContainer1.SplitterDistance = 561;
             this.splitContainer1.TabIndex = 19;
             // 
             // InventoryViewForm

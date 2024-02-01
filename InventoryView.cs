@@ -44,7 +44,6 @@ namespace InventoryView
         private bool togglecraft = false;
         private string currentSurface = "";
         private bool InFamVault = false;
-        private bool FamilyCheck = false;
 
         public void Initialize(IHost host)
         {
@@ -168,15 +167,14 @@ namespace InventoryView
                             string vaultInv = Regex.Match(trimtext, "^You rummage through a(?: secure)? vault and see (.+)\\.").Groups[1].Value;
 
                             if (Regex.Match(vaultInv, @"\b\sand\s(?:a|an|some|several)\s\b").Success)
-                            {
-                                vaultInv = Regex.Replace(vaultInv, @"\b\sand\s(?:a|an|some|several)\s\b", ", ");
-                            }
+                                vaultInv = Regex.Replace(vaultInv, @"\b\sand\s(a|an|some|several)\s\b", ", $1 ");
+
                             List<string> items = new List<string>(vaultInv.Split(','));
 
                             if (Regex.IsMatch(items[items.Count - 1], @"\b\s(?:a|an|some|several)\s\b"))
                             {
                                 // Split the last item by "and" and articles
-                                string[] lastItemSplit = Regex.Split(items[items.Count - 1], @"\b\s(?:a|an|some|several)\s\b");
+                                string[] lastItemSplit = Regex.Split(items[items.Count - 1], @"\b^\s(?:a|an|some|several)\s\b");
 
                                 items.RemoveAt(items.Count - 1);
 
@@ -196,6 +194,7 @@ namespace InventoryView
                                 {
                                     tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
                                     surfacesEncountered.Add(tap);
+                                    
                                 }
                                 else
                                 {
@@ -240,11 +239,11 @@ namespace InventoryView
                         {
                             if (InFamVault)
                             {
-                                _host.SendText("close vault");
-                                Thread.Sleep(6000);
-                                _host.SendText("go arch");
-                                Thread.Sleep(500);
+                                InFamVault = false;
                                 ScanMode = null;
+                                _host.EchoText("Scan Complete.");
+                                _host.SendText("#parse InventoryView scan complete");
+                                LoadSave.SaveSettings();
                             }
                             else
                             {
@@ -1255,7 +1254,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.2.19"; }
+            get { return "2.2.20"; }
         }
 
         public string Description
