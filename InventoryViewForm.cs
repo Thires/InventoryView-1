@@ -14,7 +14,7 @@ namespace InventoryView
 {
     public class InventoryViewForm : Form
     {
-        private readonly List<TreeNode> searchMatches = new List<TreeNode>();
+        private readonly List<TreeNode> searchMatches = new();
         private IContainer components;
         private TreeView tv;
         private ContextMenuStrip listBox_Menu;
@@ -24,9 +24,9 @@ namespace InventoryView
         private bool clickSearch = false;
         private ToolStripMenuItem copySelectedToolStripMenuItem;
         // Create a new list to store the search matches for each TreeView control
-        private readonly List<InventoryViewForm.TreeViewSearchMatches> treeViewSearchMatchesList = new List<InventoryViewForm.TreeViewSearchMatches>();
+        private readonly List<InventoryViewForm.TreeViewSearchMatches> treeViewSearchMatchesList = new();
         // Create a list to store the hidden tab pages and their original positions
-        private readonly List<(TabPage tabPage, int index)> hiddenTabPages = new List<(TabPage tabPage, int index)>();
+        private readonly List<(TabPage tabPage, int index)> hiddenTabPages = new();
         private TabControl tabControl1;
         private ListBox lblMatches;
         private TableLayoutPanel tableLayoutPanel1;
@@ -53,7 +53,8 @@ namespace InventoryView
         internal CheckBox chkDarkMode;
         internal CheckBox chkFamily;
         private static string basePath = Application.StartupPath;
-        private readonly Dictionary<string, List<MatchedItemInfo>> matchedItemsDictionary = new Dictionary<string, List<MatchedItemInfo>>();
+        internal CheckBox chkAlwaysTop;
+        private readonly Dictionary<string, List<MatchedItemInfo>> matchedItemsDictionary = new();
 
         public InventoryViewForm()
         {
@@ -61,38 +62,16 @@ namespace InventoryView
             AutoScaleMode = AutoScaleMode.Dpi;
         }
 
-        /*protected override void OnDpiChanged(DpiChangedEventArgs e)
-        {
-            base.OnDpiChanged(e);
-            const int DefaultDpi = 96;
-            // Set a maximum size for the form
-            int maxWidth = 800; // Adjust this value as needed
-            int maxHeight = 600; // Adjust this value as needed
-
-
-            //float scaleFactor = (float)e.DeviceDpiNew / 96f;
-            var scaleFactor = (float)DeviceDpi / DefaultDpi;
-
-            int newWidth = (int)(Width * scaleFactor);
-            int newHeight = (int)(Height * scaleFactor);
-
-            // Ensure the new size does not exceed the maximum specified size
-            newWidth = Math.Min(newWidth, maxWidth);
-            newHeight = Math.Min(newHeight, maxHeight);
-
-            Size = new Size(newWidth, newHeight);
-        }*/
-
         private void InventoryViewForm_Load(object sender, EventArgs e)
         {
             BindData();
-            basePath = Class1._host.get_Variable("PluginPath");
+            basePath = Class1.Host.get_Variable("PluginPath");
 
             // Load the character data
             LoadSave.LoadSettings();
 
             // Get a list of distinct character names from the characterData list
-            List<string> characterNames = Class1.characterData.Select(c => c.name).Distinct().ToList();
+            List<string> characterNames = Class1.CharacterData.Select(c => c.name).Distinct().ToList();
 
             // Sort the character names
             characterNames.Sort();
@@ -103,6 +82,8 @@ namespace InventoryView
 
             lblMatches.MouseDoubleClick += LblMatches_MouseDoubleClick;
             InitializeTooltipTimer();
+
+            chkAlwaysTop.CheckedChanged += ChkAlwaysTop_CheckedChanged;
 
             if (tabControl1.SelectedTab?.Controls.Count > 0 && tabControl1.SelectedTab.Controls[0] is TreeView tv)
             {
@@ -168,19 +149,19 @@ namespace InventoryView
             }
         }
 
-        private List<string> GetDistinctCharacters()
+        private static List<string> GetDistinctCharacters()
         {
-            var characters = Class1.characterData.Select(tbl => tbl.name).Distinct().ToList();
+            var characters = Class1.CharacterData.Select(tbl => tbl.name).Distinct().ToList();
             characters.Sort();
             return characters;
         }
 
-        private int AddCharacterDataToTreeView(TreeView tv, string character)
+        private static int AddCharacterDataToTreeView(TreeView tv, string character)
         {
             int totalCount = 0;
 
             TreeNode charNode = tv.Nodes.Add(character);
-            foreach (var source in Class1.characterData.Where(tbl => tbl.name == character))
+            foreach (var source in Class1.CharacterData.Where(tbl => tbl.name == character))
             {
                 TreeNode sourceNode = charNode.Nodes.Add(source.source);
                 sourceNode.ToolTipText = sourceNode.FullPath;
@@ -191,7 +172,7 @@ namespace InventoryView
             return totalCount;
         }
 
-        private int PopulateTree(TreeNode treeNode, List<ItemData> itemList)
+        private static int PopulateTree(TreeNode treeNode, List<ItemData> itemList)
         {
             int totalCount = 0;
 
@@ -205,14 +186,14 @@ namespace InventoryView
                     totalCount++;
                 }
 
-                if (itemData.items.Count<ItemData>() > 0)
+                if (itemData.items.Count > 0)
                     totalCount += PopulateTree(treeNode1, itemData.items);
             }
 
             return totalCount;
         }
 
-        private ContextMenuStrip CreateTreeViewContextMenuStrip(TreeView tv)
+        private static ContextMenuStrip CreateTreeViewContextMenuStrip(TreeView tv)
         {
             var contextMenuStrip = new ContextMenuStrip();
             var wikiLookupToolStripMenuItem = new ToolStripMenuItem("Wiki Lookup");
@@ -242,7 +223,7 @@ namespace InventoryView
             {
                 if (tv.SelectedNode != null)
                 {
-                    List<string> branchText = new List<string>
+                    List<string> branchText = new()
                     {
                         Regex.Replace(tv.SelectedNode.Text, @"\(\d+\)\s|^(an?|some|several)\s", "")
                     };
@@ -385,7 +366,7 @@ namespace InventoryView
                 }
 
                 // Check if the node's text contains the search text
-                if (node.Text.IndexOf(txtSearch.Text, StringComparison.OrdinalIgnoreCase) >= 0)
+                if (node.Text.Contains(txtSearch.Text, StringComparison.OrdinalIgnoreCase))
                 {
                     // Highlight the node and add it to the list of search matches
                     node.BackColor = chkDarkMode.Checked ? Color.LightBlue : Color.Yellow;
@@ -403,7 +384,7 @@ namespace InventoryView
                         if (!lblMatches.Items.Contains(" --- " + characterName + " --- "))
                         {
                             // Add a space after the last item if this is not the first character
-                            if (lblMatches.Items.Count > 0 && lblMatches.Items[lblMatches.Items.Count - 1].ToString() != " ")
+                            if (lblMatches.Items.Count > 0 && lblMatches.Items[^1].ToString() != " ")
                             {
                                 lblMatches.Items.Add(" ");
                             }
@@ -467,7 +448,7 @@ namespace InventoryView
         }
 
         private Form customTooltip = null;
-        private readonly Timer tooltipTimer = new Timer();
+        private readonly Timer tooltipTimer = new();
 
         private void InitializeTooltipTimer()
         {
@@ -522,7 +503,8 @@ namespace InventoryView
                     };
 
                     // Create a label to display the tooltip text
-                    Label label = new Label
+#pragma warning disable CA1416 // Validate platform compatibility
+                    Label label = new()
                     {
                         AutoSize = true,
                         Text = string.Join(Environment.NewLine + Environment.NewLine, matchedItems.Select(item => FormatPath(item.FullPath))),
@@ -530,6 +512,7 @@ namespace InventoryView
                         BackColor = Color.Beige,
                         Font = new Font("System", 10, FontStyle.Bold), // Set the desired font and size
                     };
+#pragma warning restore CA1416 // Validate platform compatibility
 
                     // Add the label to the form
                     customTooltip.Controls.Add(label);
@@ -552,7 +535,7 @@ namespace InventoryView
         }
 
         // Add this method to format the path with hyphen indentation
-        private string FormatPath(string fullPath)
+        private static string FormatPath(string fullPath)
         {
             string[] parts = fullPath.Split('\\');
             if (parts.Length == 0)
@@ -560,8 +543,8 @@ namespace InventoryView
                 return fullPath;
             }
 
-            string itemName = parts[parts.Length - 1];
-            string indentation = new string('-', parts.Length - 1);
+            string itemName = parts[^1];
+            string indentation = new('-', parts.Length - 1);
 
             if (parts.Length > 1)
             {
@@ -642,10 +625,10 @@ namespace InventoryView
             }
         }
 
-        private void OpenWikiPage(string text)
+        private static void OpenWikiPage(string text)
         {
-            if (Class1._host.InterfaceVersion == 4)
-                Class1._host.SendText(string.Format("#browser https://elanthipedia.play.net/index.php?search={0}", Uri.EscapeDataString(Regex.Replace(text, @"\(\d+\)\s|\s\(closed\)|^(an?|some|several)\s", ""))));
+            if (Class1.Host.InterfaceVersion == 4)
+                Class1.Host.SendText(string.Format("#browser https://elanthipedia.play.net/index.php?search={0}", Uri.EscapeDataString(Regex.Replace(text, @"\(\d+\)\s|\s\(closed\)|^(an?|some|several)\s", ""))));
             else
                 Process.Start(new ProcessStartInfo(string.Format("https://elanthipedia.play.net/index.php?search={0}", Regex.Replace(text, @"\(\d+\)\s|\s\(closed\)|(^an?|some|several)\s", ""))) { UseShellExecute = true });
         }
@@ -735,7 +718,7 @@ namespace InventoryView
 
         private void BtnScan_Click(object sender, EventArgs e)
         {
-            Class1._host.SendText("/InventoryView scan");
+            Class1.Host.SendText("/InventoryView scan");
             Close();
         }
 
@@ -752,7 +735,7 @@ namespace InventoryView
                     try
                     {
                         // Load the XML document
-                        XmlDocument doc = new XmlDocument();
+                        XmlDocument doc = new();
                         string xmlPath = Path.Combine(basePath, "InventoryView.xml");
                         doc.Load(xmlPath);
 
@@ -777,19 +760,19 @@ namespace InventoryView
                         }
                         else
                         {
-                            Class1._host.EchoText($"Could not find any CharacterData elements with a name element value of '{characterName}' in the XML file.");
+                            Class1.Host.EchoText($"Could not find any CharacterData elements with a name element value of '{characterName}' in the XML file.");
                         }
                     }
                     catch (Exception ex)
                     {
                         // Handle the exception here
-                        Class1._host.EchoText($"An exception occurred: {ex.Message}");
+                        Class1.Host.EchoText($"An exception occurred: {ex.Message}");
                     }
                 }
             }
             else
             {
-                Class1._host.EchoText("Please select a character name.");
+                Class1.Host.EchoText("Please select a character name.");
             }
         }
 
@@ -831,7 +814,7 @@ namespace InventoryView
             try
             {
                 // Load the XML document
-                XmlDocument doc = new XmlDocument();
+                XmlDocument doc = new();
                 string xmlPath = Path.Combine(basePath, "InventoryView.xml");
                 doc.Load(xmlPath);
 
@@ -839,7 +822,7 @@ namespace InventoryView
                 XmlNodeList characterNodes = doc.SelectNodes("/Root/ArrayOfCharacterData/ArrayOfCharacterData/CharacterData");
 
                 // Create a list to store the character names
-                List<string> characterNames = new List<string>();
+                List<string> characterNames = new();
 
                 // Add the character names to the list
                 foreach (XmlNode characterNode in characterNodes)
@@ -892,7 +875,7 @@ namespace InventoryView
 
         private void ExportBranchToFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            List<string> branchText = new List<string>
+            List<string> branchText = new()
             {
                 Regex.Replace(tv.SelectedNode.Text, @"\(\d+\)\s|(an?|some|several)\s", "")
             };
@@ -900,7 +883,7 @@ namespace InventoryView
             Clipboard.SetText(string.Join("\r\n", branchText.ToArray()));
         }
 
-        private void CopyBranchText(TreeNodeCollection nodes, List<string> branchText, int level)
+        private static void CopyBranchText(TreeNodeCollection nodes, List<string> branchText, int level)
         {
             foreach (TreeNode node in nodes)
             {
@@ -917,7 +900,7 @@ namespace InventoryView
             }
             else
             {
-                StringBuilder txt = new StringBuilder();
+                StringBuilder txt = new();
                 foreach (object row in lblMatches.SelectedItems)
                 {
                     txt.Append(row.ToString());
@@ -936,12 +919,12 @@ namespace InventoryView
             }
             else
             {
-                StringBuilder buffer = new StringBuilder();
+                StringBuilder buffer = new();
 
                 for (int i = 0; i < lblMatches.Items.Count; i++)
                 {
                     buffer.Append(lblMatches.Items[i].ToString());
-                    buffer.Append("\n");
+                    buffer.Append('\n');
                 }
                 Clipboard.SetText(buffer.ToString());
             }
@@ -955,12 +938,12 @@ namespace InventoryView
             }
             else
             {
-                StringBuilder buffer = new StringBuilder();
+                StringBuilder buffer = new();
 
                 for (int i = 0; i < lblMatches.SelectedItems.Count; i++)
                 {
                     buffer.Append(lblMatches.SelectedItems[i].ToString());
-                    buffer.Append("\n");
+                    buffer.Append('\n');
                 }
                 Clipboard.SetText(buffer.ToString());
             }
@@ -970,7 +953,7 @@ namespace InventoryView
         {
             if (e.Button != MouseButtons.Right)
                 return;
-            Point point = new Point(e.X, e.Y);
+            Point point = new(e.X, e.Y);
             TreeNode nodeAt = tv.GetNodeAt(point);
             if (nodeAt == null)
                 return;
@@ -979,7 +962,7 @@ namespace InventoryView
 
         private void BtnExport_Click(object sender, EventArgs e)
         {
-            SaveFileDialog saveFileDialog = new SaveFileDialog
+            SaveFileDialog saveFileDialog = new()
             {
                 Filter = "CSV file|*.csv",
                 Title = "Save the CSV file"
@@ -989,7 +972,7 @@ namespace InventoryView
                 return;
             using (StreamWriter text = File.CreateText(saveFileDialog.FileName))
             {
-                List<InventoryViewForm.ExportData> list = new List<InventoryViewForm.ExportData>();
+                List<InventoryViewForm.ExportData> list = new();
 
                 // Get the TreeView control on the currently selected tab page
                 var tv = tabControl1.SelectedTab.Controls[0] as TreeView;
@@ -1018,21 +1001,21 @@ namespace InventoryView
             _ = (int)MessageBox.Show("Export Complete.");
         }
 
-        private string CleanCSV(string data)
+        private static string CleanCSV(string data)
         {
-            if (!data.Contains(","))
+            if (!data.Contains(','))
                 return data;
-            return !data.Contains("\"") ? string.Format("\"{0}\"", (object)data) : string.Format("\"{0}\"", (object)data.Replace("\"", "\"\""));
+            return !data.Contains('"') ? string.Format("\"{0}\"", (object)data) : string.Format("\"{0}\"", (object)data.Replace("\"", "\"\""));
         }
 
-        private void ExportBranch(
+        private static void ExportBranch(
           TreeNodeCollection nodes,
           List<InventoryViewForm.ExportData> list,
           int level)
         {
             foreach (TreeNode node in nodes)
             {
-                InventoryViewForm.ExportData exportData = new InventoryViewForm.ExportData()
+                InventoryViewForm.ExportData exportData = new()
                 {
                     Tap = node.Text
                 };
@@ -1076,6 +1059,14 @@ namespace InventoryView
             chkFamily.Enabled = false;
             LoadSave.SaveSettings();
             chkFamily.Enabled = true;
+        }
+
+        public void ChkAlwaysTop_CheckedChanged(object sender, EventArgs e)
+        {
+            chkAlwaysTop.Enabled = false;
+            LoadSave.SaveSettings();
+            chkAlwaysTop.Enabled = true;
+            this.TopMost = chkAlwaysTop.Checked;
         }
 
         public void ChkDarkMode_CheckedChanged(object sender, EventArgs e)
@@ -1172,416 +1163,450 @@ namespace InventoryView
 
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
-            this.tv = new System.Windows.Forms.TreeView();
-            this.listBox_Menu = new System.Windows.Forms.ContextMenuStrip(this.components);
-            this.copyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.wikiToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.copyAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.copySelectedToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.tabControl1 = new System.Windows.Forms.TabControl();
-            this.lblMatches = new System.Windows.Forms.ListBox();
-            this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
-            this.panel1 = new System.Windows.Forms.Panel();
-            this.chkFamily = new System.Windows.Forms.CheckBox();
-            this.chkDarkMode = new System.Windows.Forms.CheckBox();
-            this.chkMultilineTabs = new System.Windows.Forms.CheckBox();
-            this.infolabel = new System.Windows.Forms.Label();
-            this.cboCharacters = new System.Windows.Forms.ComboBox();
-            this.btnRemoveCharacter = new System.Windows.Forms.Button();
-            this.btnFindPrev = new System.Windows.Forms.Button();
-            this.txtSearch = new System.Windows.Forms.TextBox();
-            this.lblFound = new System.Windows.Forms.Label();
-            this.lblSearch = new System.Windows.Forms.Label();
-            this.btnSearch = new System.Windows.Forms.Button();
-            this.btnExport = new System.Windows.Forms.Button();
-            this.btnExpand = new System.Windows.Forms.Button();
-            this.btnReload = new System.Windows.Forms.Button();
-            this.btnCollapse = new System.Windows.Forms.Button();
-            this.btnScan = new System.Windows.Forms.Button();
-            this.btnWiki = new System.Windows.Forms.Button();
-            this.btnFindNext = new System.Windows.Forms.Button();
-            this.btnReset = new System.Windows.Forms.Button();
-            this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.listBox_Menu.SuspendLayout();
-            this.tableLayoutPanel1.SuspendLayout();
-            this.panel1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
-            this.splitContainer1.Panel1.SuspendLayout();
-            this.splitContainer1.Panel2.SuspendLayout();
-            this.splitContainer1.SuspendLayout();
-            this.SuspendLayout();
+            components = new Container();
+            tv = new TreeView();
+            listBox_Menu = new ContextMenuStrip(components);
+            copyToolStripMenuItem = new ToolStripMenuItem();
+            wikiToolStripMenuItem = new ToolStripMenuItem();
+            copyAllToolStripMenuItem = new ToolStripMenuItem();
+            copySelectedToolStripMenuItem = new ToolStripMenuItem();
+            tabControl1 = new TabControl();
+            lblMatches = new ListBox();
+            tableLayoutPanel1 = new TableLayoutPanel();
+            panel1 = new Panel();
+            chkAlwaysTop = new CheckBox();
+            chkFamily = new CheckBox();
+            chkDarkMode = new CheckBox();
+            chkMultilineTabs = new CheckBox();
+            infolabel = new Label();
+            cboCharacters = new ComboBox();
+            btnRemoveCharacter = new Button();
+            btnFindPrev = new Button();
+            txtSearch = new TextBox();
+            lblFound = new Label();
+            lblSearch = new Label();
+            btnSearch = new Button();
+            btnExport = new Button();
+            btnExpand = new Button();
+            btnReload = new Button();
+            btnCollapse = new Button();
+            btnScan = new Button();
+            btnWiki = new Button();
+            btnFindNext = new Button();
+            btnReset = new Button();
+            splitContainer1 = new SplitContainer();
+            listBox_Menu.SuspendLayout();
+            tableLayoutPanel1.SuspendLayout();
+            panel1.SuspendLayout();
+            ((ISupportInitialize)splitContainer1).BeginInit();
+            splitContainer1.Panel1.SuspendLayout();
+            splitContainer1.Panel2.SuspendLayout();
+            splitContainer1.SuspendLayout();
+            SuspendLayout();
             // 
             // tv
             // 
-            this.tv.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.tv.Location = new System.Drawing.Point(2, 2);
-            this.tv.Name = "tv";
-            this.tv.ShowNodeToolTips = true;
-            this.tv.Size = new System.Drawing.Size(5, 28);
-            this.tv.TabIndex = 10;
-            this.tv.Visible = false;
-            this.tv.MouseUp += new System.Windows.Forms.MouseEventHandler(this.Tv_MouseUp);
+            tv.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            tv.Location = new Point(2, 2);
+            tv.Margin = new Padding(4, 3, 4, 3);
+            tv.Name = "tv";
+            tv.ShowNodeToolTips = true;
+            tv.Size = new Size(5, 32);
+            tv.TabIndex = 10;
+            tv.Visible = false;
+            tv.MouseUp += Tv_MouseUp;
             // 
             // listBox_Menu
             // 
-            this.listBox_Menu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.copyToolStripMenuItem,
-            this.wikiToolStripMenuItem,
-            this.copyAllToolStripMenuItem,
-            this.copySelectedToolStripMenuItem});
-            this.listBox_Menu.Name = "listBox_Menu";
-            this.listBox_Menu.Size = new System.Drawing.Size(167, 92);
+            listBox_Menu.Items.AddRange(new ToolStripItem[] { copyToolStripMenuItem, wikiToolStripMenuItem, copyAllToolStripMenuItem, copySelectedToolStripMenuItem });
+            listBox_Menu.Name = "listBox_Menu";
+            listBox_Menu.Size = new Size(167, 92);
             // 
             // copyToolStripMenuItem
             // 
-            this.copyToolStripMenuItem.Name = "copyToolStripMenuItem";
-            this.copyToolStripMenuItem.Size = new System.Drawing.Size(166, 22);
-            this.copyToolStripMenuItem.Text = "Copy Selected";
-            this.copyToolStripMenuItem.Click += new System.EventHandler(this.ListBox_Copy_Click);
+            copyToolStripMenuItem.Name = "copyToolStripMenuItem";
+            copyToolStripMenuItem.Size = new Size(166, 22);
+            copyToolStripMenuItem.Text = "Copy Selected";
+            copyToolStripMenuItem.Click += ListBox_Copy_Click;
             // 
             // wikiToolStripMenuItem
             // 
-            this.wikiToolStripMenuItem.Name = "wikiToolStripMenuItem";
-            this.wikiToolStripMenuItem.Size = new System.Drawing.Size(166, 22);
-            this.wikiToolStripMenuItem.Text = "Wiki Selected";
-            this.wikiToolStripMenuItem.Click += new System.EventHandler(this.Listbox_Wiki_Click);
+            wikiToolStripMenuItem.Name = "wikiToolStripMenuItem";
+            wikiToolStripMenuItem.Size = new Size(166, 22);
+            wikiToolStripMenuItem.Text = "Wiki Selected";
+            wikiToolStripMenuItem.Click += Listbox_Wiki_Click;
             // 
             // copyAllToolStripMenuItem
             // 
-            this.copyAllToolStripMenuItem.Name = "copyAllToolStripMenuItem";
-            this.copyAllToolStripMenuItem.Size = new System.Drawing.Size(166, 22);
-            this.copyAllToolStripMenuItem.Text = "Copy All";
-            this.copyAllToolStripMenuItem.Click += new System.EventHandler(this.ListBox_Copy_All_Click);
+            copyAllToolStripMenuItem.Name = "copyAllToolStripMenuItem";
+            copyAllToolStripMenuItem.Size = new Size(166, 22);
+            copyAllToolStripMenuItem.Text = "Copy All";
+            copyAllToolStripMenuItem.Click += ListBox_Copy_All_Click;
             // 
             // copySelectedToolStripMenuItem
             // 
-            this.copySelectedToolStripMenuItem.Name = "copySelectedToolStripMenuItem";
-            this.copySelectedToolStripMenuItem.Size = new System.Drawing.Size(166, 22);
-            this.copySelectedToolStripMenuItem.Text = "Copy All Selected";
-            this.copySelectedToolStripMenuItem.Click += new System.EventHandler(this.ListBox_Copy_All_Selected_Click);
+            copySelectedToolStripMenuItem.Name = "copySelectedToolStripMenuItem";
+            copySelectedToolStripMenuItem.Size = new Size(166, 22);
+            copySelectedToolStripMenuItem.Text = "Copy All Selected";
+            copySelectedToolStripMenuItem.Click += ListBox_Copy_All_Selected_Click;
             // 
             // tabControl1
             // 
-            this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tabControl1.Location = new System.Drawing.Point(0, 0);
-            this.tabControl1.Name = "tabControl1";
-            this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(561, 408);
-            this.tabControl1.TabIndex = 16;
+            tabControl1.Dock = DockStyle.Fill;
+            tabControl1.Location = new Point(0, 0);
+            tabControl1.Margin = new Padding(4, 3, 4, 3);
+            tabControl1.Name = "tabControl1";
+            tabControl1.SelectedIndex = 0;
+            tabControl1.Size = new Size(654, 472);
+            tabControl1.TabIndex = 16;
             // 
             // lblMatches
             // 
-            this.lblMatches.AllowDrop = true;
-            this.lblMatches.ContextMenuStrip = this.listBox_Menu;
-            this.lblMatches.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.lblMatches.FormattingEnabled = true;
-            this.lblMatches.HorizontalScrollbar = true;
-            this.lblMatches.Location = new System.Drawing.Point(0, 0);
-            this.lblMatches.Name = "lblMatches";
-            this.lblMatches.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
-            this.lblMatches.Size = new System.Drawing.Size(454, 408);
-            this.lblMatches.TabIndex = 17;
-            this.lblMatches.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.LblMatches_MouseDoubleClick);
-            this.lblMatches.MouseDown += new System.Windows.Forms.MouseEventHandler(this.LblMatches_MouseDown);
+            lblMatches.AllowDrop = true;
+            lblMatches.ContextMenuStrip = listBox_Menu;
+            lblMatches.Dock = DockStyle.Fill;
+            lblMatches.FormattingEnabled = true;
+            lblMatches.HorizontalScrollbar = true;
+            lblMatches.ItemHeight = 15;
+            lblMatches.Location = new Point(0, 0);
+            lblMatches.Margin = new Padding(4, 3, 4, 3);
+            lblMatches.Name = "lblMatches";
+            lblMatches.SelectionMode = SelectionMode.MultiExtended;
+            lblMatches.Size = new Size(530, 472);
+            lblMatches.TabIndex = 17;
+            lblMatches.MouseDoubleClick += LblMatches_MouseDoubleClick;
+            lblMatches.MouseDown += LblMatches_MouseDown;
             // 
             // tableLayoutPanel1
             // 
-            this.tableLayoutPanel1.AutoSize = true;
-            this.tableLayoutPanel1.ColumnCount = 1;
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-            this.tableLayoutPanel1.Controls.Add(this.panel1, 0, 0);
-            this.tableLayoutPanel1.Controls.Add(this.splitContainer1, 0, 1);
-            this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tableLayoutPanel1.Location = new System.Drawing.Point(0, 0);
-            this.tableLayoutPanel1.Name = "tableLayoutPanel1";
-            this.tableLayoutPanel1.RowCount = 2;
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 64F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tableLayoutPanel1.Size = new System.Drawing.Size(1015, 478);
-            this.tableLayoutPanel1.TabIndex = 18;
+            tableLayoutPanel1.AutoSize = true;
+            tableLayoutPanel1.ColumnCount = 1;
+            tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle());
+            tableLayoutPanel1.Controls.Add(panel1, 0, 0);
+            tableLayoutPanel1.Controls.Add(splitContainer1, 0, 1);
+            tableLayoutPanel1.Dock = DockStyle.Fill;
+            tableLayoutPanel1.Location = new Point(0, 0);
+            tableLayoutPanel1.Margin = new Padding(4, 3, 4, 3);
+            tableLayoutPanel1.Name = "tableLayoutPanel1";
+            tableLayoutPanel1.RowCount = 2;
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 74F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle());
+            tableLayoutPanel1.Size = new Size(1184, 552);
+            tableLayoutPanel1.TabIndex = 18;
             // 
             // panel1
             // 
-            this.panel1.Controls.Add(this.chkFamily);
-            this.panel1.Controls.Add(this.chkDarkMode);
-            this.panel1.Controls.Add(this.chkMultilineTabs);
-            this.panel1.Controls.Add(this.infolabel);
-            this.panel1.Controls.Add(this.cboCharacters);
-            this.panel1.Controls.Add(this.btnRemoveCharacter);
-            this.panel1.Controls.Add(this.btnFindPrev);
-            this.panel1.Controls.Add(this.txtSearch);
-            this.panel1.Controls.Add(this.lblFound);
-            this.panel1.Controls.Add(this.lblSearch);
-            this.panel1.Controls.Add(this.btnSearch);
-            this.panel1.Controls.Add(this.btnExport);
-            this.panel1.Controls.Add(this.btnExpand);
-            this.panel1.Controls.Add(this.btnReload);
-            this.panel1.Controls.Add(this.btnCollapse);
-            this.panel1.Controls.Add(this.btnScan);
-            this.panel1.Controls.Add(this.btnWiki);
-            this.panel1.Controls.Add(this.btnFindNext);
-            this.panel1.Controls.Add(this.btnReset);
-            this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel1.Location = new System.Drawing.Point(3, 3);
-            this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(1019, 58);
-            this.panel1.TabIndex = 0;
+            panel1.Controls.Add(chkAlwaysTop);
+            panel1.Controls.Add(chkFamily);
+            panel1.Controls.Add(chkDarkMode);
+            panel1.Controls.Add(chkMultilineTabs);
+            panel1.Controls.Add(infolabel);
+            panel1.Controls.Add(cboCharacters);
+            panel1.Controls.Add(btnRemoveCharacter);
+            panel1.Controls.Add(btnFindPrev);
+            panel1.Controls.Add(txtSearch);
+            panel1.Controls.Add(lblFound);
+            panel1.Controls.Add(lblSearch);
+            panel1.Controls.Add(btnSearch);
+            panel1.Controls.Add(btnExport);
+            panel1.Controls.Add(btnExpand);
+            panel1.Controls.Add(btnReload);
+            panel1.Controls.Add(btnCollapse);
+            panel1.Controls.Add(btnScan);
+            panel1.Controls.Add(btnWiki);
+            panel1.Controls.Add(btnFindNext);
+            panel1.Controls.Add(btnReset);
+            panel1.Dock = DockStyle.Fill;
+            panel1.Location = new Point(4, 3);
+            panel1.Margin = new Padding(4, 3, 4, 3);
+            panel1.Name = "panel1";
+            panel1.Size = new Size(1189, 68);
+            panel1.TabIndex = 0;
+            // 
+            // chkAlwaysTop
+            // 
+            chkAlwaysTop.AutoSize = true;
+            chkAlwaysTop.Location = new Point(388, 0);
+            chkAlwaysTop.Name = "chkAlwaysTop";
+            chkAlwaysTop.Size = new Size(85, 19);
+            chkAlwaysTop.TabIndex = 20;
+            chkAlwaysTop.Text = "Always Top";
+            chkAlwaysTop.UseVisualStyleBackColor = true;
+            chkAlwaysTop.CheckedChanged += ChkAlwaysTop_CheckedChanged;
             // 
             // chkFamily
             // 
-            this.chkFamily.AutoSize = true;
-            this.chkFamily.Location = new System.Drawing.Point(112, 0);
-            this.chkFamily.Name = "chkFamily";
-            this.chkFamily.Size = new System.Drawing.Size(262, 17);
-            this.chkFamily.TabIndex = 19;
-            this.chkFamily.Text = "Family Vault - Must have runners or be inside vault";
-            this.chkFamily.UseVisualStyleBackColor = true;
-            this.chkFamily.CheckedChanged += new System.EventHandler(this.ChkFamily_CheckedChanged);
+            chkFamily.AutoSize = true;
+            chkFamily.Location = new Point(92, 0);
+            chkFamily.Margin = new Padding(4, 3, 4, 3);
+            chkFamily.Name = "chkFamily";
+            chkFamily.Size = new Size(292, 19);
+            chkFamily.TabIndex = 19;
+            chkFamily.Text = "Family Vault - Must have runners or be inside vault";
+            chkFamily.UseVisualStyleBackColor = true;
+            chkFamily.CheckedChanged += ChkFamily_CheckedChanged;
             // 
             // chkDarkMode
             // 
-            this.chkDarkMode.AutoSize = true;
-            this.chkDarkMode.Location = new System.Drawing.Point(2, 0);
-            this.chkDarkMode.Name = "chkDarkMode";
-            this.chkDarkMode.Size = new System.Drawing.Size(79, 17);
-            this.chkDarkMode.TabIndex = 18;
-            this.chkDarkMode.Text = "Dark Mode";
-            this.chkDarkMode.UseVisualStyleBackColor = true;
-            this.chkDarkMode.CheckedChanged += new System.EventHandler(this.ChkDarkMode_CheckedChanged);
+            chkDarkMode.AutoSize = true;
+            chkDarkMode.Location = new Point(2, 0);
+            chkDarkMode.Margin = new Padding(4, 3, 4, 3);
+            chkDarkMode.Name = "chkDarkMode";
+            chkDarkMode.Size = new Size(84, 19);
+            chkDarkMode.TabIndex = 18;
+            chkDarkMode.Text = "Dark Mode";
+            chkDarkMode.UseVisualStyleBackColor = true;
+            chkDarkMode.CheckedChanged += ChkDarkMode_CheckedChanged;
             // 
             // chkMultilineTabs
             // 
-            this.chkMultilineTabs.AutoSize = true;
-            this.chkMultilineTabs.Location = new System.Drawing.Point(2, 40);
-            this.chkMultilineTabs.Name = "chkMultilineTabs";
-            this.chkMultilineTabs.Size = new System.Drawing.Size(91, 17);
-            this.chkMultilineTabs.TabIndex = 17;
-            this.chkMultilineTabs.Text = "Multiline Tabs";
-            this.chkMultilineTabs.UseVisualStyleBackColor = true;
-            this.chkMultilineTabs.CheckedChanged += new System.EventHandler(this.ChkMultiLineTabs_CheckedChanged);
+            chkMultilineTabs.AutoSize = true;
+            chkMultilineTabs.Location = new Point(2, 46);
+            chkMultilineTabs.Margin = new Padding(4, 3, 4, 3);
+            chkMultilineTabs.Name = "chkMultilineTabs";
+            chkMultilineTabs.Size = new Size(99, 19);
+            chkMultilineTabs.TabIndex = 17;
+            chkMultilineTabs.Text = "Multiline Tabs";
+            chkMultilineTabs.UseVisualStyleBackColor = true;
+            chkMultilineTabs.CheckedChanged += ChkMultiLineTabs_CheckedChanged;
             // 
             // infolabel
             // 
-            this.infolabel.AutoSize = true;
-            this.infolabel.Location = new System.Drawing.Point(100, 42);
-            this.infolabel.Name = "infolabel";
-            this.infolabel.Size = new System.Drawing.Size(201, 13);
-            this.infolabel.TabIndex = 16;
-            this.infolabel.Text = "T = Total Item Count | M = Total Matches";
+            infolabel.AutoSize = true;
+            infolabel.Location = new Point(117, 48);
+            infolabel.Margin = new Padding(4, 0, 4, 0);
+            infolabel.Name = "infolabel";
+            infolabel.Size = new Size(222, 15);
+            infolabel.TabIndex = 16;
+            infolabel.Text = "T = Total Item Count | M = Total Matches";
             // 
             // cboCharacters
             // 
-            this.cboCharacters.FormattingEnabled = true;
-            this.cboCharacters.Location = new System.Drawing.Point(914, 5);
-            this.cboCharacters.Name = "cboCharacters";
-            this.cboCharacters.Size = new System.Drawing.Size(94, 21);
-            this.cboCharacters.TabIndex = 15;
+            cboCharacters.FormattingEnabled = true;
+            cboCharacters.Location = new Point(1066, 6);
+            cboCharacters.Margin = new Padding(4, 3, 4, 3);
+            cboCharacters.Name = "cboCharacters";
+            cboCharacters.Size = new Size(109, 23);
+            cboCharacters.TabIndex = 15;
             // 
             // btnRemoveCharacter
             // 
-            this.btnRemoveCharacter.AutoSize = true;
-            this.btnRemoveCharacter.ForeColor = System.Drawing.Color.Black;
-            this.btnRemoveCharacter.Location = new System.Drawing.Point(914, 32);
-            this.btnRemoveCharacter.Name = "btnRemoveCharacter";
-            this.btnRemoveCharacter.Size = new System.Drawing.Size(94, 23);
-            this.btnRemoveCharacter.TabIndex = 14;
-            this.btnRemoveCharacter.Text = "Remove";
-            this.btnRemoveCharacter.UseVisualStyleBackColor = true;
-            this.btnRemoveCharacter.Click += new System.EventHandler(this.BtnRemoveCharacter_Click);
+            btnRemoveCharacter.AutoSize = true;
+            btnRemoveCharacter.ForeColor = Color.Black;
+            btnRemoveCharacter.Location = new Point(1066, 37);
+            btnRemoveCharacter.Margin = new Padding(4, 3, 4, 3);
+            btnRemoveCharacter.Name = "btnRemoveCharacter";
+            btnRemoveCharacter.Size = new Size(110, 29);
+            btnRemoveCharacter.TabIndex = 14;
+            btnRemoveCharacter.Text = "Remove";
+            btnRemoveCharacter.UseVisualStyleBackColor = true;
+            btnRemoveCharacter.Click += BtnRemoveCharacter_Click;
             // 
             // btnFindPrev
             // 
-            this.btnFindPrev.AutoSize = true;
-            this.btnFindPrev.ForeColor = System.Drawing.Color.Black;
-            this.btnFindPrev.Location = new System.Drawing.Point(407, 5);
-            this.btnFindPrev.Name = "btnFindPrev";
-            this.btnFindPrev.Size = new System.Drawing.Size(75, 23);
-            this.btnFindPrev.TabIndex = 3;
-            this.btnFindPrev.Text = "Find Prev";
-            this.btnFindPrev.UseVisualStyleBackColor = true;
-            this.btnFindPrev.Visible = false;
-            this.btnFindPrev.Click += new System.EventHandler(this.BtnFindPrev_Click);
+            btnFindPrev.AutoSize = true;
+            btnFindPrev.ForeColor = Color.Black;
+            btnFindPrev.Location = new Point(475, 6);
+            btnFindPrev.Margin = new Padding(4, 3, 4, 3);
+            btnFindPrev.Name = "btnFindPrev";
+            btnFindPrev.Size = new Size(88, 29);
+            btnFindPrev.TabIndex = 3;
+            btnFindPrev.Text = "Find Prev";
+            btnFindPrev.UseVisualStyleBackColor = true;
+            btnFindPrev.Visible = false;
+            btnFindPrev.Click += BtnFindPrev_Click;
             // 
             // txtSearch
             // 
-            this.txtSearch.Location = new System.Drawing.Point(58, 19);
-            this.txtSearch.Name = "txtSearch";
-            this.txtSearch.Size = new System.Drawing.Size(262, 20);
-            this.txtSearch.TabIndex = 1;
+            txtSearch.Location = new Point(68, 22);
+            txtSearch.Margin = new Padding(4, 3, 4, 3);
+            txtSearch.Name = "txtSearch";
+            txtSearch.Size = new Size(305, 23);
+            txtSearch.TabIndex = 1;
             // 
             // lblFound
             // 
-            this.lblFound.AutoSize = true;
-            this.lblFound.Location = new System.Drawing.Point(326, 42);
-            this.lblFound.Name = "lblFound";
-            this.lblFound.Size = new System.Drawing.Size(49, 13);
-            this.lblFound.TabIndex = 0;
-            this.lblFound.Text = "Found: 0";
+            lblFound.AutoSize = true;
+            lblFound.Location = new Point(380, 48);
+            lblFound.Margin = new Padding(4, 0, 4, 0);
+            lblFound.Name = "lblFound";
+            lblFound.Size = new Size(53, 15);
+            lblFound.TabIndex = 0;
+            lblFound.Text = "Found: 0";
             // 
             // lblSearch
             // 
-            this.lblSearch.AutoSize = true;
-            this.lblSearch.Location = new System.Drawing.Point(8, 22);
-            this.lblSearch.Name = "lblSearch";
-            this.lblSearch.Size = new System.Drawing.Size(44, 13);
-            this.lblSearch.TabIndex = 0;
-            this.lblSearch.Text = "Search:";
+            lblSearch.AutoSize = true;
+            lblSearch.Location = new Point(9, 25);
+            lblSearch.Margin = new Padding(4, 0, 4, 0);
+            lblSearch.Name = "lblSearch";
+            lblSearch.Size = new Size(45, 15);
+            lblSearch.TabIndex = 0;
+            lblSearch.Text = "Search:";
             // 
             // btnSearch
             // 
-            this.btnSearch.AutoSize = true;
-            this.btnSearch.ForeColor = System.Drawing.Color.Black;
-            this.btnSearch.Location = new System.Drawing.Point(326, 16);
-            this.btnSearch.Name = "btnSearch";
-            this.btnSearch.Size = new System.Drawing.Size(75, 23);
-            this.btnSearch.TabIndex = 2;
-            this.btnSearch.Text = "Search";
-            this.btnSearch.UseVisualStyleBackColor = true;
-            this.btnSearch.Click += new System.EventHandler(this.BtnSearch_Click);
+            btnSearch.AutoSize = true;
+            btnSearch.ForeColor = Color.Black;
+            btnSearch.Location = new Point(380, 18);
+            btnSearch.Margin = new Padding(4, 3, 4, 3);
+            btnSearch.Name = "btnSearch";
+            btnSearch.Size = new Size(88, 29);
+            btnSearch.TabIndex = 2;
+            btnSearch.Text = "Search";
+            btnSearch.UseVisualStyleBackColor = true;
+            btnSearch.Click += BtnSearch_Click;
             // 
             // btnExport
             // 
-            this.btnExport.AutoSize = true;
-            this.btnExport.ForeColor = System.Drawing.Color.Black;
-            this.btnExport.Location = new System.Drawing.Point(731, 19);
-            this.btnExport.Name = "btnExport";
-            this.btnExport.Size = new System.Drawing.Size(75, 23);
-            this.btnExport.TabIndex = 13;
-            this.btnExport.Text = "Export";
-            this.btnExport.UseVisualStyleBackColor = true;
-            this.btnExport.Click += new System.EventHandler(this.BtnExport_Click);
+            btnExport.AutoSize = true;
+            btnExport.ForeColor = Color.Black;
+            btnExport.Location = new Point(853, 22);
+            btnExport.Margin = new Padding(4, 3, 4, 3);
+            btnExport.Name = "btnExport";
+            btnExport.Size = new Size(88, 29);
+            btnExport.TabIndex = 13;
+            btnExport.Text = "Export";
+            btnExport.UseVisualStyleBackColor = true;
+            btnExport.Click += BtnExport_Click;
             // 
             // btnExpand
             // 
-            this.btnExpand.AutoSize = true;
-            this.btnExpand.ForeColor = System.Drawing.Color.Black;
-            this.btnExpand.Location = new System.Drawing.Point(569, 5);
-            this.btnExpand.Name = "btnExpand";
-            this.btnExpand.Size = new System.Drawing.Size(75, 23);
-            this.btnExpand.TabIndex = 6;
-            this.btnExpand.Text = "Expand All";
-            this.btnExpand.UseVisualStyleBackColor = true;
-            this.btnExpand.Click += new System.EventHandler(this.BtnExpand_Click);
+            btnExpand.AutoSize = true;
+            btnExpand.ForeColor = Color.Black;
+            btnExpand.Location = new Point(664, 6);
+            btnExpand.Margin = new Padding(4, 3, 4, 3);
+            btnExpand.Name = "btnExpand";
+            btnExpand.Size = new Size(88, 29);
+            btnExpand.TabIndex = 6;
+            btnExpand.Text = "Expand All";
+            btnExpand.UseVisualStyleBackColor = true;
+            btnExpand.Click += BtnExpand_Click;
             // 
             // btnReload
             // 
-            this.btnReload.AutoSize = true;
-            this.btnReload.ForeColor = System.Drawing.Color.Black;
-            this.btnReload.Location = new System.Drawing.Point(811, 32);
-            this.btnReload.Name = "btnReload";
-            this.btnReload.Size = new System.Drawing.Size(97, 23);
-            this.btnReload.TabIndex = 12;
-            this.btnReload.Text = "Reload File";
-            this.btnReload.UseVisualStyleBackColor = true;
-            this.btnReload.Click += new System.EventHandler(this.BtnReload_Click);
+            btnReload.AutoSize = true;
+            btnReload.ForeColor = Color.Black;
+            btnReload.Location = new Point(946, 37);
+            btnReload.Margin = new Padding(4, 3, 4, 3);
+            btnReload.Name = "btnReload";
+            btnReload.Size = new Size(113, 29);
+            btnReload.TabIndex = 12;
+            btnReload.Text = "Reload File";
+            btnReload.UseVisualStyleBackColor = true;
+            btnReload.Click += BtnReload_Click;
             // 
             // btnCollapse
             // 
-            this.btnCollapse.AutoSize = true;
-            this.btnCollapse.ForeColor = System.Drawing.Color.Black;
-            this.btnCollapse.Location = new System.Drawing.Point(569, 32);
-            this.btnCollapse.Name = "btnCollapse";
-            this.btnCollapse.Size = new System.Drawing.Size(75, 23);
-            this.btnCollapse.TabIndex = 7;
-            this.btnCollapse.Text = "Collapse All";
-            this.btnCollapse.UseVisualStyleBackColor = true;
-            this.btnCollapse.Click += new System.EventHandler(this.BtnCollapse_Click);
+            btnCollapse.AutoSize = true;
+            btnCollapse.ForeColor = Color.Black;
+            btnCollapse.Location = new Point(664, 37);
+            btnCollapse.Margin = new Padding(4, 3, 4, 3);
+            btnCollapse.Name = "btnCollapse";
+            btnCollapse.Size = new Size(92, 29);
+            btnCollapse.TabIndex = 7;
+            btnCollapse.Text = "Collapse All";
+            btnCollapse.UseVisualStyleBackColor = true;
+            btnCollapse.Click += BtnCollapse_Click;
             // 
             // btnScan
             // 
-            this.btnScan.AutoSize = true;
-            this.btnScan.ForeColor = System.Drawing.Color.Black;
-            this.btnScan.Location = new System.Drawing.Point(811, 5);
-            this.btnScan.Name = "btnScan";
-            this.btnScan.Size = new System.Drawing.Size(97, 23);
-            this.btnScan.TabIndex = 11;
-            this.btnScan.Text = "Scan Inventory";
-            this.btnScan.UseVisualStyleBackColor = true;
-            this.btnScan.Click += new System.EventHandler(this.BtnScan_Click);
+            btnScan.AutoSize = true;
+            btnScan.ForeColor = Color.Black;
+            btnScan.Location = new Point(946, 6);
+            btnScan.Margin = new Padding(4, 3, 4, 3);
+            btnScan.Name = "btnScan";
+            btnScan.Size = new Size(113, 29);
+            btnScan.TabIndex = 11;
+            btnScan.Text = "Scan Inventory";
+            btnScan.UseVisualStyleBackColor = true;
+            btnScan.Click += BtnScan_Click;
             // 
             // btnWiki
             // 
-            this.btnWiki.AutoSize = true;
-            this.btnWiki.ForeColor = System.Drawing.Color.Black;
-            this.btnWiki.Location = new System.Drawing.Point(650, 19);
-            this.btnWiki.Name = "btnWiki";
-            this.btnWiki.Size = new System.Drawing.Size(77, 23);
-            this.btnWiki.TabIndex = 8;
-            this.btnWiki.Text = "Wiki Lookup";
-            this.btnWiki.UseVisualStyleBackColor = true;
-            this.btnWiki.Click += new System.EventHandler(this.BtnWiki_Click);
+            btnWiki.AutoSize = true;
+            btnWiki.ForeColor = Color.Black;
+            btnWiki.Location = new Point(758, 22);
+            btnWiki.Margin = new Padding(4, 3, 4, 3);
+            btnWiki.Name = "btnWiki";
+            btnWiki.Size = new Size(97, 29);
+            btnWiki.TabIndex = 8;
+            btnWiki.Text = "Wiki Lookup";
+            btnWiki.UseVisualStyleBackColor = true;
+            btnWiki.Click += BtnWiki_Click;
             // 
             // btnFindNext
             // 
-            this.btnFindNext.AutoSize = true;
-            this.btnFindNext.ForeColor = System.Drawing.Color.Black;
-            this.btnFindNext.Location = new System.Drawing.Point(407, 32);
-            this.btnFindNext.Name = "btnFindNext";
-            this.btnFindNext.Size = new System.Drawing.Size(75, 23);
-            this.btnFindNext.TabIndex = 4;
-            this.btnFindNext.Text = "Find Next";
-            this.btnFindNext.UseVisualStyleBackColor = true;
-            this.btnFindNext.Visible = false;
-            this.btnFindNext.Click += new System.EventHandler(this.BtnFindNext_Click);
+            btnFindNext.AutoSize = true;
+            btnFindNext.ForeColor = Color.Black;
+            btnFindNext.Location = new Point(475, 37);
+            btnFindNext.Margin = new Padding(4, 3, 4, 3);
+            btnFindNext.Name = "btnFindNext";
+            btnFindNext.Size = new Size(88, 29);
+            btnFindNext.TabIndex = 4;
+            btnFindNext.Text = "Find Next";
+            btnFindNext.UseVisualStyleBackColor = true;
+            btnFindNext.Visible = false;
+            btnFindNext.Click += BtnFindNext_Click;
             // 
             // btnReset
             // 
-            this.btnReset.AutoSize = true;
-            this.btnReset.ForeColor = System.Drawing.Color.Black;
-            this.btnReset.Location = new System.Drawing.Point(488, 19);
-            this.btnReset.Name = "btnReset";
-            this.btnReset.Size = new System.Drawing.Size(75, 23);
-            this.btnReset.TabIndex = 5;
-            this.btnReset.Text = "Reset";
-            this.btnReset.UseVisualStyleBackColor = true;
-            this.btnReset.Visible = false;
-            this.btnReset.Click += new System.EventHandler(this.BtnReset_Click);
+            btnReset.AutoSize = true;
+            btnReset.ForeColor = Color.Black;
+            btnReset.Location = new Point(569, 22);
+            btnReset.Margin = new Padding(4, 3, 4, 3);
+            btnReset.Name = "btnReset";
+            btnReset.Size = new Size(88, 29);
+            btnReset.TabIndex = 5;
+            btnReset.Text = "Reset";
+            btnReset.UseVisualStyleBackColor = true;
+            btnReset.Visible = false;
+            btnReset.Click += BtnReset_Click;
             // 
             // splitContainer1
             // 
-            this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer1.Location = new System.Drawing.Point(3, 67);
-            this.splitContainer1.Name = "splitContainer1";
+            splitContainer1.Dock = DockStyle.Fill;
+            splitContainer1.Location = new Point(4, 77);
+            splitContainer1.Margin = new Padding(4, 3, 4, 3);
+            splitContainer1.Name = "splitContainer1";
             // 
             // splitContainer1.Panel1
             // 
-            this.splitContainer1.Panel1.Controls.Add(this.tabControl1);
+            splitContainer1.Panel1.Controls.Add(tabControl1);
             // 
             // splitContainer1.Panel2
             // 
-            this.splitContainer1.Panel2.Controls.Add(this.lblMatches);
-            this.splitContainer1.Size = new System.Drawing.Size(1019, 408);
-            this.splitContainer1.SplitterDistance = 561;
-            this.splitContainer1.TabIndex = 19;
+            splitContainer1.Panel2.Controls.Add(lblMatches);
+            splitContainer1.Size = new Size(1189, 472);
+            splitContainer1.SplitterDistance = 654;
+            splitContainer1.SplitterWidth = 5;
+            splitContainer1.TabIndex = 19;
             // 
             // InventoryViewForm
             // 
-            this.AcceptButton = this.btnSearch;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.AutoSize = true;
-            this.ClientSize = new System.Drawing.Size(1015, 478);
-            this.Controls.Add(this.tableLayoutPanel1);
-            this.Controls.Add(this.tv);
-            this.Name = "InventoryViewForm";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Inventory View";
-            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.InventoryViewForm_FormClosed);
-            this.Load += new System.EventHandler(this.InventoryViewForm_Load);
-            this.listBox_Menu.ResumeLayout(false);
-            this.tableLayoutPanel1.ResumeLayout(false);
-            this.panel1.ResumeLayout(false);
-            this.panel1.PerformLayout();
-            this.splitContainer1.Panel1.ResumeLayout(false);
-            this.splitContainer1.Panel2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
-            this.splitContainer1.ResumeLayout(false);
-            this.ResumeLayout(false);
-            this.PerformLayout();
-
+            AcceptButton = btnSearch;
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            AutoSize = true;
+            ClientSize = new Size(1184, 552);
+            Controls.Add(tableLayoutPanel1);
+            Controls.Add(tv);
+            Margin = new Padding(4, 3, 4, 3);
+            Name = "InventoryViewForm";
+            StartPosition = FormStartPosition.CenterScreen;
+            Text = "Inventory View";
+            FormClosed += InventoryViewForm_FormClosed;
+            Load += InventoryViewForm_Load;
+            listBox_Menu.ResumeLayout(false);
+            tableLayoutPanel1.ResumeLayout(false);
+            panel1.ResumeLayout(false);
+            panel1.PerformLayout();
+            splitContainer1.Panel1.ResumeLayout(false);
+            splitContainer1.Panel2.ResumeLayout(false);
+            ((ISupportInitialize)splitContainer1).EndInit();
+            splitContainer1.ResumeLayout(false);
+            ResumeLayout(false);
+            PerformLayout();
         }
     }
 }

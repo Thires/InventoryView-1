@@ -15,7 +15,7 @@ namespace InventoryView
         public string source;
         public string Circle { get; set; }
         public string Guild { get; set; }
-        public List<ItemData> items = new List<ItemData>();
+        public List<ItemData> items = new();
 
         public ItemData AddItem(ItemData newItem)
         {
@@ -25,7 +25,7 @@ namespace InventoryView
 
         public ItemData AddItem(string tap, bool storage = false)
         {
-            ItemData newItem = new ItemData() { tap = tap, storage = storage };
+            ItemData newItem = new() { tap = tap, storage = storage };
             items.Add(newItem);
             return newItem;
         }
@@ -37,7 +37,7 @@ namespace InventoryView
         public bool storage;
         public string tap;
         public ItemData parent;
-        public List<ItemData> items = new List<ItemData>();
+        public List<ItemData> items = new();
 
         public ItemData AddItem(ItemData newItem)
         {
@@ -48,7 +48,7 @@ namespace InventoryView
 
         public ItemData AddItem(string tap, bool storage = false)
         {
-            ItemData newItem = new ItemData() { tap = tap, storage = storage, parent = this };
+            ItemData newItem = new() { tap = tap, storage = storage, parent = this };
             items.Add(newItem);
             return newItem;
         }
@@ -84,25 +84,25 @@ namespace InventoryView
 
         public static void SaveSettings()
         {
-            basePath = Class1._host.get_Variable("PluginPath");
+            basePath = Class1.Host.get_Variable("PluginPath");
             string configFile = Path.Combine(basePath, "InventoryView.xml");
             try
             {
                 // Can't serialize a class with circular references, so I have to remove the parent links first.
-                foreach (var cData in Class1.characterData)
+                foreach (var cData in Class1.CharacterData)
                 {
                     RemoveParents(cData.items);
                 }
 
                 // Create a new XmlSerializer for the CharacterData type
-                XmlSerializer serializer = new XmlSerializer(typeof(List<CharacterData>));
+                XmlSerializer serializer = new(typeof(List<CharacterData>));
 
                 // Serialize the characterData list to a StringWriter
-                StringWriter stringWriter = new StringWriter();
-                serializer.Serialize(stringWriter, Class1.characterData);
+                StringWriter stringWriter = new();
+                serializer.Serialize(stringWriter, Class1.CharacterData);
 
                 // Create a new XmlDocument
-                XmlDocument doc = new XmlDocument();
+                XmlDocument doc = new();
 
                 // If the configFile exists, load the existing XML data into the XmlDocument
                 if (File.Exists(configFile))
@@ -126,7 +126,7 @@ namespace InventoryView
                 }
 
                 // If characterData list is not empty, import serialized character data into XmlDocument.
-                if (Class1.characterData.Count > 0)
+                if (Class1.CharacterData.Count > 0)
                 {
                     // Create a new ArrayOfCharacterData element and append it to the root element if it doesn't exist
                     if (arrayOfCharacterDataNode == null)
@@ -140,7 +140,7 @@ namespace InventoryView
                     if (characterDataXml.StartsWith("<?xml"))
                     {
                         int endOfDeclaration = characterDataXml.IndexOf("?>") + 2;
-                        characterDataXml = characterDataXml.Substring(endOfDeclaration);
+                        characterDataXml = characterDataXml[endOfDeclaration..];
                     }
 
                     // Set InnerXml property of ArrayOfCharacterData element to serialized character data.
@@ -152,12 +152,12 @@ namespace InventoryView
 
                 // If CheckBoxState element exists, update its value.
                 if (multilinetabsNode != null)
-                    multilinetabsNode.InnerText = ((InventoryViewForm)Class1._form).chkMultilineTabs.Checked.ToString();
+                    multilinetabsNode.InnerText = ((InventoryViewForm)Class1.Form).chkMultilineTabs.Checked.ToString();
                 else
                 {
                     // Otherwise, create new CheckBoxState element and set its value to state of checkBox1 control.
                     XmlElement multilineTabsElemnt = doc.CreateElement("MultilineTabs");
-                    multilineTabsElemnt.InnerText = ((InventoryViewForm)Class1._form).chkMultilineTabs.Checked.ToString();
+                    multilineTabsElemnt.InnerText = ((InventoryViewForm)Class1.Form).chkMultilineTabs.Checked.ToString();
 
                     // Append CheckBoxState element to root element of XmlDocument.
                     doc.DocumentElement.AppendChild(multilineTabsElemnt);
@@ -168,12 +168,12 @@ namespace InventoryView
 
                 // If DarkModeState element exists, update its value.
                 if (darkModeNode != null)
-                    darkModeNode.InnerText = ((InventoryViewForm)Class1._form).chkDarkMode.Checked.ToString();
+                    darkModeNode.InnerText = ((InventoryViewForm)Class1.Form).chkDarkMode.Checked.ToString();
                 else
                 {
                     // Otherwise, create new DarkModeState element and set its value to state of chkDarkMode control.
                     XmlElement darkModeElement = doc.CreateElement("DarkMode");
-                    darkModeElement.InnerText = ((InventoryViewForm)Class1._form).chkDarkMode.Checked.ToString();
+                    darkModeElement.InnerText = ((InventoryViewForm)Class1.Form).chkDarkMode.Checked.ToString();
 
                     // Append DarkModeState element to root element of XmlDocument.
                     doc.DocumentElement.AppendChild(darkModeElement);
@@ -183,15 +183,30 @@ namespace InventoryView
 
                 // If DarkModeState element exists, update its value.
                 if (familyNode != null)
-                    familyNode.InnerText = ((InventoryViewForm)Class1._form).chkFamily.Checked.ToString();
+                    familyNode.InnerText = ((InventoryViewForm)Class1.Form).chkFamily.Checked.ToString();
                 else
                 {
                     // Otherwise, create new DarkModeState element and set its value to state of chkDarkMode control.
                     XmlElement familyElement = doc.CreateElement("Family");
-                    familyElement.InnerText = ((InventoryViewForm)Class1._form).chkFamily.Checked.ToString();
+                    familyElement.InnerText = ((InventoryViewForm)Class1.Form).chkFamily.Checked.ToString();
 
                     // Append DarkModeState element to root element of XmlDocument.
                     doc.DocumentElement.AppendChild(familyElement);
+                }
+
+                XmlNode alwaysTopNode = doc.SelectSingleNode("/Root/AlwaysTop");
+
+                // If AlwaysTopState element exists, update its value.
+                if (alwaysTopNode != null)
+                    alwaysTopNode.InnerText = ((InventoryViewForm)Class1.Form).chkAlwaysTop.Checked.ToString();
+                else
+                {
+                    // Otherwise, create new DarkModeState element and set its value to state of chkDarkMode control.
+                    XmlElement alwaysTopElement = doc.CreateElement("AlwaysTop");
+                    alwaysTopElement.InnerText = ((InventoryViewForm)Class1.Form).chkAlwaysTop.Checked.ToString();
+
+                    // Append DarkModeState element to root element of XmlDocument.
+                    doc.DocumentElement.AppendChild(alwaysTopElement);
                 }
 
 
@@ -202,26 +217,26 @@ namespace InventoryView
                 }
 
                 // ..and add them back again afterwards.
-                foreach (var cData in Class1.characterData)
+                foreach (var cData in Class1.CharacterData)
                 {
                     AddParents(cData.items, null);
                 }
             }
             catch (IOException ex)
             {
-                Class1._host.EchoText("Error writing to InventoryView file: " + ex.Message);
+                Class1.Host.EchoText("Error writing to InventoryView file: " + ex.Message);
             }
         }
         public static void LoadSettings()
         {
-            basePath = Class1._host.get_Variable("PluginPath");
+            basePath = Class1.Host.get_Variable("PluginPath");
             string configFile = Path.Combine(basePath, "InventoryView.xml");
             try
             {
                 if (File.Exists(configFile))
                 {
                     // Load the XML data into an XmlDocument
-                    XmlDocument doc = new XmlDocument();
+                    XmlDocument doc = new();
                     doc.Load(configFile);
 
                     // Check if the XML file starts with the <Root> element
@@ -255,6 +270,11 @@ namespace InventoryView
                         familyElement.InnerText = "False";
                         newRootNode.AppendChild(familyElement);
 
+                        // Create a new AlwaysTop element and set its value to False
+                        XmlElement alwaysTopElement = doc.CreateElement("AlwaysTop");
+                        alwaysTopElement.InnerText = "False";
+                        newRootNode.AppendChild(alwaysTopElement);
+
                         // Replace the old root node with the new root node
                         doc.ReplaceChild(newRootNode, doc.DocumentElement);
 
@@ -268,25 +288,23 @@ namespace InventoryView
                     XmlNodeList characterDataNodes = doc.SelectNodes("/Root/ArrayOfCharacterData/ArrayOfCharacterData/CharacterData");
 
                     // Clear the existing characterData list
-                    Class1.characterData.Clear();
+                    Class1.CharacterData.Clear();
 
                     // Iterate over each CharacterData element and deserialize it into a CharacterData object
                     foreach (XmlNode characterDataNode in characterDataNodes)
                     {
                         // Create a new XmlSerializer for the CharacterData type
-                        XmlSerializer serializer = new XmlSerializer(typeof(CharacterData));
+                        XmlSerializer serializer = new(typeof(CharacterData));
 
                         // Deserialize the CharacterData element into a CharacterData object
-                        using (StringReader reader = new StringReader(characterDataNode.OuterXml))
-                        {
-                            CharacterData cData = (CharacterData)serializer.Deserialize(reader);
+                        using StringReader reader = new(characterDataNode.OuterXml);
+                        CharacterData cData = (CharacterData)serializer.Deserialize(reader);
 
-                            // Add the deserialized CharacterData object to the characterData list
-                            Class1.characterData.Add(cData);
-                        }
+                        // Add the deserialized CharacterData object to the characterData list
+                        Class1.CharacterData.Add(cData);
                     }
                     // ..and add them back again afterwards.
-                    foreach (var cData in Class1.characterData)
+                    foreach (var cData in Class1.CharacterData)
                     {
                         AddParents(cData.items, null);
                     }
@@ -294,24 +312,29 @@ namespace InventoryView
                     // Load CheckBox state.
                     XmlNode multilineTabsNode = doc.SelectSingleNode("/Root/MultilineTabs");
                     if (multilineTabsNode != null)
-                        ((InventoryViewForm)Class1._form).chkMultilineTabs.Checked = bool.Parse(multilineTabsNode.InnerText);
+                        ((InventoryViewForm)Class1.Form).chkMultilineTabs.Checked = bool.Parse(multilineTabsNode.InnerText);
 
                     // Load DarkMode state.
                     XmlNode darkModeNode = doc.SelectSingleNode("/Root/DarkMode");
                     if (darkModeNode != null)
-                        ((InventoryViewForm)Class1._form).chkDarkMode.Checked = bool.Parse(darkModeNode.InnerText);
+                        ((InventoryViewForm)Class1.Form).chkDarkMode.Checked = bool.Parse(darkModeNode.InnerText);
 
                     // Load Family Vault state.
                     XmlNode familyNode = doc.SelectSingleNode("/Root/Family");
                     if (familyNode != null)
-                        ((InventoryViewForm)Class1._form).chkFamily.Checked = bool.Parse(familyNode.InnerText);
+                        ((InventoryViewForm)Class1.Form).chkFamily.Checked = bool.Parse(familyNode.InnerText);
+
+                    // Load Always On Top state
+                    XmlNode alwaystopNode = doc.SelectSingleNode("/Root/AlwaysTop");
+                    if (alwaystopNode != null)
+                        ((InventoryViewForm)Class1.Form).chkAlwaysTop.Checked = bool.Parse(alwaystopNode.InnerText);
                 }
                 else
-                    Class1._host.EchoText("File does not exist");
+                    Class1.Host.EchoText("File does not exist");
             }
             catch (IOException ex)
             {
-                Class1._host.EchoText("Error reading from InventoryView file: " + ex.Message);
+                Class1.Host.EchoText("Error reading from InventoryView file: " + ex.Message);
             }
         }
 
