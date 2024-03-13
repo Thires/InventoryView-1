@@ -16,7 +16,7 @@ namespace InventoryView
         // Plugin Form.
         private static Form form;
 
-        readonly InventoryTextSearch inventorytext = new();
+        //readonly InventoryTextSearch inventorytext = new();
 
         // This contains all the of the inventory data.
         private static List<CharacterData> characterData = new();
@@ -37,13 +37,14 @@ namespace InventoryView
         private ItemData lastItem = null;
 
         private bool Debug = false;
+        private bool togglecraft = false;
+        private bool InFamVault = false;
+
         private string LastText = "";
 	    private string bookContainer;
         private string guild = "";
         private string accountName = "";
-        private bool togglecraft = false;
         private string currentSurface = "";
-        private bool InFamVault = false;
 
         public void Initialize(IHost host)
         {
@@ -77,7 +78,7 @@ namespace InventoryView
                 if (trimtext.StartsWith("XML") && trimtext.EndsWith("XML")) return ""; // Skip XML parser lines
                 else if (string.IsNullOrEmpty(trimtext)) return ""; // Skip blank lines
 
-                if (((InventoryViewForm)Form).chkFamily.Checked)
+                if (((InventoryViewForm)Form).toolStripFamily.Checked)
                     if (Regex.IsMatch(trimtext, "^Account Info for\\s+(.+):"))
                         accountName = Regex.Match(trimtext, "^Account Info for\\s+(.+):").Groups[1].Value;
 
@@ -85,7 +86,7 @@ namespace InventoryView
                 {
                     guild = Regex.Match(trimtext, "Guild: ([A-z ]+)$").Groups[1].Value;
                     Host.set_Variable("guild", guild);
-                    if (((InventoryViewForm)Form).chkFamily.Checked && Host.get_Variable("roomname").Contains("Family Vault"))
+                    if (((InventoryViewForm)Form).toolStripFamily.Checked && Host.get_Variable("roomname").Contains("Family Vault"))
                     {
                         Thread.Sleep(500);
                         ScanMode = "InFamilyCheck";
@@ -331,7 +332,7 @@ namespace InventoryView
                         // This text indicates the end of the vault inventory list.
                         if (text.StartsWith("The last note in your book indicates that your vault contains"))
                         {
-                            if (((InventoryViewForm)Form).chkFamily.Checked)
+                            if (((InventoryViewForm)Form).toolStripFamily.Checked)
                             {
                                 ScanMode = "FamilyStart";
                                 if (bookContainer == "")
@@ -402,7 +403,7 @@ namespace InventoryView
                         // If you don't have access to vault standard, it skips to checking for family vault.
                         else if (IsDenied(trimtext))
                         {
-                            if (((InventoryViewForm)Form).chkFamily.Checked)
+                            if (((InventoryViewForm)Form).toolStripFamily.Checked)
                             {
                                 Host.EchoText("Skipping Standard Vault.");
                                 ScanMode = "FamilyStart";
@@ -420,7 +421,7 @@ namespace InventoryView
                         // This text indicates the end of the vault inventory list.
                         if (text.StartsWith("The last note indicates that your vault contains"))
                         {
-                            if (((InventoryViewForm)Form).chkFamily.Checked)
+                            if (((InventoryViewForm)Form).toolStripFamily.Checked)
                                 ScanMode = "FamilyStart";
                             else
                                 ScanMode = "DeedStart";
@@ -1180,7 +1181,7 @@ namespace InventoryView
                         {
                             CharacterData.Remove(CharacterData.Where(tbl => tbl.name == Host.get_Variable("charactername")).First());
                         }
-                        if (((InventoryViewForm)Form).chkFamily.Checked)
+                        if (((InventoryViewForm)Form).toolStripFamily.Checked)
                             Host.SendText("played");
                         Host.SendText("info");
                     }
