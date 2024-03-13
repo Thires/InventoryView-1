@@ -152,12 +152,12 @@ namespace InventoryView
 
                 // If CheckBoxState element exists, update its value.
                 if (multilinetabsNode != null)
-                    multilinetabsNode.InnerText = ((InventoryViewForm)Class1.Form).chkMultilineTabs.Checked.ToString();
+                    multilinetabsNode.InnerText = ((InventoryViewForm)Class1.Form).toolStripMultilineTabs.Checked.ToString();
                 else
                 {
                     // Otherwise, create new CheckBoxState element and set its value to state of checkBox1 control.
                     XmlElement multilineTabsElemnt = doc.CreateElement("MultilineTabs");
-                    multilineTabsElemnt.InnerText = ((InventoryViewForm)Class1.Form).chkMultilineTabs.Checked.ToString();
+                    multilineTabsElemnt.InnerText = ((InventoryViewForm)Class1.Form).toolStripMultilineTabs.Checked.ToString();
 
                     // Append CheckBoxState element to root element of XmlDocument.
                     doc.DocumentElement.AppendChild(multilineTabsElemnt);
@@ -168,12 +168,12 @@ namespace InventoryView
 
                 // If DarkModeState element exists, update its value.
                 if (darkModeNode != null)
-                    darkModeNode.InnerText = ((InventoryViewForm)Class1.Form).chkDarkMode.Checked.ToString();
+                    darkModeNode.InnerText = ((InventoryViewForm)Class1.Form).toolStripDarkMode.Checked.ToString();
                 else
                 {
                     // Otherwise, create new DarkModeState element and set its value to state of chkDarkMode control.
                     XmlElement darkModeElement = doc.CreateElement("DarkMode");
-                    darkModeElement.InnerText = ((InventoryViewForm)Class1.Form).chkDarkMode.Checked.ToString();
+                    darkModeElement.InnerText = ((InventoryViewForm)Class1.Form).toolStripDarkMode.Checked.ToString();
 
                     // Append DarkModeState element to root element of XmlDocument.
                     doc.DocumentElement.AppendChild(darkModeElement);
@@ -181,34 +181,34 @@ namespace InventoryView
 
                 XmlNode familyNode = doc.SelectSingleNode("/Root/Family");
 
-                // If DarkModeState element exists, update its value.
+                // If FamilyModeState element exists, update its value.
                 if (familyNode != null)
-                    familyNode.InnerText = ((InventoryViewForm)Class1.Form).chkFamily.Checked.ToString();
+                    familyNode.InnerText = ((InventoryViewForm)Class1.Form).toolStripFamily.Checked.ToString();
                 else
                 {
                     // Otherwise, create new DarkModeState element and set its value to state of chkDarkMode control.
                     XmlElement familyElement = doc.CreateElement("Family");
-                    familyElement.InnerText = ((InventoryViewForm)Class1.Form).chkFamily.Checked.ToString();
+                    familyElement.InnerText = ((InventoryViewForm)Class1.Form).toolStripFamily.Checked.ToString();
 
                     // Append DarkModeState element to root element of XmlDocument.
                     doc.DocumentElement.AppendChild(familyElement);
                 }
 
+
                 XmlNode alwaysTopNode = doc.SelectSingleNode("/Root/AlwaysTop");
 
                 // If AlwaysTopState element exists, update its value.
                 if (alwaysTopNode != null)
-                    alwaysTopNode.InnerText = ((InventoryViewForm)Class1.Form).chkAlwaysTop.Checked.ToString();
+                    alwaysTopNode.InnerText = ((InventoryViewForm)Class1.Form).toolStripAlwaysTop.Checked.ToString();
                 else
                 {
                     // Otherwise, create new DarkModeState element and set its value to state of chkDarkMode control.
                     XmlElement alwaysTopElement = doc.CreateElement("AlwaysTop");
-                    alwaysTopElement.InnerText = ((InventoryViewForm)Class1.Form).chkAlwaysTop.Checked.ToString();
+                    alwaysTopElement.InnerText = ((InventoryViewForm)Class1.Form).toolStripAlwaysTop.Checked.ToString();
 
                     // Append DarkModeState element to root element of XmlDocument.
                     doc.DocumentElement.AppendChild(alwaysTopElement);
                 }
-
 
                 // Save changes to XML file.
                 using (var writer = XmlWriter.Create(configFile, new XmlWriterSettings { Encoding = Encoding.UTF8, Indent = true }))
@@ -312,22 +312,22 @@ namespace InventoryView
                     // Load CheckBox state.
                     XmlNode multilineTabsNode = doc.SelectSingleNode("/Root/MultilineTabs");
                     if (multilineTabsNode != null)
-                        ((InventoryViewForm)Class1.Form).chkMultilineTabs.Checked = bool.Parse(multilineTabsNode.InnerText);
+                        ((InventoryViewForm)Class1.Form).toolStripMultilineTabs.Checked = bool.Parse(multilineTabsNode.InnerText);
 
-                    // Load DarkMode state.
+                    // Load DarkMode state
                     XmlNode darkModeNode = doc.SelectSingleNode("/Root/DarkMode");
                     if (darkModeNode != null)
-                        ((InventoryViewForm)Class1.Form).chkDarkMode.Checked = bool.Parse(darkModeNode.InnerText);
+                        ((InventoryViewForm)Class1.Form).toolStripDarkMode.Checked = bool.Parse(darkModeNode.InnerText);
 
-                    // Load Family Vault state.
+                    // Load Family Vault state
                     XmlNode familyNode = doc.SelectSingleNode("/Root/Family");
                     if (familyNode != null)
-                        ((InventoryViewForm)Class1.Form).chkFamily.Checked = bool.Parse(familyNode.InnerText);
+                        ((InventoryViewForm)Class1.Form).toolStripFamily.Checked = bool.Parse(familyNode.InnerText);
 
                     // Load Always On Top state
                     XmlNode alwaystopNode = doc.SelectSingleNode("/Root/AlwaysTop");
                     if (alwaystopNode != null)
-                        ((InventoryViewForm)Class1.Form).chkAlwaysTop.Checked = bool.Parse(alwaystopNode.InnerText);
+                        ((InventoryViewForm)Class1.Form).toolStripAlwaysTop.Checked = bool.Parse(alwaystopNode.InnerText);
                 }
                 else
                     Class1.Host.EchoText("File does not exist");

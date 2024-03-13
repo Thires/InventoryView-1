@@ -1,4 +1,5 @@
-﻿using System;
+﻿using GeniePlugin.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -17,12 +18,25 @@ namespace InventoryView
         private readonly List<TreeNode> searchMatches = new();
         private IContainer components;
         private TreeView tv;
+
+        private MenuStrip menuStrip;
         private ContextMenuStrip listBox_Menu;
         private ToolStripMenuItem copyToolStripMenuItem;
         private ToolStripMenuItem wikiToolStripMenuItem;
         private ToolStripMenuItem copyAllToolStripMenuItem;
-        private bool clickSearch = false;
+        private ToolStripMenuItem optionsToolStripMenuItem;
+        internal ToolStripMenuItem toolStripDarkMode;
+        internal ToolStripMenuItem toolStripFamily;
+        internal ToolStripMenuItem toolStripMultilineTabs;
+        private ToolStripMenuItem commandsToolStripMenuItem;
+        internal ToolStripMenuItem toolStripScan;
+        internal ToolStripMenuItem toolStripReload;
+        internal ToolStripMenuItem toolStripWiki;
+        private ToolStripMenuItem toolStripExport;
         private ToolStripMenuItem copySelectedToolStripMenuItem;
+
+        private bool clickSearch = false;
+
         // Create a new list to store the search matches for each TreeView control
         private readonly List<InventoryViewForm.TreeViewSearchMatches> treeViewSearchMatchesList = new();
         // Create a list to store the hidden tab pages and their original positions
@@ -31,29 +45,28 @@ namespace InventoryView
         private ListBox lblMatches;
         private TableLayoutPanel tableLayoutPanel1;
         private Panel panel1;
-        private Button btnFindPrev;
         private TextBox txtSearch;
-        private Label lblFound;
-        private Label lblSearch;
-        private Button btnSearch;
-        private Button btnExport;
-        private Button btnExpand;
-        private Button btnReload;
-        private Button btnCollapse;
-        private Button btnScan;
-        private Button btnWiki;
-        private Button btnFindNext;
-        private Button btnReset;
-        private SplitContainer splitContainer1;
-        private ComboBox cboCharacters;
-        private Button btnRemoveCharacter;
 
         private Label infolabel;
-        internal CheckBox chkMultilineTabs;
-        internal CheckBox chkDarkMode;
-        internal CheckBox chkFamily;
+        private Label lblFound;
+        private Label lblSearch;
+
+        private Button btnRemoveCharacter;
+        private Button btnFindPrev;
+        private Button btnExpand;
+        private Button btnCollapse;
+        private Button btnFindNext;
+        private Button btnReset;
+
+        private SplitContainer splitContainer1;
+        private ComboBox cboCharacters;
+
+        private Form customTooltip = null;
+        private readonly Timer tooltipTimer = new();
+
         private static string basePath = Application.StartupPath;
-        internal CheckBox chkAlwaysTop;
+        private ToolStripContainer toolStripContainer1;
+        internal ToolStripMenuItem toolStripAlwaysTop;
         private readonly Dictionary<string, List<MatchedItemInfo>> matchedItemsDictionary = new();
 
         public InventoryViewForm()
@@ -83,7 +96,7 @@ namespace InventoryView
             lblMatches.MouseDoubleClick += LblMatches_MouseDoubleClick;
             InitializeTooltipTimer();
 
-            chkAlwaysTop.CheckedChanged += ChkAlwaysTop_CheckedChanged;
+            toolStripAlwaysTop.CheckedChanged += toolStripAlwaysTop_CheckedChanged;
 
             if (tabControl1.SelectedTab?.Controls.Count > 0 && tabControl1.SelectedTab.Controls[0] is TreeView tv)
             {
@@ -94,7 +107,7 @@ namespace InventoryView
                 }
             }
         }
-       
+
         private void BindData()
         {
             // Clear existing data
@@ -116,15 +129,15 @@ namespace InventoryView
                     Dock = DockStyle.Fill
                 };
 
-                if (chkDarkMode.Checked)
+                if (toolStripDarkMode.Checked)
                 {
-                    tv.ForeColor = Color.White;
-                    tv.BackColor = Color.Black;
+                    tv.ForeColor = SystemColors.Control;
+                    tv.BackColor = SystemColors.ControlText;
                 }
                 else
                 {
-                    tv.ForeColor = Color.Black;
-                    tv.BackColor = Color.White;
+                    tv.ForeColor = SystemColors.ControlText;
+                    tv.BackColor = SystemColors.Control;
                 }
 
                 tabPage.Controls.Add(tv);
@@ -213,7 +226,7 @@ namespace InventoryView
             copyTextToolStripMenuItem.Click += (sender, e) =>
             {
                 if (tv.SelectedNode != null)
-                    Clipboard.SetText(Regex.Replace(tv.SelectedNode.Text, @"\(\d+\)\s|^(an?|some|several)\s", ""));
+                    Clipboard.SetText(Regex.Replace(tv.SelectedNode.Text, @"\(\d+\)\s|^(an?|some|several)\s|^\d+\s--\s(an?|some|several)\s", ""));
             };
             contextMenuStrip.Items.Add(copyTextToolStripMenuItem);
 
@@ -225,7 +238,7 @@ namespace InventoryView
                 {
                     List<string> branchText = new()
                     {
-                        Regex.Replace(tv.SelectedNode.Text, @"\(\d+\)\s|^(an?|some|several)\s", "")
+                        Regex.Replace(tv.SelectedNode.Text, @"\(\d+\)\s|^(an?|some|several)\s|^\d+\s--\s(an?|some|several)\s", "")
                     };
                     CopyBranchText(tv.SelectedNode.Nodes, branchText, 1);
                     Clipboard.SetText(string.Join("\r\n", branchText.ToArray()));
@@ -236,100 +249,106 @@ namespace InventoryView
             return contextMenuStrip;
         }
 
-        private void BtnSearch_Click(object sender, EventArgs e)
+        private void TxtSearch_KeyDown(object sender, KeyEventArgs e)
         {
-            if (customTooltip != null && !customTooltip.IsDisposed)
+            if (e.KeyCode == Keys.Enter)
             {
-                customTooltip.Close();
-                tooltipTimer.Stop(); // Stop the timer
-            }
-            // Reset the found count value
-            lblFound.Text = "Found: 0";
-            ClearMatchedItemPaths();
-            // Clear existing search matches
-            searchMatches.Clear();
-            treeViewSearchMatchesList.Clear();
-            lblMatches.Items.Clear();
+                e.SuppressKeyPress = true;
 
-            if (!string.IsNullOrEmpty(txtSearch.Text))
-            {
-                // Clear hiddenTabPages
-                hiddenTabPages.Clear();
 
-                // Call BindData to make sure all tabs are visible
-                BindData();
-
-                // Save the currently selected tab page
-                var selectedTab = tabControl1.SelectedTab;
-
-                // Iterate over each visible and hidden tab page
-                var allTabPages = tabControl1.TabPages.Cast<TabPage>().Concat(hiddenTabPages.Select(x => x.tabPage)).ToList();
-
-                // Clear the treeViewSearchMatchesList
-                treeViewSearchMatchesList.Clear();
-
-                foreach (var tabPage in allTabPages)
+                if (customTooltip != null && !customTooltip.IsDisposed)
                 {
-                    // Reset the search count for the tab page
-                    tabPage.Text = tabPage.Text.Split(' ')[0];
+                    customTooltip.Close();
+                    tooltipTimer.Stop(); // Stop the timer
+                }
+                // Reset the found count value
+                lblFound.Text = "Found: 0";
+                ClearMatchedItemPaths();
+                // Clear existing search matches
+                searchMatches.Clear();
+                treeViewSearchMatchesList.Clear();
+                lblMatches.Items.Clear();
 
-                    // Select the tab page if it's visible
-                    if (tabControl1.TabPages.Contains(tabPage))
-                        tabControl1.SelectedTab = tabPage;
+                if (!string.IsNullOrEmpty(txtSearch.Text))
+                {
+                    // Clear hiddenTabPages
+                    hiddenTabPages.Clear();
 
-                    // Get the TreeView control on the tab page
-                    var tv = tabPage.Controls[0] as TreeView;
+                    // Call BindData to make sure all tabs are visible
+                    BindData();
 
-                    // Create a new TreeViewSearchMatches object for the TreeView control
-                    var treeViewSearchMatches = new TreeViewSearchMatches() { TreeView = tv };
-                    treeViewSearchMatchesList.Add(treeViewSearchMatches);
+                    // Save the currently selected tab page
+                    var selectedTab = tabControl1.SelectedTab;
 
-                    // Reset the search count and total count
-                    int searchCount = 0;
-                    int totalCount = 0;
+                    // Iterate over each visible and hidden tab page
+                    var allTabPages = tabControl1.TabPages.Cast<TabPage>().Concat(hiddenTabPages.Select(x => x.tabPage)).ToList();
 
-                    // Search the TreeView
-                    tv.CollapseAll();
-                    SearchTree(tv, tv.Nodes, treeViewSearchMatches.SearchMatches, ref searchCount, ref totalCount);
+                    // Clear the treeViewSearchMatchesList
+                    treeViewSearchMatchesList.Clear();
 
-                    // Update the tab page text with the search count if greater than zero
-                    if (searchCount > 0)
-                        tabPage.Text = new StringBuilder(tabPage.Text.Split(' ')[0]).Append($" (M: {searchCount})").ToString();
-                    else
+                    foreach (var tabPage in allTabPages)
                     {
-                        tabPage.Text = new StringBuilder(tabPage.Text.Split(' ')[0]).Append($" (T: {totalCount})").ToString();
+                        // Reset the search count for the tab page
+                        tabPage.Text = tabPage.Text.Split(' ')[0];
 
-                        // Hide the tab page if no matching items were found and it's not already hidden
-                        if (tabControl1.TabPages.Contains(tabPage) && !hiddenTabPages.Any(x => x.tabPage == tabPage))
+                        // Select the tab page if it's visible
+                        if (tabControl1.TabPages.Contains(tabPage))
+                            tabControl1.SelectedTab = tabPage;
+
+                        // Get the TreeView control on the tab page
+                        var tv = tabPage.Controls[0] as TreeView;
+
+                        // Create a new TreeViewSearchMatches object for the TreeView control
+                        var treeViewSearchMatches = new TreeViewSearchMatches() { TreeView = tv };
+                        treeViewSearchMatchesList.Add(treeViewSearchMatches);
+
+                        // Reset the search count and total count
+                        int searchCount = 0;
+                        int totalCount = 0;
+
+                        // Search the TreeView
+                        tv.CollapseAll();
+                        SearchTree(tv, tv.Nodes, treeViewSearchMatches.SearchMatches, ref searchCount, ref totalCount);
+
+                        // Update the tab page text with the search count if greater than zero
+                        if (searchCount > 0)
+                            tabPage.Text = new StringBuilder(tabPage.Text.Split(' ')[0]).Append($" (M: {searchCount})").ToString();
+                        else
                         {
-                            hiddenTabPages.Add((tabPage, tabControl1.TabPages.IndexOf(tabPage)));
-                            tabControl1.TabPages.Remove(tabPage);
+                            tabPage.Text = new StringBuilder(tabPage.Text.Split(' ')[0]).Append($" (T: {totalCount})").ToString();
+
+                            // Hide the tab page if no matching items were found and it's not already hidden
+                            if (tabControl1.TabPages.Contains(tabPage) && !hiddenTabPages.Any(x => x.tabPage == tabPage))
+                            {
+                                hiddenTabPages.Add((tabPage, tabControl1.TabPages.IndexOf(tabPage)));
+                                tabControl1.TabPages.Remove(tabPage);
+                            }
                         }
                     }
+
+                    // Restore the originally selected tab page
+                    if (tabControl1.TabPages.Contains(selectedTab))
+                        tabControl1.SelectedTab = selectedTab;
+                    else if (tabControl1.TabPages.Count > 0)
+                        tabControl1.SelectedIndex = 0;
+
+                    btnFindNext.Visible = btnFindPrev.Visible = btnReset.Visible = treeViewSearchMatchesList.Any(x => x.SearchMatches.Count > 0);
+                    lblFound.Text = "Found: " + treeViewSearchMatchesList.Sum(x => x.SearchMatches.Count).ToString();
+
+                    if (!treeViewSearchMatchesList.Any(x => x.SearchMatches.Count > 0))
+                    {
+                        BindData();
+                        // Set focus back to the txtSearch control
+                        txtSearch.Focus();
+                        return;
+                    }
                 }
+                // Set clickSearch to true to indicate that a search has been performed
+                clickSearch = true;
 
-                // Restore the originally selected tab page
-                if (tabControl1.TabPages.Contains(selectedTab))
-                    tabControl1.SelectedTab = selectedTab;
-                else if (tabControl1.TabPages.Count > 0)
-                    tabControl1.SelectedIndex = 0;
-
-                btnFindNext.Visible = btnFindPrev.Visible = btnReset.Visible = treeViewSearchMatchesList.Any(x => x.SearchMatches.Count > 0);
-                lblFound.Text = "Found: " + treeViewSearchMatchesList.Sum(x => x.SearchMatches.Count).ToString();
-
-                if (!treeViewSearchMatchesList.Any(x => x.SearchMatches.Count > 0))
-                {
-                    BindData();
-                    // Set focus back to the txtSearch control
-                    txtSearch.Focus();
-                    return;
-                }
+                // Set focus back to the txtSearch control
+                txtSearch.Focus();
             }
-            // Set clickSearch to true to indicate that a search has been performed
-            clickSearch = true;
-
-            // Set focus back to the txtSearch control
-            txtSearch.Focus();
         }
 
         private void ClearMatchedItemPaths()
@@ -349,8 +368,8 @@ namespace InventoryView
                 totalCount++;
 
                 // Reset the node's background color and foreground color based on the dark mode
-                node.BackColor = chkDarkMode.Checked ? Color.Black : Color.White;
-                node.ForeColor = chkDarkMode.Checked ? Color.White : Color.Black;
+                node.BackColor = toolStripDarkMode.Checked ? SystemColors.ControlText : SystemColors.Control;
+                node.ForeColor = toolStripDarkMode.Checked ? SystemColors.Control : SystemColors.ControlText;
 
                 // Search the node's child nodes and update the match status
                 if (SearchTree(treeView, node.Nodes, searchMatches, ref searchCount, ref totalCount))
@@ -369,8 +388,8 @@ namespace InventoryView
                 if (node.Text.Contains(txtSearch.Text, StringComparison.OrdinalIgnoreCase))
                 {
                     // Highlight the node and add it to the list of search matches
-                    node.BackColor = chkDarkMode.Checked ? Color.LightBlue : Color.Yellow;
-                    node.ForeColor = Color.Black;
+                    node.BackColor = toolStripDarkMode.Checked ? Color.LightBlue : Color.Yellow;
+                    node.ForeColor = SystemColors.ControlText;
                     searchMatches.Add(node);
                     searchCount++;
                     isMatchFound = true;
@@ -418,7 +437,7 @@ namespace InventoryView
                     {
                         if (childNode.BackColor == Color.LightBlue || childNode.BackColor == Color.Yellow)
                         {
-                            childNode.ForeColor = Color.Black;
+                            childNode.ForeColor = SystemColors.ControlText;
                             break;
                         }
                     }
@@ -446,9 +465,6 @@ namespace InventoryView
                 tooltipTimer.Stop();
             }
         }
-
-        private Form customTooltip = null;
-        private readonly Timer tooltipTimer = new();
 
         private void InitializeTooltipTimer()
         {
@@ -508,9 +524,9 @@ namespace InventoryView
                     {
                         AutoSize = true,
                         Text = string.Join(Environment.NewLine + Environment.NewLine, matchedItems.Select(item => FormatPath(item.FullPath))),
-                        ForeColor = Color.Black,
+                        ForeColor = SystemColors.ControlText,
                         BackColor = Color.Beige,
-                        Font = new Font("System", 10, FontStyle.Bold), // Set the desired font and size
+                        Font = new Font("System", 12F, FontStyle.Bold), // Set the desired font and size
                     };
 #pragma warning restore CA1416 // Validate platform compatibility
 
@@ -583,7 +599,7 @@ namespace InventoryView
             }
         }
 
-        private void BtnWiki_Click(object sender, EventArgs e)
+        private void Wiki_Click(object sender, EventArgs e)
         {
             // Get the TreeView control on the currently selected tab page
             var tv = tabControl1.SelectedTab.Controls[0] as TreeView;
@@ -628,9 +644,9 @@ namespace InventoryView
         private static void OpenWikiPage(string text)
         {
             if (Class1.Host.InterfaceVersion == 4)
-                Class1.Host.SendText(string.Format("#browser https://elanthipedia.play.net/index.php?search={0}", Uri.EscapeDataString(Regex.Replace(text, @"\(\d+\)\s|\s\(closed\)|^(an?|some|several)\s", ""))));
+                Class1.Host.SendText(string.Format("#browser https://elanthipedia.play.net/index.php?search={0}", Uri.EscapeDataString(Regex.Replace(text, @"\(\d+\)\s|\s\(closed\)|^(an?|some|several)\s|^\d+\s--\s(an?|some|several)\s", ""))));
             else
-                Process.Start(new ProcessStartInfo(string.Format("https://elanthipedia.play.net/index.php?search={0}", Regex.Replace(text, @"\(\d+\)\s|\s\(closed\)|(^an?|some|several)\s", ""))) { UseShellExecute = true });
+                Process.Start(new ProcessStartInfo(string.Format("https://elanthipedia.play.net/index.php?search={0}", Regex.Replace(text, @"\(\d+\)\s|\s\(closed\)|(^an?|some|several)\s|^\d+\s--\s(an?|some|several)\s", ""))) { UseShellExecute = true });
         }
 
         private void BtnFindNext_Click(object sender, EventArgs e)
@@ -663,7 +679,7 @@ namespace InventoryView
             else
             {
                 // Reset the current match's background color
-                if (chkDarkMode.Checked)
+                if (toolStripDarkMode.Checked)
                     treeViewSearchMatches.CurrentMatch.BackColor = Color.LightBlue;
                 else
                     treeViewSearchMatches.CurrentMatch.BackColor = Color.Yellow;
@@ -709,14 +725,14 @@ namespace InventoryView
             {
                 // Ensure that the current match is visible and highlight it
                 treeViewSearchMatches.CurrentMatch.EnsureVisible();
-                if (chkDarkMode.Checked)
+                if (toolStripDarkMode.Checked)
                     treeViewSearchMatches.CurrentMatch.BackColor = Color.LightBlue;
                 else
                     treeViewSearchMatches.CurrentMatch.BackColor = Color.Yellow;
             }
         }
 
-        private void BtnScan_Click(object sender, EventArgs e)
+        private void Scan_Click(object sender, EventArgs e)
         {
             Class1.Host.SendText("/InventoryView scan");
             Close();
@@ -792,7 +808,7 @@ namespace InventoryView
             ResetSearchControls();
         }
 
-        private void BtnReload_Click(object sender, EventArgs e)
+        private void Reload_Click(object sender, EventArgs e)
         {
             // Reload the data
             ReloadData();
@@ -960,7 +976,7 @@ namespace InventoryView
             tv.SelectedNode = nodeAt;
         }
 
-        private void BtnExport_Click(object sender, EventArgs e)
+        private void Export_Click(object sender, EventArgs e)
         {
             SaveFileDialog saveFileDialog = new()
             {
@@ -1046,39 +1062,33 @@ namespace InventoryView
             public List<string> Path { get; set; } = new List<string>();
         }
 
-        public void ChkMultiLineTabs_CheckedChanged(object sender, EventArgs e)
+        public void MultiLineTabs_CheckedChanged(object sender, EventArgs e)
         {
-            tabControl1.Multiline = chkMultilineTabs.Checked;
-            chkMultilineTabs.Enabled = false;
+            tabControl1.Multiline = toolStripMultilineTabs.Checked;
+            toolStripMultilineTabs.Enabled = false;
             LoadSave.SaveSettings();
-            chkMultilineTabs.Enabled = true;
+            toolStripMultilineTabs.Enabled = true;
         }
 
-        public void ChkFamily_CheckedChanged(object sender, EventArgs e)
+        public void Family_CheckedChanged(object sender, EventArgs e)
         {
-            chkFamily.Enabled = false;
+            toolStripFamily.Enabled = false;
             LoadSave.SaveSettings();
-            chkFamily.Enabled = true;
+            toolStripFamily.Enabled = true;
+            if (toolStripFamily.Checked)
+                Class1.Host.EchoText("To use family vault, be inside the vault or have runners");
         }
 
-        public void ChkAlwaysTop_CheckedChanged(object sender, EventArgs e)
-        {
-            chkAlwaysTop.Enabled = false;
-            LoadSave.SaveSettings();
-            chkAlwaysTop.Enabled = true;
-            this.TopMost = chkAlwaysTop.Checked;
-        }
-
-        public void ChkDarkMode_CheckedChanged(object sender, EventArgs e)
+        public void DarkMode_CheckedChanged(object sender, EventArgs e)
         {
             // Define the color values for dark mode and light mode
-            Color darkModeForeColor = Color.White;
-            Color darkModeBackColor = Color.Black;
-            Color lightModeForeColor = Color.Black;
-            Color lightModeBackColor = Color.White;
+            Color darkModeForeColor = SystemColors.Control;
+            Color darkModeBackColor = SystemColors.ControlText;
+            Color lightModeForeColor = SystemColors.ControlText;
+            Color lightModeBackColor = SystemColors.Control;
 
             Color foreColor, backColor;
-            if (chkDarkMode.Checked)
+            if (toolStripDarkMode.Checked)
             {
                 foreColor = darkModeForeColor;
                 backColor = darkModeBackColor;
@@ -1093,6 +1103,7 @@ namespace InventoryView
             Control[] controlsToUpdate = new Control[]
             {
         this,
+        this.menuStrip,
         this.lblMatches,
         this.panel1,
         this.splitContainer1,
@@ -1128,6 +1139,24 @@ namespace InventoryView
                 UpdateNodeColors(tv.Nodes, foreColor, backColor);
             }
 
+            ToolStripItem[] toolStripItemsToUpdate = new ToolStripItem[]
+            {
+                optionsToolStripMenuItem,
+                commandsToolStripMenuItem,
+                toolStripDarkMode,
+                toolStripFamily,
+                toolStripMultilineTabs,
+                toolStripScan,
+                toolStripReload,
+                toolStripWiki,
+                toolStripExport
+            };
+
+            foreach (ToolStripItem toolStripItem in toolStripItemsToUpdate)
+            {
+                UpdateToolStripItemColors(toolStripItem, foreColor, backColor);
+            }
+
             LoadSave.SaveSettings();
         }
 
@@ -1138,8 +1167,8 @@ namespace InventoryView
                 if (node.BackColor == Color.LightBlue || node.BackColor == Color.Yellow)
                 {
                     // Set the ForeColor of matching nodes to black and the BackColor to LightBlue or Yellow
-                    node.ForeColor = Color.Black;
-                    node.BackColor = chkDarkMode.Checked ? Color.LightBlue : Color.Yellow;
+                    node.ForeColor = SystemColors.ControlText;
+                    node.BackColor = toolStripDarkMode.Checked ? Color.LightBlue : Color.Yellow;
                 }
                 else
                 {
@@ -1153,6 +1182,33 @@ namespace InventoryView
             }
         }
 
+        private static void UpdateToolStripItemColors(ToolStripItem toolStripItem, Color foreColor, Color backColor)
+        {
+            if (toolStripItem is ToolStripMenuItem menuItem)
+            {
+                menuItem.ForeColor = foreColor;
+                menuItem.BackColor = backColor;
+
+                // Update sub-menu items recursively
+                foreach (ToolStripItem subItem in menuItem.DropDownItems)
+                {
+                    UpdateToolStripItemColors(subItem, foreColor, backColor);
+                }
+            }
+            else
+            {
+                toolStripItem.ForeColor = foreColor;
+                toolStripItem.BackColor = backColor;
+            }
+        }
+
+        private void toolStripAlwaysTop_CheckedChanged(object sender, EventArgs e)
+        {
+            toolStripAlwaysTop.Enabled = false;
+            LoadSave.SaveSettings();
+            toolStripAlwaysTop.Enabled = true;
+            this.TopMost = toolStripAlwaysTop.Checked;
+        }
 
         protected override void Dispose(bool disposing)
         {
@@ -1161,6 +1217,7 @@ namespace InventoryView
             base.Dispose(disposing);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>")]
         private void InitializeComponent()
         {
             components = new Container();
@@ -1174,10 +1231,6 @@ namespace InventoryView
             lblMatches = new ListBox();
             tableLayoutPanel1 = new TableLayoutPanel();
             panel1 = new Panel();
-            chkAlwaysTop = new CheckBox();
-            chkFamily = new CheckBox();
-            chkDarkMode = new CheckBox();
-            chkMultilineTabs = new CheckBox();
             infolabel = new Label();
             cboCharacters = new ComboBox();
             btnRemoveCharacter = new Button();
@@ -1185,16 +1238,23 @@ namespace InventoryView
             txtSearch = new TextBox();
             lblFound = new Label();
             lblSearch = new Label();
-            btnSearch = new Button();
-            btnExport = new Button();
             btnExpand = new Button();
-            btnReload = new Button();
             btnCollapse = new Button();
-            btnScan = new Button();
-            btnWiki = new Button();
             btnFindNext = new Button();
             btnReset = new Button();
             splitContainer1 = new SplitContainer();
+            menuStrip = new MenuStrip();
+            optionsToolStripMenuItem = new ToolStripMenuItem();
+            toolStripDarkMode = new ToolStripMenuItem();
+            toolStripFamily = new ToolStripMenuItem();
+            toolStripMultilineTabs = new ToolStripMenuItem();
+            toolStripAlwaysTop = new ToolStripMenuItem();
+            commandsToolStripMenuItem = new ToolStripMenuItem();
+            toolStripScan = new ToolStripMenuItem();
+            toolStripReload = new ToolStripMenuItem();
+            toolStripWiki = new ToolStripMenuItem();
+            toolStripExport = new ToolStripMenuItem();
+            toolStripContainer1 = new ToolStripContainer();
             listBox_Menu.SuspendLayout();
             tableLayoutPanel1.SuspendLayout();
             panel1.SuspendLayout();
@@ -1202,16 +1262,21 @@ namespace InventoryView
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
             splitContainer1.SuspendLayout();
+            menuStrip.SuspendLayout();
+            toolStripContainer1.ContentPanel.SuspendLayout();
+            toolStripContainer1.TopToolStripPanel.SuspendLayout();
+            toolStripContainer1.SuspendLayout();
             SuspendLayout();
             // 
             // tv
             // 
-            tv.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            tv.Location = new Point(2, 2);
+            tv.BorderStyle = BorderStyle.None;
+            tv.Font = new Font("Segoe UI Semibold", 11.25F, FontStyle.Bold, GraphicsUnit.Point);
+            tv.Location = new Point(0, 0);
             tv.Margin = new Padding(4, 3, 4, 3);
             tv.Name = "tv";
             tv.ShowNodeToolTips = true;
-            tv.Size = new Size(5, 32);
+            tv.Size = new Size(11, 30);
             tv.TabIndex = 10;
             tv.Visible = false;
             tv.MouseUp += Tv_MouseUp;
@@ -1253,26 +1318,29 @@ namespace InventoryView
             // tabControl1
             // 
             tabControl1.Dock = DockStyle.Fill;
+            tabControl1.Font = new Font("Segoe UI Semibold", 9.75F, FontStyle.Bold, GraphicsUnit.Point);
             tabControl1.Location = new Point(0, 0);
             tabControl1.Margin = new Padding(4, 3, 4, 3);
             tabControl1.Name = "tabControl1";
             tabControl1.SelectedIndex = 0;
-            tabControl1.Size = new Size(654, 472);
+            tabControl1.Size = new Size(691, 271);
             tabControl1.TabIndex = 16;
             // 
             // lblMatches
             // 
             lblMatches.AllowDrop = true;
+            lblMatches.BackColor = SystemColors.Control;
             lblMatches.ContextMenuStrip = listBox_Menu;
             lblMatches.Dock = DockStyle.Fill;
+            lblMatches.Font = new Font("Segoe UI Semibold", 9.75F, FontStyle.Bold, GraphicsUnit.Point);
             lblMatches.FormattingEnabled = true;
             lblMatches.HorizontalScrollbar = true;
-            lblMatches.ItemHeight = 15;
+            lblMatches.ItemHeight = 17;
             lblMatches.Location = new Point(0, 0);
             lblMatches.Margin = new Padding(4, 3, 4, 3);
             lblMatches.Name = "lblMatches";
             lblMatches.SelectionMode = SelectionMode.MultiExtended;
-            lblMatches.Size = new Size(530, 472);
+            lblMatches.Size = new Size(691, 279);
             lblMatches.TabIndex = 17;
             lblMatches.MouseDoubleClick += LblMatches_MouseDoubleClick;
             lblMatches.MouseDown += LblMatches_MouseDown;
@@ -1280,6 +1348,7 @@ namespace InventoryView
             // tableLayoutPanel1
             // 
             tableLayoutPanel1.AutoSize = true;
+            tableLayoutPanel1.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             tableLayoutPanel1.ColumnCount = 1;
             tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle());
             tableLayoutPanel1.Controls.Add(panel1, 0, 0);
@@ -1289,17 +1358,15 @@ namespace InventoryView
             tableLayoutPanel1.Margin = new Padding(4, 3, 4, 3);
             tableLayoutPanel1.Name = "tableLayoutPanel1";
             tableLayoutPanel1.RowCount = 2;
-            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 74F));
-            tableLayoutPanel1.RowStyles.Add(new RowStyle());
-            tableLayoutPanel1.Size = new Size(1184, 552);
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 79F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
+            tableLayoutPanel1.Size = new Size(699, 641);
             tableLayoutPanel1.TabIndex = 18;
             // 
             // panel1
             // 
-            panel1.Controls.Add(chkAlwaysTop);
-            panel1.Controls.Add(chkFamily);
-            panel1.Controls.Add(chkDarkMode);
-            panel1.Controls.Add(chkMultilineTabs);
+            panel1.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             panel1.Controls.Add(infolabel);
             panel1.Controls.Add(cboCharacters);
             panel1.Controls.Add(btnRemoveCharacter);
@@ -1307,83 +1374,32 @@ namespace InventoryView
             panel1.Controls.Add(txtSearch);
             panel1.Controls.Add(lblFound);
             panel1.Controls.Add(lblSearch);
-            panel1.Controls.Add(btnSearch);
-            panel1.Controls.Add(btnExport);
             panel1.Controls.Add(btnExpand);
-            panel1.Controls.Add(btnReload);
             panel1.Controls.Add(btnCollapse);
-            panel1.Controls.Add(btnScan);
-            panel1.Controls.Add(btnWiki);
             panel1.Controls.Add(btnFindNext);
             panel1.Controls.Add(btnReset);
             panel1.Dock = DockStyle.Fill;
             panel1.Location = new Point(4, 3);
             panel1.Margin = new Padding(4, 3, 4, 3);
             panel1.Name = "panel1";
-            panel1.Size = new Size(1189, 68);
+            panel1.Size = new Size(691, 73);
             panel1.TabIndex = 0;
-            // 
-            // chkAlwaysTop
-            // 
-            chkAlwaysTop.AutoSize = true;
-            chkAlwaysTop.Location = new Point(388, 0);
-            chkAlwaysTop.Name = "chkAlwaysTop";
-            chkAlwaysTop.Size = new Size(85, 19);
-            chkAlwaysTop.TabIndex = 20;
-            chkAlwaysTop.Text = "Always Top";
-            chkAlwaysTop.UseVisualStyleBackColor = true;
-            chkAlwaysTop.CheckedChanged += ChkAlwaysTop_CheckedChanged;
-            // 
-            // chkFamily
-            // 
-            chkFamily.AutoSize = true;
-            chkFamily.Location = new Point(92, 0);
-            chkFamily.Margin = new Padding(4, 3, 4, 3);
-            chkFamily.Name = "chkFamily";
-            chkFamily.Size = new Size(292, 19);
-            chkFamily.TabIndex = 19;
-            chkFamily.Text = "Family Vault - Must have runners or be inside vault";
-            chkFamily.UseVisualStyleBackColor = true;
-            chkFamily.CheckedChanged += ChkFamily_CheckedChanged;
-            // 
-            // chkDarkMode
-            // 
-            chkDarkMode.AutoSize = true;
-            chkDarkMode.Location = new Point(2, 0);
-            chkDarkMode.Margin = new Padding(4, 3, 4, 3);
-            chkDarkMode.Name = "chkDarkMode";
-            chkDarkMode.Size = new Size(84, 19);
-            chkDarkMode.TabIndex = 18;
-            chkDarkMode.Text = "Dark Mode";
-            chkDarkMode.UseVisualStyleBackColor = true;
-            chkDarkMode.CheckedChanged += ChkDarkMode_CheckedChanged;
-            // 
-            // chkMultilineTabs
-            // 
-            chkMultilineTabs.AutoSize = true;
-            chkMultilineTabs.Location = new Point(2, 46);
-            chkMultilineTabs.Margin = new Padding(4, 3, 4, 3);
-            chkMultilineTabs.Name = "chkMultilineTabs";
-            chkMultilineTabs.Size = new Size(99, 19);
-            chkMultilineTabs.TabIndex = 17;
-            chkMultilineTabs.Text = "Multiline Tabs";
-            chkMultilineTabs.UseVisualStyleBackColor = true;
-            chkMultilineTabs.CheckedChanged += ChkMultiLineTabs_CheckedChanged;
             // 
             // infolabel
             // 
             infolabel.AutoSize = true;
-            infolabel.Location = new Point(117, 48);
+            infolabel.Font = new Font("Segoe UI", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
+            infolabel.Location = new Point(2, 51);
             infolabel.Margin = new Padding(4, 0, 4, 0);
             infolabel.Name = "infolabel";
-            infolabel.Size = new Size(222, 15);
+            infolabel.Size = new Size(245, 17);
             infolabel.TabIndex = 16;
-            infolabel.Text = "T = Total Item Count | M = Total Matches";
+            infolabel.Text = "T = Total Item Count  M = Total Matches";
             // 
             // cboCharacters
             // 
             cboCharacters.FormattingEnabled = true;
-            cboCharacters.Location = new Point(1066, 6);
+            cboCharacters.Location = new Point(561, 7);
             cboCharacters.Margin = new Padding(4, 3, 4, 3);
             cboCharacters.Name = "cboCharacters";
             cboCharacters.Size = new Size(109, 23);
@@ -1392,8 +1408,8 @@ namespace InventoryView
             // btnRemoveCharacter
             // 
             btnRemoveCharacter.AutoSize = true;
-            btnRemoveCharacter.ForeColor = Color.Black;
-            btnRemoveCharacter.Location = new Point(1066, 37);
+            btnRemoveCharacter.ForeColor = SystemColors.ControlText;
+            btnRemoveCharacter.Location = new Point(561, 38);
             btnRemoveCharacter.Margin = new Padding(4, 3, 4, 3);
             btnRemoveCharacter.Name = "btnRemoveCharacter";
             btnRemoveCharacter.Size = new Size(110, 29);
@@ -1405,8 +1421,8 @@ namespace InventoryView
             // btnFindPrev
             // 
             btnFindPrev.AutoSize = true;
-            btnFindPrev.ForeColor = Color.Black;
-            btnFindPrev.Location = new Point(475, 6);
+            btnFindPrev.ForeColor = SystemColors.ControlText;
+            btnFindPrev.Location = new Point(374, 7);
             btnFindPrev.Margin = new Padding(4, 3, 4, 3);
             btnFindPrev.Name = "btnFindPrev";
             btnFindPrev.Size = new Size(88, 29);
@@ -1418,63 +1434,39 @@ namespace InventoryView
             // 
             // txtSearch
             // 
-            txtSearch.Location = new Point(68, 22);
+            txtSearch.Location = new Point(47, 26);
             txtSearch.Margin = new Padding(4, 3, 4, 3);
             txtSearch.Name = "txtSearch";
-            txtSearch.Size = new Size(305, 23);
+            txtSearch.Size = new Size(266, 23);
             txtSearch.TabIndex = 1;
+            txtSearch.KeyDown += TxtSearch_KeyDown;
             // 
             // lblFound
             // 
             lblFound.AutoSize = true;
-            lblFound.Location = new Point(380, 48);
+            lblFound.Font = new Font("Segoe UI", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
+            lblFound.Location = new Point(261, 51);
             lblFound.Margin = new Padding(4, 0, 4, 0);
             lblFound.Name = "lblFound";
-            lblFound.Size = new Size(53, 15);
+            lblFound.Size = new Size(58, 17);
             lblFound.TabIndex = 0;
             lblFound.Text = "Found: 0";
             // 
             // lblSearch
             // 
             lblSearch.AutoSize = true;
-            lblSearch.Location = new Point(9, 25);
+            lblSearch.Location = new Point(2, 29);
             lblSearch.Margin = new Padding(4, 0, 4, 0);
             lblSearch.Name = "lblSearch";
             lblSearch.Size = new Size(45, 15);
             lblSearch.TabIndex = 0;
             lblSearch.Text = "Search:";
             // 
-            // btnSearch
-            // 
-            btnSearch.AutoSize = true;
-            btnSearch.ForeColor = Color.Black;
-            btnSearch.Location = new Point(380, 18);
-            btnSearch.Margin = new Padding(4, 3, 4, 3);
-            btnSearch.Name = "btnSearch";
-            btnSearch.Size = new Size(88, 29);
-            btnSearch.TabIndex = 2;
-            btnSearch.Text = "Search";
-            btnSearch.UseVisualStyleBackColor = true;
-            btnSearch.Click += BtnSearch_Click;
-            // 
-            // btnExport
-            // 
-            btnExport.AutoSize = true;
-            btnExport.ForeColor = Color.Black;
-            btnExport.Location = new Point(853, 22);
-            btnExport.Margin = new Padding(4, 3, 4, 3);
-            btnExport.Name = "btnExport";
-            btnExport.Size = new Size(88, 29);
-            btnExport.TabIndex = 13;
-            btnExport.Text = "Export";
-            btnExport.UseVisualStyleBackColor = true;
-            btnExport.Click += BtnExport_Click;
-            // 
             // btnExpand
             // 
             btnExpand.AutoSize = true;
-            btnExpand.ForeColor = Color.Black;
-            btnExpand.Location = new Point(664, 6);
+            btnExpand.ForeColor = SystemColors.ControlText;
+            btnExpand.Location = new Point(468, 7);
             btnExpand.Margin = new Padding(4, 3, 4, 3);
             btnExpand.Name = "btnExpand";
             btnExpand.Size = new Size(88, 29);
@@ -1483,24 +1475,12 @@ namespace InventoryView
             btnExpand.UseVisualStyleBackColor = true;
             btnExpand.Click += BtnExpand_Click;
             // 
-            // btnReload
-            // 
-            btnReload.AutoSize = true;
-            btnReload.ForeColor = Color.Black;
-            btnReload.Location = new Point(946, 37);
-            btnReload.Margin = new Padding(4, 3, 4, 3);
-            btnReload.Name = "btnReload";
-            btnReload.Size = new Size(113, 29);
-            btnReload.TabIndex = 12;
-            btnReload.Text = "Reload File";
-            btnReload.UseVisualStyleBackColor = true;
-            btnReload.Click += BtnReload_Click;
-            // 
             // btnCollapse
             // 
             btnCollapse.AutoSize = true;
-            btnCollapse.ForeColor = Color.Black;
-            btnCollapse.Location = new Point(664, 37);
+            btnCollapse.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            btnCollapse.ForeColor = SystemColors.ControlText;
+            btnCollapse.Location = new Point(468, 38);
             btnCollapse.Margin = new Padding(4, 3, 4, 3);
             btnCollapse.Name = "btnCollapse";
             btnCollapse.Size = new Size(92, 29);
@@ -1509,37 +1489,11 @@ namespace InventoryView
             btnCollapse.UseVisualStyleBackColor = true;
             btnCollapse.Click += BtnCollapse_Click;
             // 
-            // btnScan
-            // 
-            btnScan.AutoSize = true;
-            btnScan.ForeColor = Color.Black;
-            btnScan.Location = new Point(946, 6);
-            btnScan.Margin = new Padding(4, 3, 4, 3);
-            btnScan.Name = "btnScan";
-            btnScan.Size = new Size(113, 29);
-            btnScan.TabIndex = 11;
-            btnScan.Text = "Scan Inventory";
-            btnScan.UseVisualStyleBackColor = true;
-            btnScan.Click += BtnScan_Click;
-            // 
-            // btnWiki
-            // 
-            btnWiki.AutoSize = true;
-            btnWiki.ForeColor = Color.Black;
-            btnWiki.Location = new Point(758, 22);
-            btnWiki.Margin = new Padding(4, 3, 4, 3);
-            btnWiki.Name = "btnWiki";
-            btnWiki.Size = new Size(97, 29);
-            btnWiki.TabIndex = 8;
-            btnWiki.Text = "Wiki Lookup";
-            btnWiki.UseVisualStyleBackColor = true;
-            btnWiki.Click += BtnWiki_Click;
-            // 
             // btnFindNext
             // 
             btnFindNext.AutoSize = true;
-            btnFindNext.ForeColor = Color.Black;
-            btnFindNext.Location = new Point(475, 37);
+            btnFindNext.ForeColor = SystemColors.ControlText;
+            btnFindNext.Location = new Point(374, 38);
             btnFindNext.Margin = new Padding(4, 3, 4, 3);
             btnFindNext.Name = "btnFindNext";
             btnFindNext.Size = new Size(88, 29);
@@ -1552,11 +1506,11 @@ namespace InventoryView
             // btnReset
             // 
             btnReset.AutoSize = true;
-            btnReset.ForeColor = Color.Black;
-            btnReset.Location = new Point(569, 22);
+            btnReset.ForeColor = SystemColors.ControlText;
+            btnReset.Location = new Point(321, 22);
             btnReset.Margin = new Padding(4, 3, 4, 3);
             btnReset.Name = "btnReset";
-            btnReset.Size = new Size(88, 29);
+            btnReset.Size = new Size(47, 29);
             btnReset.TabIndex = 5;
             btnReset.Text = "Reset";
             btnReset.UseVisualStyleBackColor = true;
@@ -1566,32 +1520,158 @@ namespace InventoryView
             // splitContainer1
             // 
             splitContainer1.Dock = DockStyle.Fill;
-            splitContainer1.Location = new Point(4, 77);
+            splitContainer1.Location = new Point(4, 82);
             splitContainer1.Margin = new Padding(4, 3, 4, 3);
             splitContainer1.Name = "splitContainer1";
+            splitContainer1.Orientation = Orientation.Horizontal;
             // 
             // splitContainer1.Panel1
             // 
             splitContainer1.Panel1.Controls.Add(tabControl1);
+            splitContainer1.Panel1.Controls.Add(tv);
             // 
             // splitContainer1.Panel2
             // 
             splitContainer1.Panel2.Controls.Add(lblMatches);
-            splitContainer1.Size = new Size(1189, 472);
-            splitContainer1.SplitterDistance = 654;
-            splitContainer1.SplitterWidth = 5;
+            splitContainer1.Size = new Size(691, 556);
+            splitContainer1.SplitterDistance = 271;
+            splitContainer1.SplitterWidth = 6;
             splitContainer1.TabIndex = 19;
+            // 
+            // menuStrip
+            // 
+            menuStrip.BackColor = SystemColors.Control;
+            menuStrip.Dock = DockStyle.None;
+            menuStrip.GripMargin = new Padding(0);
+            menuStrip.Items.AddRange(new ToolStripItem[] { optionsToolStripMenuItem, commandsToolStripMenuItem });
+            menuStrip.LayoutStyle = ToolStripLayoutStyle.HorizontalStackWithOverflow;
+            menuStrip.Location = new Point(0, 0);
+            menuStrip.Name = "menuStrip";
+            menuStrip.Size = new Size(701, 24);
+            menuStrip.TabIndex = 19;
+            menuStrip.Text = "menuStrip1";
+            // 
+            // optionsToolStripMenuItem
+            // 
+            optionsToolStripMenuItem.BackColor = SystemColors.Control;
+            optionsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { toolStripDarkMode, toolStripFamily, toolStripMultilineTabs, toolStripAlwaysTop });
+            optionsToolStripMenuItem.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            optionsToolStripMenuItem.ForeColor = SystemColors.ControlText;
+            optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
+            optionsToolStripMenuItem.Size = new Size(61, 20);
+            optionsToolStripMenuItem.Text = "Options";
+            // 
+            // toolStripDarkMode
+            // 
+            toolStripDarkMode.BackColor = SystemColors.Control;
+            toolStripDarkMode.CheckOnClick = true;
+            toolStripDarkMode.ForeColor = SystemColors.ControlText;
+            toolStripDarkMode.Name = "toolStripDarkMode";
+            toolStripDarkMode.Size = new Size(180, 22);
+            toolStripDarkMode.Text = "Dark Mode";
+            toolStripDarkMode.CheckedChanged += DarkMode_CheckedChanged;
+            // 
+            // toolStripFamily
+            // 
+            toolStripFamily.BackColor = SystemColors.Control;
+            toolStripFamily.CheckOnClick = true;
+            toolStripFamily.ForeColor = SystemColors.ControlText;
+            toolStripFamily.Name = "toolStripFamily";
+            toolStripFamily.Size = new Size(180, 22);
+            toolStripFamily.Text = "Family Vault";
+            toolStripFamily.CheckedChanged += Family_CheckedChanged;
+            // 
+            // toolStripMultilineTabs
+            // 
+            toolStripMultilineTabs.BackColor = SystemColors.Control;
+            toolStripMultilineTabs.CheckOnClick = true;
+            toolStripMultilineTabs.ForeColor = SystemColors.ControlText;
+            toolStripMultilineTabs.Name = "toolStripMultilineTabs";
+            toolStripMultilineTabs.Size = new Size(180, 22);
+            toolStripMultilineTabs.Text = "Multiline Tabs";
+            toolStripMultilineTabs.CheckedChanged += MultiLineTabs_CheckedChanged;
+            // 
+            // toolStripAlwaysTop
+            // 
+            toolStripAlwaysTop.CheckOnClick = true;
+            toolStripAlwaysTop.Name = "toolStripAlwaysTop";
+            toolStripAlwaysTop.Size = new Size(180, 22);
+            toolStripAlwaysTop.Text = "Always On top";
+            toolStripAlwaysTop.CheckedChanged += toolStripAlwaysTop_CheckedChanged;
+            // 
+            // commandsToolStripMenuItem
+            // 
+            commandsToolStripMenuItem.BackColor = SystemColors.Control;
+            commandsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { toolStripScan, toolStripReload, toolStripWiki, toolStripExport });
+            commandsToolStripMenuItem.ForeColor = SystemColors.ControlText;
+            commandsToolStripMenuItem.Name = "commandsToolStripMenuItem";
+            commandsToolStripMenuItem.Size = new Size(81, 20);
+            commandsToolStripMenuItem.Text = "Commands";
+            // 
+            // toolStripScan
+            // 
+            toolStripScan.BackColor = SystemColors.Control;
+            toolStripScan.ForeColor = SystemColors.ControlText;
+            toolStripScan.Name = "toolStripScan";
+            toolStripScan.Size = new Size(153, 22);
+            toolStripScan.Text = "Scan Character";
+            toolStripScan.Click += Scan_Click;
+            // 
+            // toolStripReload
+            // 
+            toolStripReload.BackColor = SystemColors.Control;
+            toolStripReload.ForeColor = SystemColors.ControlText;
+            toolStripReload.Name = "toolStripReload";
+            toolStripReload.Size = new Size(153, 22);
+            toolStripReload.Text = "Reload File";
+            toolStripReload.Click += Reload_Click;
+            // 
+            // toolStripWiki
+            // 
+            toolStripWiki.BackColor = SystemColors.Control;
+            toolStripWiki.ForeColor = SystemColors.ControlText;
+            toolStripWiki.Name = "toolStripWiki";
+            toolStripWiki.Size = new Size(153, 22);
+            toolStripWiki.Text = "Wiki Lookup";
+            toolStripWiki.Click += Wiki_Click;
+            // 
+            // toolStripExport
+            // 
+            toolStripExport.Name = "toolStripExport";
+            toolStripExport.Size = new Size(153, 22);
+            toolStripExport.Text = "Export";
+            toolStripExport.Click += Export_Click;
+            // 
+            // toolStripContainer1
+            // 
+            // 
+            // toolStripContainer1.ContentPanel
+            // 
+            toolStripContainer1.ContentPanel.BorderStyle = BorderStyle.FixedSingle;
+            toolStripContainer1.ContentPanel.Controls.Add(tableLayoutPanel1);
+            toolStripContainer1.ContentPanel.Size = new Size(701, 643);
+            toolStripContainer1.Dock = DockStyle.Fill;
+            toolStripContainer1.Location = new Point(0, 0);
+            toolStripContainer1.Name = "toolStripContainer1";
+            toolStripContainer1.Size = new Size(701, 667);
+            toolStripContainer1.TabIndex = 19;
+            toolStripContainer1.Text = "toolStripContainer1";
+            // 
+            // toolStripContainer1.TopToolStripPanel
+            // 
+            toolStripContainer1.TopToolStripPanel.Controls.Add(menuStrip);
             // 
             // InventoryViewForm
             // 
-            AcceptButton = btnSearch;
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             AutoSize = true;
-            ClientSize = new Size(1184, 552);
-            Controls.Add(tableLayoutPanel1);
-            Controls.Add(tv);
+            AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            ClientSize = new Size(701, 667);
+            Controls.Add(toolStripContainer1);
+            MainMenuStrip = menuStrip;
             Margin = new Padding(4, 3, 4, 3);
+            MinimumSize = new Size(711, 693);
             Name = "InventoryViewForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Inventory View";
@@ -1605,8 +1685,15 @@ namespace InventoryView
             splitContainer1.Panel2.ResumeLayout(false);
             ((ISupportInitialize)splitContainer1).EndInit();
             splitContainer1.ResumeLayout(false);
+            menuStrip.ResumeLayout(false);
+            menuStrip.PerformLayout();
+            toolStripContainer1.ContentPanel.ResumeLayout(false);
+            toolStripContainer1.ContentPanel.PerformLayout();
+            toolStripContainer1.TopToolStripPanel.ResumeLayout(false);
+            toolStripContainer1.TopToolStripPanel.PerformLayout();
+            toolStripContainer1.ResumeLayout(false);
+            toolStripContainer1.PerformLayout();
             ResumeLayout(false);
-            PerformLayout();
         }
     }
 }
