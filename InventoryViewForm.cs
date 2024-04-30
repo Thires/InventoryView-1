@@ -54,6 +54,7 @@ namespace InventoryView
         internal CheckBox chkFamily;
         private static string basePath = Application.StartupPath;
         internal CheckBox chkAlwaysTop;
+        private Button button1;
         private readonly Dictionary<string, List<MatchedItemInfo>> matchedItemsDictionary = new();
 
         public InventoryViewForm()
@@ -1001,6 +1002,48 @@ namespace InventoryView
             _ = (int)MessageBox.Show("Export Complete.");
         }
 
+        private void BtnExportAll_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog saveFileDialog = new()
+            {
+                Filter = "CSV file|*.csv",
+                Title = "Save the CSV file"
+            };
+            _ = (int)saveFileDialog.ShowDialog();
+            if (!(saveFileDialog.FileName != ""))
+                return;
+            using (StreamWriter text = File.CreateText(saveFileDialog.FileName))
+            {
+                text.WriteLine("Character,Tap,Path");
+
+                // Iterate through each tab page
+                foreach (TabPage tabPage in tabControl1.TabPages)
+                {
+                    // Get the TreeView control on the current tab page
+                    var tv = tabPage.Controls[0] as TreeView;
+
+                    // Add the TreeView's data to the list
+                    List<InventoryViewForm.ExportData> list = new();
+                    ExportBranch(tv.Nodes, list, 1);
+
+                    // Write data from the current tab page to the CSV file
+                    foreach (InventoryViewForm.ExportData exportData in list)
+                    {
+                        if (exportData.Path.Count >= 1)
+                        {
+                            if (exportData.Path.Count == 3)
+                            {
+                                if (((IEnumerable<string>)new string[2] { "Vault", "Home" }).Contains<string>(exportData.Path[1]))
+                                    continue;
+                            }
+                            text.WriteLine(string.Format("{0},{1},{2}", (object)CleanCSV(exportData.Character), (object)CleanCSV(exportData.Tap), (object)CleanCSV(string.Join("\\", (IEnumerable<string>)exportData.Path))));
+                        }
+                    }
+                }
+            }
+            _ = (int)MessageBox.Show("Export Complete.");
+        }
+
         private static string CleanCSV(string data)
         {
             if (!data.Contains(','))
@@ -1195,6 +1238,7 @@ namespace InventoryView
             btnFindNext = new Button();
             btnReset = new Button();
             splitContainer1 = new SplitContainer();
+            button1 = new Button();
             listBox_Menu.SuspendLayout();
             tableLayoutPanel1.SuspendLayout();
             panel1.SuspendLayout();
@@ -1296,6 +1340,7 @@ namespace InventoryView
             // 
             // panel1
             // 
+            panel1.Controls.Add(button1);
             panel1.Controls.Add(chkAlwaysTop);
             panel1.Controls.Add(chkFamily);
             panel1.Controls.Add(chkDarkMode);
@@ -1461,12 +1506,12 @@ namespace InventoryView
             // 
             btnExport.AutoSize = true;
             btnExport.ForeColor = Color.Black;
-            btnExport.Location = new Point(853, 22);
+            btnExport.Location = new Point(853, 6);
             btnExport.Margin = new Padding(4, 3, 4, 3);
             btnExport.Name = "btnExport";
-            btnExport.Size = new Size(88, 29);
+            btnExport.Size = new Size(94, 29);
             btnExport.TabIndex = 13;
-            btnExport.Text = "Export";
+            btnExport.Text = "Export Current";
             btnExport.UseVisualStyleBackColor = true;
             btnExport.Click += BtnExport_Click;
             // 
@@ -1581,6 +1626,19 @@ namespace InventoryView
             splitContainer1.SplitterDistance = 654;
             splitContainer1.SplitterWidth = 5;
             splitContainer1.TabIndex = 19;
+            // 
+            // button1
+            // 
+            button1.AutoSize = true;
+            button1.ForeColor = Color.Black;
+            button1.Location = new Point(853, 37);
+            button1.Margin = new Padding(4, 3, 4, 3);
+            button1.Name = "button1";
+            button1.Size = new Size(88, 29);
+            button1.TabIndex = 21;
+            button1.Text = "Export All";
+            button1.UseVisualStyleBackColor = true;
+            button1.Click += BtnExportAll_Click;
             // 
             // InventoryViewForm
             // 
