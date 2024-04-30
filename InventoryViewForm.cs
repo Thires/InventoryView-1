@@ -67,6 +67,7 @@ namespace InventoryView
         private static string basePath = Application.StartupPath;
         private ToolStripContainer toolStripContainer1;
         internal ToolStripMenuItem toolStripAlwaysTop;
+        private ToolStripMenuItem toolStripMenuItem1;
         private readonly Dictionary<string, List<MatchedItemInfo>> matchedItemsDictionary = new();
 
         public InventoryViewForm()
@@ -1017,6 +1018,48 @@ namespace InventoryView
             _ = (int)MessageBox.Show("Export Complete.");
         }
 
+        private void ExportAll_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog saveFileDialog = new()
+            {
+                Filter = "CSV file|*.csv",
+                Title = "Save the CSV file"
+            };
+            _ = (int)saveFileDialog.ShowDialog();
+            if (!(saveFileDialog.FileName != ""))
+                return;
+            using (StreamWriter text = File.CreateText(saveFileDialog.FileName))
+            {
+                text.WriteLine("Character,Tap,Path");
+
+                // Iterate through each tab page
+                foreach (TabPage tabPage in tabControl1.TabPages)
+                {
+                    // Get the TreeView control on the current tab page
+                    var tv = tabPage.Controls[0] as TreeView;
+
+                    // Add the TreeView's data to the list
+                    List<InventoryViewForm.ExportData> list = new();
+                    ExportBranch(tv.Nodes, list, 1);
+
+                    // Write data from the current tab page to the CSV file
+                    foreach (InventoryViewForm.ExportData exportData in list)
+                    {
+                        if (exportData.Path.Count >= 1)
+                        {
+                            if (exportData.Path.Count == 3)
+                            {
+                                if (((IEnumerable<string>)new string[2] { "Vault", "Home" }).Contains<string>(exportData.Path[1]))
+                                    continue;
+                            }
+                            text.WriteLine(string.Format("{0},{1},{2}", (object)CleanCSV(exportData.Character), (object)CleanCSV(exportData.Tap), (object)CleanCSV(string.Join("\\", (IEnumerable<string>)exportData.Path))));
+                        }
+                    }
+                }
+            }
+            _ = (int)MessageBox.Show("Export Complete.");
+        }
+
         private static string CleanCSV(string data)
         {
             if (!data.Contains(','))
@@ -1255,6 +1298,7 @@ namespace InventoryView
             toolStripWiki = new ToolStripMenuItem();
             toolStripExport = new ToolStripMenuItem();
             toolStripContainer1 = new ToolStripContainer();
+            toolStripMenuItem1 = new ToolStripMenuItem();
             listBox_Menu.SuspendLayout();
             tableLayoutPanel1.SuspendLayout();
             panel1.SuspendLayout();
@@ -1567,7 +1611,7 @@ namespace InventoryView
             toolStripDarkMode.CheckOnClick = true;
             toolStripDarkMode.ForeColor = SystemColors.ControlText;
             toolStripDarkMode.Name = "toolStripDarkMode";
-            toolStripDarkMode.Size = new Size(180, 22);
+            toolStripDarkMode.Size = new Size(151, 22);
             toolStripDarkMode.Text = "Dark Mode";
             toolStripDarkMode.CheckedChanged += DarkMode_CheckedChanged;
             // 
@@ -1577,7 +1621,7 @@ namespace InventoryView
             toolStripFamily.CheckOnClick = true;
             toolStripFamily.ForeColor = SystemColors.ControlText;
             toolStripFamily.Name = "toolStripFamily";
-            toolStripFamily.Size = new Size(180, 22);
+            toolStripFamily.Size = new Size(151, 22);
             toolStripFamily.Text = "Family Vault";
             toolStripFamily.CheckedChanged += Family_CheckedChanged;
             // 
@@ -1587,7 +1631,7 @@ namespace InventoryView
             toolStripMultilineTabs.CheckOnClick = true;
             toolStripMultilineTabs.ForeColor = SystemColors.ControlText;
             toolStripMultilineTabs.Name = "toolStripMultilineTabs";
-            toolStripMultilineTabs.Size = new Size(180, 22);
+            toolStripMultilineTabs.Size = new Size(151, 22);
             toolStripMultilineTabs.Text = "Multiline Tabs";
             toolStripMultilineTabs.CheckedChanged += MultiLineTabs_CheckedChanged;
             // 
@@ -1595,14 +1639,14 @@ namespace InventoryView
             // 
             toolStripAlwaysTop.CheckOnClick = true;
             toolStripAlwaysTop.Name = "toolStripAlwaysTop";
-            toolStripAlwaysTop.Size = new Size(180, 22);
+            toolStripAlwaysTop.Size = new Size(151, 22);
             toolStripAlwaysTop.Text = "Always On top";
             toolStripAlwaysTop.CheckedChanged += toolStripAlwaysTop_CheckedChanged;
             // 
             // commandsToolStripMenuItem
             // 
             commandsToolStripMenuItem.BackColor = SystemColors.Control;
-            commandsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { toolStripScan, toolStripReload, toolStripWiki, toolStripExport });
+            commandsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { toolStripScan, toolStripReload, toolStripWiki, toolStripExport, toolStripMenuItem1 });
             commandsToolStripMenuItem.ForeColor = SystemColors.ControlText;
             commandsToolStripMenuItem.Name = "commandsToolStripMenuItem";
             commandsToolStripMenuItem.Size = new Size(81, 20);
@@ -1613,7 +1657,7 @@ namespace InventoryView
             toolStripScan.BackColor = SystemColors.Control;
             toolStripScan.ForeColor = SystemColors.ControlText;
             toolStripScan.Name = "toolStripScan";
-            toolStripScan.Size = new Size(153, 22);
+            toolStripScan.Size = new Size(180, 22);
             toolStripScan.Text = "Scan Character";
             toolStripScan.Click += Scan_Click;
             // 
@@ -1622,7 +1666,7 @@ namespace InventoryView
             toolStripReload.BackColor = SystemColors.Control;
             toolStripReload.ForeColor = SystemColors.ControlText;
             toolStripReload.Name = "toolStripReload";
-            toolStripReload.Size = new Size(153, 22);
+            toolStripReload.Size = new Size(180, 22);
             toolStripReload.Text = "Reload File";
             toolStripReload.Click += Reload_Click;
             // 
@@ -1631,15 +1675,15 @@ namespace InventoryView
             toolStripWiki.BackColor = SystemColors.Control;
             toolStripWiki.ForeColor = SystemColors.ControlText;
             toolStripWiki.Name = "toolStripWiki";
-            toolStripWiki.Size = new Size(153, 22);
+            toolStripWiki.Size = new Size(180, 22);
             toolStripWiki.Text = "Wiki Lookup";
             toolStripWiki.Click += Wiki_Click;
             // 
             // toolStripExport
             // 
             toolStripExport.Name = "toolStripExport";
-            toolStripExport.Size = new Size(153, 22);
-            toolStripExport.Text = "Export";
+            toolStripExport.Size = new Size(180, 22);
+            toolStripExport.Text = "Export Current";
             toolStripExport.Click += Export_Click;
             // 
             // toolStripContainer1
@@ -1660,6 +1704,13 @@ namespace InventoryView
             // toolStripContainer1.TopToolStripPanel
             // 
             toolStripContainer1.TopToolStripPanel.Controls.Add(menuStrip);
+            // 
+            // toolStripMenuItem1
+            // 
+            toolStripMenuItem1.Name = "toolStripMenuItem1";
+            toolStripMenuItem1.Size = new Size(180, 22);
+            toolStripMenuItem1.Text = "Export All";
+            toolStripMenuItem1.Click += ExportAll_Click;
             // 
             // InventoryViewForm
             // 
