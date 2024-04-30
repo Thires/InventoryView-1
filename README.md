@@ -1,4 +1,4 @@
-![image](https://github.com/Thires/InventoryView-1/assets/28072996/d1157e37-da27-4813-8772-85c3bf60c4d1)
+![image](https://github.com/Thires/InventoryView-1/assets/28072996/8f879543-875c-4562-a738-ad4a947bda04)
 
 ![image](https://github.com/Thires/InventoryView-1/assets/28072996/6c7c23c3-3a91-44cc-b735-007ac6f55861)
 
