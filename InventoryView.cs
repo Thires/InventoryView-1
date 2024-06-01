@@ -1127,6 +1127,7 @@ namespace InventoryView
                 "^A Dwarven attendant steps in front of you, barring your path\\.  \"Wait a bit, \\S+\\.  You were just in there not too long ago\\.\"",
                 "^The script that the vault book is written in is unfamiliar to you\\.  You are unable to read it\\.",
                 "^The storage book is filled with complex lists of inventory that make little sense to you\\.",
+                "^The vault book is filled with blank pages pre-printed with branch office letterhead\\.",
                 "^This storage book doesn't seem to belong to you\\.",
                 "^You can't access [A-z ]+ vault at this time[A-z \\.]+",
                 "^You currently do not have access to VAULT STANDARD or VAULT FAMILY\\.  You will need to use VAULT PAY CONVERT to convert an urchin runner for this purpose\\.",
@@ -1254,7 +1255,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.2.22"; }
+            get { return "2.2.23"; }
         }
 
         public string Description

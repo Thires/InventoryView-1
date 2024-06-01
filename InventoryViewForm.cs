@@ -492,14 +492,14 @@ namespace InventoryView
                     customTooltip = new Form
                     {
                         // Set the form's properties
-                        FormBorderStyle = FormBorderStyle.Fixed3D, // Remove title bar
+                        FormBorderStyle = FormBorderStyle.FixedSingle,
                         MaximizeBox = false,
                         MinimizeBox = false,
                         ControlBox = false,
                         AutoScroll = true,
                         AutoSize = true,
                         AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                        MaximumSize = new Size(int.MaxValue, 420),
+                        //MaximumSize = new Size(int.MaxValue, 420),
                         TopMost = true // Keep the form on top of all other windows
                     };
 
@@ -528,7 +528,7 @@ namespace InventoryView
 
                     // Calculate the tooltip position near the click location
                     Point screenClickLocation = listBox.PointToScreen(e.Location);
-                    customTooltip.StartPosition = FormStartPosition.Manual;
+                    customTooltip.StartPosition = FormStartPosition.CenterParent;
                     customTooltip.Location = new Point(screenClickLocation.X + 10, screenClickLocation.Y + 10);
                     customTooltip.Show();
                 }
