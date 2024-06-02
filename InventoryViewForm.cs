@@ -508,14 +508,14 @@ namespace InventoryView
                     customTooltip = new Form
                     {
                         // Set the form's properties
-                        FormBorderStyle = FormBorderStyle.Fixed3D, // Remove title bar
+                        FormBorderStyle = FormBorderStyle.FixedSingle,
                         MaximizeBox = false,
                         MinimizeBox = false,
                         ControlBox = false,
                         AutoScroll = true,
                         AutoSize = true,
                         AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                        MaximumSize = new Size(int.MaxValue, 420),
+                        //MaximumSize = new Size(int.MaxValue, 420),
                         TopMost = true // Keep the form on top of all other windows
                     };
 
@@ -525,9 +525,9 @@ namespace InventoryView
                     {
                         AutoSize = true,
                         Text = string.Join(Environment.NewLine + Environment.NewLine, matchedItems.Select(item => FormatPath(item.FullPath))),
-                        ForeColor = SystemColors.ControlText,
+                        ForeColor = Color.Black,
                         BackColor = Color.Beige,
-                        Font = new Font("System", 12F, FontStyle.Bold), // Set the desired font and size
+                        Font = new Font("System", 10, FontStyle.Bold), // Set the desired font and size
                     };
 #pragma warning restore CA1416 // Validate platform compatibility
 
@@ -544,7 +544,7 @@ namespace InventoryView
 
                     // Calculate the tooltip position near the click location
                     Point screenClickLocation = listBox.PointToScreen(e.Location);
-                    customTooltip.StartPosition = FormStartPosition.Manual;
+                    customTooltip.StartPosition = FormStartPosition.CenterParent;
                     customTooltip.Location = new Point(screenClickLocation.X + 10, screenClickLocation.Y + 10);
                     customTooltip.Show();
                 }
@@ -1297,8 +1297,8 @@ namespace InventoryView
             toolStripReload = new ToolStripMenuItem();
             toolStripWiki = new ToolStripMenuItem();
             toolStripExport = new ToolStripMenuItem();
-            toolStripContainer1 = new ToolStripContainer();
             toolStripMenuItem1 = new ToolStripMenuItem();
+            toolStripContainer1 = new ToolStripContainer();
             listBox_Menu.SuspendLayout();
             tableLayoutPanel1.SuspendLayout();
             panel1.SuspendLayout();
@@ -1443,7 +1443,7 @@ namespace InventoryView
             // cboCharacters
             // 
             cboCharacters.FormattingEnabled = true;
-            cboCharacters.Location = new Point(561, 7);
+            cboCharacters.Location = new Point(573, 7);
             cboCharacters.Margin = new Padding(4, 3, 4, 3);
             cboCharacters.Name = "cboCharacters";
             cboCharacters.Size = new Size(109, 23);
@@ -1453,7 +1453,7 @@ namespace InventoryView
             // 
             btnRemoveCharacter.AutoSize = true;
             btnRemoveCharacter.ForeColor = SystemColors.ControlText;
-            btnRemoveCharacter.Location = new Point(561, 38);
+            btnRemoveCharacter.Location = new Point(573, 38);
             btnRemoveCharacter.Margin = new Padding(4, 3, 4, 3);
             btnRemoveCharacter.Name = "btnRemoveCharacter";
             btnRemoveCharacter.Size = new Size(110, 29);
@@ -1466,7 +1466,7 @@ namespace InventoryView
             // 
             btnFindPrev.AutoSize = true;
             btnFindPrev.ForeColor = SystemColors.ControlText;
-            btnFindPrev.Location = new Point(374, 7);
+            btnFindPrev.Location = new Point(383, 7);
             btnFindPrev.Margin = new Padding(4, 3, 4, 3);
             btnFindPrev.Name = "btnFindPrev";
             btnFindPrev.Size = new Size(88, 29);
@@ -1510,7 +1510,7 @@ namespace InventoryView
             // 
             btnExpand.AutoSize = true;
             btnExpand.ForeColor = SystemColors.ControlText;
-            btnExpand.Location = new Point(468, 7);
+            btnExpand.Location = new Point(477, 7);
             btnExpand.Margin = new Padding(4, 3, 4, 3);
             btnExpand.Name = "btnExpand";
             btnExpand.Size = new Size(88, 29);
@@ -1524,10 +1524,10 @@ namespace InventoryView
             btnCollapse.AutoSize = true;
             btnCollapse.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
             btnCollapse.ForeColor = SystemColors.ControlText;
-            btnCollapse.Location = new Point(468, 38);
+            btnCollapse.Location = new Point(477, 38);
             btnCollapse.Margin = new Padding(4, 3, 4, 3);
             btnCollapse.Name = "btnCollapse";
-            btnCollapse.Size = new Size(92, 29);
+            btnCollapse.Size = new Size(88, 29);
             btnCollapse.TabIndex = 7;
             btnCollapse.Text = "Collapse All";
             btnCollapse.UseVisualStyleBackColor = true;
@@ -1537,7 +1537,7 @@ namespace InventoryView
             // 
             btnFindNext.AutoSize = true;
             btnFindNext.ForeColor = SystemColors.ControlText;
-            btnFindNext.Location = new Point(374, 38);
+            btnFindNext.Location = new Point(383, 38);
             btnFindNext.Margin = new Padding(4, 3, 4, 3);
             btnFindNext.Name = "btnFindNext";
             btnFindNext.Size = new Size(88, 29);
@@ -1551,7 +1551,7 @@ namespace InventoryView
             // 
             btnReset.AutoSize = true;
             btnReset.ForeColor = SystemColors.ControlText;
-            btnReset.Location = new Point(321, 22);
+            btnReset.Location = new Point(330, 22);
             btnReset.Margin = new Padding(4, 3, 4, 3);
             btnReset.Name = "btnReset";
             btnReset.Size = new Size(47, 29);
@@ -1657,7 +1657,7 @@ namespace InventoryView
             toolStripScan.BackColor = SystemColors.Control;
             toolStripScan.ForeColor = SystemColors.ControlText;
             toolStripScan.Name = "toolStripScan";
-            toolStripScan.Size = new Size(180, 22);
+            toolStripScan.Size = new Size(153, 22);
             toolStripScan.Text = "Scan Character";
             toolStripScan.Click += Scan_Click;
             // 
@@ -1666,7 +1666,7 @@ namespace InventoryView
             toolStripReload.BackColor = SystemColors.Control;
             toolStripReload.ForeColor = SystemColors.ControlText;
             toolStripReload.Name = "toolStripReload";
-            toolStripReload.Size = new Size(180, 22);
+            toolStripReload.Size = new Size(153, 22);
             toolStripReload.Text = "Reload File";
             toolStripReload.Click += Reload_Click;
             // 
@@ -1675,16 +1675,23 @@ namespace InventoryView
             toolStripWiki.BackColor = SystemColors.Control;
             toolStripWiki.ForeColor = SystemColors.ControlText;
             toolStripWiki.Name = "toolStripWiki";
-            toolStripWiki.Size = new Size(180, 22);
+            toolStripWiki.Size = new Size(153, 22);
             toolStripWiki.Text = "Wiki Lookup";
             toolStripWiki.Click += Wiki_Click;
             // 
             // toolStripExport
             // 
             toolStripExport.Name = "toolStripExport";
-            toolStripExport.Size = new Size(180, 22);
+            toolStripExport.Size = new Size(153, 22);
             toolStripExport.Text = "Export Current";
             toolStripExport.Click += Export_Click;
+            // 
+            // toolStripMenuItem1
+            // 
+            toolStripMenuItem1.Name = "toolStripMenuItem1";
+            toolStripMenuItem1.Size = new Size(153, 22);
+            toolStripMenuItem1.Text = "Export All";
+            toolStripMenuItem1.Click += ExportAll_Click;
             // 
             // toolStripContainer1
             // 
@@ -1704,13 +1711,6 @@ namespace InventoryView
             // toolStripContainer1.TopToolStripPanel
             // 
             toolStripContainer1.TopToolStripPanel.Controls.Add(menuStrip);
-            // 
-            // toolStripMenuItem1
-            // 
-            toolStripMenuItem1.Name = "toolStripMenuItem1";
-            toolStripMenuItem1.Size = new Size(180, 22);
-            toolStripMenuItem1.Text = "Export All";
-            toolStripMenuItem1.Click += ExportAll_Click;
             // 
             // InventoryViewForm
             // 

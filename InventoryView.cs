@@ -733,105 +733,17 @@ namespace InventoryView
                         else if (trimtext.StartsWith("Your documentation filed with the Estate Holders"))
                         {
                             Host.EchoText("Skipping Home.");
-
-                            switch (guild)
-                            {
-                                case "Trader":
-                                    ScanMode = "TraderStart";
-                                    Host.SendText("get my storage book");
-                                    break;
-
-                                case "Moon Mage":
-                                    string shadow = Host.get_Variable("roomobjs");
-                                    if (shadow.Contains("Shadow Servant"))
-                                    {
-                                        Host.SendText("prep pg 5");
-                                        ScanMode = "MoonMageStart";
-                                    }
-                                    else
-                                    {
-                                        ScanMode = null;
-                                        Host.EchoText("Scan Complete.");
-                                        Host.SendText("#parse InventoryView scan complete");
-                                        LoadSave.SaveSettings();
-                                    }
-                                    break;
-
-                                default:
-                                    ScanMode = null;
-                                    Host.EchoText("Scan Complete.");
-                                    Host.SendText("#parse InventoryView scan complete");
-                                    LoadSave.SaveSettings();
-                                    break;
-                            }
+                            GuildCheck(trimtext);
                         }
                         else if (IsDenied(trimtext))
                         {
-                            switch (guild)
-                            {
-                                case "Trader":
-                                    ScanMode = "TraderStart";
-                                    Host.SendText("get my storage book");
-                                    break;
-
-                                case "Moon Mage":
-                                    string shadow = Host.get_Variable("roomobjs");
-                                    if (shadow.Contains("Shadow Servant"))
-                                    {
-                                        ScanMode = "MoonMageStart";
-                                        Host.SendText("prep pg 5");
-                                    }
-                                    else
-                                    {
-                                        ScanMode = null;
-                                        Host.EchoText("Scan Complete.");
-                                        Host.SendText("#parse InventoryView scan complete");
-                                        LoadSave.SaveSettings();
-                                    }
-                                    break;
-
-                                default:
-                                    ScanMode = null;
-                                    Host.EchoText("Scan Complete.");
-                                    Host.SendText("#parse InventoryView scan complete");
-                                    LoadSave.SaveSettings();
-                                    break;
-                            }
+                            GuildCheck(trimtext);
                         }
                         break; //end of HomeStart
                     case "Home":
-                        if (Regex.IsMatch(trimtext, @"\^[^>]*>|[^>]*\>|>|\^\>")) // There is no text after the home list, so watch for the next >
+                        if (Regex.IsMatch(trimtext, @"\^[^>]*>|[^>]*\>|>|\^\>|^Roundtime:")) // There is no text after the home list, so watch for the next >
                         {
-                            switch (guild)
-                            {
-                                case "Trader":
-                                    ScanMode = "TraderStart";
-                                    Host.SendText("get my storage book");
-                                    break;
-
-                                case "Moon Mage":
-                                    string shadow = Host.get_Variable("roomobjs"); 
-                                    if (shadow.Contains("Shadow Servant"))
-                                    {
-                                        ScanMode = "MoonMageStart";
-                                        Host.SendText("prep pg 5");
-                                    }
-                                    else 
-                                    {
-                                        ScanMode = null;
-                                        Host.EchoText("Scan Complete.");
-                                        Host.SendText("#parse InventoryView scan complete");
-                                        LoadSave.SaveSettings(); 
-                                    }
-                                    break;
-
-                                default:
-                                    ScanMode = null;
-                                    Host.EchoText("Scan Complete.");
-                                    Host.SendText("#parse InventoryView scan complete");
-                                    LoadSave.SaveSettings();
-                                    break;
-                            }
+                            GuildCheck(trimtext);
                         }
                         else if (trimtext.StartsWith("Attached:")) // If the item is attached, it is in/on/under/behind a piece of furniture.
                         {
@@ -1061,10 +973,49 @@ namespace InventoryView
 
         private static void PauseForRoundtime(string text)
         {
-            Match match = Regex.Match(text, "^Roundtime:\\s{1,3}(\\d{1,3})\\s{1,3}secs?\\.$");
-            int roundtime = int.Parse(match.Groups[1].Value);
+            Match match = Regex.Match(text, @"^(Roundtime:|\.\.\.wait)\s{1,3}(\d{1,3})\s{1,3}(secs?|seconds?)\.$");
+            int roundtime = int.Parse(match.Groups[2].Value);
             Host.EchoText($"Pausing {roundtime} seconds for RT.");
             Thread.Sleep(roundtime * 1000);
+        }
+
+        private void GuildCheck(string text)
+        {
+            if (text.StartsWith("Roundtime:"))
+            {
+                PauseForRoundtime(text);
+            }
+
+            switch (guild)
+            {
+                case "Trader":
+                    ScanMode = "TraderStart";
+                    Host.SendText("get my storage book");
+                    break;
+
+                case "Moon Mage":
+                    string shadow = Host.get_Variable("roomobjs");
+                    if (shadow.Contains("Shadow Servant"))
+                    {
+                        ScanMode = "MoonMageStart";
+                        Host.SendText("prep pg 5");
+                    }
+                    else
+                    {
+                        ScanMode = null;
+                        Host.EchoText("Scan Complete.");
+                        Host.SendText("#parse InventoryView scan complete");
+                        LoadSave.SaveSettings();
+                    }
+                    break;
+
+                default:
+                    ScanMode = null;
+                    Host.EchoText("Scan Complete.");
+                    Host.SendText("#parse InventoryView scan complete");
+                    LoadSave.SaveSettings();
+                    break;
+            }
         }
 
         private static bool RummageCheck(string trimtext, string currentSurface, out string resultText)
@@ -1128,6 +1079,7 @@ namespace InventoryView
                 "^A Dwarven attendant steps in front of you, barring your path\\.  \"Wait a bit, \\S+\\.  You were just in there not too long ago\\.\"",
                 "^The script that the vault book is written in is unfamiliar to you\\.  You are unable to read it\\.",
                 "^The storage book is filled with complex lists of inventory that make little sense to you\\.",
+                "^The vault book is filled with blank pages pre-printed with branch office letterhead\\.",
                 "^This storage book doesn't seem to belong to you\\.",
                 "^You can't access [A-z ]+ vault at this time[A-z \\.]+",
                 "^You currently do not have access to VAULT STANDARD or VAULT FAMILY\\.  You will need to use VAULT PAY CONVERT to convert an urchin runner for this purpose\\.",
@@ -1255,7 +1207,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.2.22"; }
+            get { return "2.2.23"; }
         }
 
         public string Description
