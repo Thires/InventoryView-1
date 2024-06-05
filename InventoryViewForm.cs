@@ -470,7 +470,7 @@ namespace InventoryView
         private void InitializeTooltipTimer()
         {
             // Set the interval for the timer
-            tooltipTimer.Interval = 5000;
+            tooltipTimer.Interval = 6000;
 
             // Tick event of the timer
             tooltipTimer.Tick += (sender, e) =>
@@ -511,11 +511,11 @@ namespace InventoryView
                         FormBorderStyle = FormBorderStyle.FixedSingle,
                         MaximizeBox = false,
                         MinimizeBox = false,
-                        ControlBox = false,
+                        ControlBox = true,
                         AutoScroll = true,
                         AutoSize = true,
                         AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                        //MaximumSize = new Size(int.MaxValue, 420),
+                        MaximumSize = new Size(int.MaxValue, 600),
                         TopMost = true // Keep the form on top of all other windows
                     };
 
@@ -544,7 +544,7 @@ namespace InventoryView
 
                     // Calculate the tooltip position near the click location
                     Point screenClickLocation = listBox.PointToScreen(e.Location);
-                    customTooltip.StartPosition = FormStartPosition.CenterParent;
+                    customTooltip.StartPosition = FormStartPosition.CenterScreen;
                     customTooltip.Location = new Point(screenClickLocation.X + 10, screenClickLocation.Y + 10);
                     customTooltip.Show();
                 }

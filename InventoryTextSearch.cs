@@ -11,12 +11,12 @@ namespace InventoryView
     internal class InventoryTextSearch
     {
         private static string basePath = Application.StartupPath;
-        
-        public void PerformSearch(string searchText, string style)
+
+        public static void PerformSearch(string searchText, string style)
         {
             if (string.IsNullOrEmpty(searchText))
             {
-                Class1._host.EchoText("Provide a tap to use.");
+                Class1.Host.EchoText("Provide a tap to use.");
                 return;
             }
 
@@ -24,37 +24,37 @@ namespace InventoryView
 
             if (matchingItems.Count > 0)
             {
-                if (style == "path") Class1._host.EchoText($"\nFull path for '{searchText}':\n");
-                else Class1._host.EchoText($"\nFound {matchingItems.Count} items matching '{searchText}':\n");
+                if (style == "path") Class1.Host.EchoText($"\nFull path for '{searchText}':\n");
+                else Class1.Host.EchoText($"\nFound {matchingItems.Count} items matching '{searchText}':\n");
 
                 foreach (var item in matchingItems)
                 {
-                    if (style == "path") Class1._host.EchoText(item);
-                    else Class1._host.SendText("#link {" + item + "} {#put /iv path " + Regex.Replace(item, @"\w+ - ", "") + "}");
+                    if (style == "path") Class1.Host.EchoText(item);
+                    else Class1.Host.SendText("#link {" + item + "} {#put /iv path " + Regex.Replace(item, @"\w+ - ", "") + "}");
                 }
             }
             else
             {
-                Class1._host.EchoText($"No matches found for '{searchText}'.");
+                Class1.Host.EchoText($"No matches found for '{searchText}'.");
             }
         }
 
-        public List<string> SearchXmlData(string searchText, string style)
+        public static List<string> SearchXmlData(string searchText, string style)
         {
-            basePath = Class1._host.get_Variable("PluginPath");
+            basePath = Class1.Host.get_Variable("PluginPath");
             var matchingItems = new List<string>();
             string xmlPath = Path.Combine(basePath, "InventoryView.xml");
 
             if (!File.Exists(xmlPath))
             {
-                Class1._host.EchoText("InventoryView.xml not found.");
+                Class1.Host.EchoText("InventoryView.xml not found.");
                 return matchingItems;
             }
 
-            XmlDocument doc = new XmlDocument();
+            XmlDocument doc = new();
             doc.Load(xmlPath);
 
-            Regex regex = new Regex(searchText, RegexOptions.IgnoreCase);
+            Regex regex = new(searchText, RegexOptions.IgnoreCase);
 
             // Navigate to the CharacterData elements
             XmlNodeList characterDataElements = doc.GetElementsByTagName("CharacterData");
@@ -102,7 +102,7 @@ namespace InventoryView
             return matchingItems;
         }
 
-        private string GetItemPath(XmlNode itemNode)
+        private static string GetItemPath(XmlNode itemNode)
         {
             var path = new List<string>();
             var current = itemNode;
@@ -126,7 +126,7 @@ namespace InventoryView
                 current = current.ParentNode;
 
                 // Check if it's the final <tap> node within <items> and it's a single-word item
-                if (current != null && current.Name == "items" && !current.PreviousSibling.HasChildNodes && !tapText.Contains(" "))
+                if (current != null && current.Name == "items" && !current.PreviousSibling.HasChildNodes && !tapText.Contains(' '))
                 {
                     break;
                 }
