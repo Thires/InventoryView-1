@@ -1155,11 +1155,17 @@ namespace InventoryView
                 else if (SplitText[1].ToLower() == "search" && SplitText.Length > 2)
                 {
                     string searchText = SplitText[2];
-                    if (SplitText.Length > 3 || searchText.Length < 3)
+                    if (SplitText.Length > 3)
                     {
-                        Host.EchoText("Search text should be a single word and larger than 2 charcters.");
+                        searchText += " " + SplitText[3];
+                    }
+
+                    if (searchText.Length < 3)
+                    {
+                        Host.EchoText("Search text should be one or two words and larger than 2 characters.");
                         return text;
                     }
+
                     string style = "line";
                     InventoryTextSearch.PerformSearch(searchText, style);
                 }
@@ -1207,7 +1213,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.2.23"; }
+            get { return "2.2.24"; }
         }
 
         public string Description
