@@ -973,7 +973,7 @@ namespace InventoryView
 
         private static void PauseForRoundtime(string text)
         {
-            Match match = Regex.Match(text, @"^(Roundtime:|\.\.\.wait)\s{1,3}(\d{1,3})\s{1,3}(secs?|seconds?)\.$");
+            Match match = Regex.Match(text, @"^(Roundtime:|\.\.\.wait)\s{1,3}(\d{1,3})\s{1,3}(secs?|seconds?|Irenos?)\.$");
             int roundtime = int.Parse(match.Groups[2].Value);
             Host.EchoText($"Pausing {roundtime} seconds for RT.");
             Thread.Sleep(roundtime * 1000);
