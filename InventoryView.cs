@@ -1213,7 +1213,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.2.24"; }
+            get { return "2.2.24.1"; }
         }
 
         public string Description
