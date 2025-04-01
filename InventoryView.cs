@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System;
+using System.Net.Sockets;
 
 namespace InventoryView
 {
@@ -42,9 +43,11 @@ namespace InventoryView
 
         private string LastText = "";
 	    private string bookContainer;
+        private string pocketContainer;
         private string guild = "";
         private string accountName = "";
         private string currentSurface = "";
+        List<string> closedContainers = new();
 
         public void Initialize(IHost host)
         {
@@ -105,24 +108,15 @@ namespace InventoryView
                             ScanStart("Inventory");
                         }
                         break;
+
                     case "Inventory":
                         if (trimtext.StartsWith("Roundtime:")) // text that appears at the end of "inventory list"
                         {
-                            // Inventory List has a RT based on the number of items, so grab the number and pause the thread for that length.
                             PauseForRoundtime(trimtext);
-                            if (Host.get_Variable("roomname").Contains("Carousel Chamber"))
-                            {
-                                ScanMode = "InVault";
-                                Host.EchoText("Rummaging Vault.");
-                                ScanStart("InVault");
-                                Host.SendText("open vault");
-                                Host.SendText("rummage vault");
-                            }
-                            else
-                            {
-                                ScanMode = "VaultStart";
-                                Host.SendText("get my vault book");
-                            }
+                            Host.EchoText("Checking Pocket");
+                            Host.SendText("tap pocket");
+                            ScanMode = "PocketStart";
+
                         }
                         else if (trimtext.StartsWith("[Use"))
                             return "";
@@ -162,6 +156,119 @@ namespace InventoryView
                             level = newlevel;
                         }
                         break; //end of Inventory
+
+                    case "PocketStart": // start of pocket
+                        if (Regex.IsMatch(trimtext, "^You tap a pocket inside your .+\\."))
+                        {
+                            Match match = Regex.Match(trimtext, "^You tap a pocket inside your (.+)\\.");
+                            pocketContainer = match.Success ? match.Groups[1].Value : "";
+
+                            if (!string.IsNullOrEmpty(pocketContainer))
+                            {
+                                string[] words = pocketContainer.Split(' ');
+                                string formattedContainer;
+
+                                if (words.Length == 3)
+                                {
+                                    formattedContainer = $"{char.ToUpper(words[0][0]) + words[0].Substring(1)} {char.ToUpper(words[2][0]) + words[2].Substring(1)}";
+                                }
+                                else if (words.Length == 2)
+                                {
+                                    formattedContainer = $"{char.ToUpper(words[0][0]) + words[0].Substring(1)} {char.ToUpper(words[1][0]) + words[1].Substring(1)}";
+                                }
+                                else
+                                {
+                                    formattedContainer = char.ToUpper(words[0][0]) + words[0].Substring(1);
+                                }
+                                pocketContainer = formattedContainer;
+                            }
+
+                            Host.SendText("rummage pocket");
+                            ScanMode = "Pocket";
+                        }
+                        else if (IsDenied(trimtext))
+                        {
+                            if (closedContainers.Count > 0)
+                            {
+                                Host.EchoText("Reopening closed pocket containers");
+                                foreach (var container in closedContainers)
+                                {
+                                    Host.SendText($"open my {container}");
+                                }
+                                closedContainers.Clear();
+                            }
+
+                            if (Host.get_Variable("roomname").Contains("Carousel Chamber"))
+                            {
+                                ScanMode = "InVault";
+                                Host.EchoText("Rummaging Vault.");
+                                ScanStart("InVault");
+                                Host.SendText("open vault");
+                                Host.SendText("rummage vault");
+                            }
+                            else
+                            {
+                                ScanMode = "VaultStart";
+                                Host.SendText("get my vault book");
+                            }
+                        }
+                        break;
+
+                    case "Pocket":
+                        if (Regex.IsMatch(trimtext, "^You rummage through a pocket and see (.+)\\."))
+                        {
+                            ScanStart("Pocket");
+                            string pocketInv = Regex.Match(trimtext, "^You rummage through a pocket and see (.+)\\.").Groups[1].Value;
+
+                            if (Regex.Match(pocketInv, @"\b\sand\s(?:a|an|some|several)\s\b").Success)
+                                pocketInv = Regex.Replace(pocketInv, @"\b\sand\s(a|an|some|several)\s\b", ", $1 ");
+
+                            List<string> items = new(pocketInv.Split(','));
+
+                            foreach (string itemText in items)
+                            {
+                                string tap = itemText.Trim();
+                                tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
+                                lastItem = currentData.AddItem(new ItemData() { tap = tap });
+                            }
+
+                            // Store pocket containers
+                            if (!closedContainers.Contains(pocketContainer))
+                            {
+                                closedContainers.Add(pocketContainer);
+                                Host.SendText($"close my {pocketContainer}");
+                            }
+
+                            // check for another pocket
+                            Host.SendText("tap pocket");
+                            ScanMode = "PocketStart"; // Restart from PocketStart
+                        }
+
+                        else if (Regex.IsMatch(trimtext, "^You close your .+\\.$"))
+                        {
+                            // check for another pocket
+                            Host.SendText("tap pocket");
+                            ScanMode = "PocketStart";
+                        }
+
+                        else if (IsDenied(trimtext))
+                        {
+                            if (Host.get_Variable("roomname").Contains("Carousel Chamber"))
+                            {
+                                ScanMode = "InVault";
+                                Host.EchoText("Rummaging Vault.");
+                                ScanStart("InVault");
+                                Host.SendText("open vault");
+                                Host.SendText("rummage vault");
+                            }
+                            else
+                            {
+                                ScanMode = "VaultStart";
+                                Host.SendText("get my vault book");
+                            }
+                        }
+                        break; // end of pocket
+
                     case "InVault":
                         if (Regex.IsMatch(trimtext, "^You rummage through a(?: secure)? vault and see (.+)\\."))
                         {
@@ -207,6 +314,7 @@ namespace InventoryView
                             break;
                         }
                         break;
+
                     case "Surface":
                         currentSurface = SurfacesEncountered[0];
                         if (currentSurface == "steel wire rack")
@@ -243,7 +351,7 @@ namespace InventoryView
                                 InFamVault = false;
                                 ScanMode = null;
                                 Host.EchoText("Scan Complete.");
-                                Host.SendText("#parse InventoryView scan complete");
+                                Host.SendText("#parse Scan Complete");
                                 LoadSave.SaveSettings();
                             }
                             else
@@ -261,6 +369,7 @@ namespace InventoryView
                             }
                         }
                         break;
+
                     case "InFamilyCheck":
                         if (!InFamVault)
                         {
@@ -328,6 +437,7 @@ namespace InventoryView
                             Host.SendText("vault standard");
                         }
                         break; //end of VaultStart
+
                     case "Vault":
                         // This text indicates the end of the vault inventory list.
                         if (text.StartsWith("The last note in your book indicates that your vault contains"))
@@ -417,6 +527,7 @@ namespace InventoryView
                             }
                         }
                         break; //end of VaultStandardStart
+
                     case "Standard":
                         // This text indicates the end of the vault inventory list.
                         if (text.StartsWith("The last note indicates that your vault contains"))
@@ -493,6 +604,7 @@ namespace InventoryView
                             }
                         }
                         break; //end of VaultFamilyStart
+
                     case "FamilyVault":
                         // This text indicates the end of the vault inventory list.
                         if (text.StartsWith("The last note indicates that your vault contains"))
@@ -599,6 +711,7 @@ namespace InventoryView
                             Host.SendText("get my tool catalog");
                         }
                         break;//end if DeedStart
+
                     case "Deed":
                         if (Regex.IsMatch(trimtext, @"^Currently [S|s]tored"))
                         {
@@ -704,7 +817,8 @@ namespace InventoryView
                             bookContainer = "";
                             Host.SendText("home recall");
                         }
-                        break; //end of CatalogStart 
+                        break; //end of CatalogStart
+
                     case "Catalog":
                         if (trimtext.StartsWith("Currently stored:"))
                         {
@@ -740,6 +854,7 @@ namespace InventoryView
                             GuildCheck(trimtext);
                         }
                         break; //end of HomeStart
+
                     case "Home":
                         if (Regex.IsMatch(trimtext, @"\^[^>]*>|[^>]*\>|>|\^\>|^Roundtime:")) // There is no text after the home list, so watch for the next >
                         {
@@ -801,7 +916,7 @@ namespace InventoryView
                             ScanMode = null;
                             Host.EchoText("Skipping Trader Storage.");
                             Host.EchoText("Scan Complete.");
-                            Host.SendText("#parse InventoryView scan complete");
+                            Host.SendText("#parse Scan Complete");
                             LoadSave.SaveSettings();
                         }
                         else if (Regex.IsMatch(text, "^What were you referring to\\?"))
@@ -809,11 +924,12 @@ namespace InventoryView
                             ScanMode = null;
                             Host.EchoText("Skipping Trader Storage.");
                             Host.EchoText("Scan Complete.");
-                            Host.SendText("#parse InventoryView scan complete");
+                            Host.SendText("#parse Scan Complete");
                             bookContainer = "";
                             LoadSave.SaveSettings();
                         }
                         break; // end of trader start
+
                     case "Trader":
                         // This text indicates the end of the storage box inventory list.
                         if (text.StartsWith("A notation at the bottom indicates"))
@@ -824,7 +940,7 @@ namespace InventoryView
                                 Host.SendText("stow my storage book");
                             else
                                 Host.SendText("put my storage book in my " + bookContainer);
-                                Host.SendText("#parse InventoryView scan complete");
+                                Host.SendText("#parse Scan Complete");
                                 bookContainer = "";
                             LoadSave.SaveSettings();
                         }
@@ -877,16 +993,17 @@ namespace InventoryView
                             ScanMode = null;
                             Host.EchoText("Skipping Servant, Piercing Gaze required.");
                             Host.EchoText("Scan Complete.");
-                            Host.SendText("#parse InventoryView scan complete");
+                            Host.SendText("#parse Scan Complete");
                             LoadSave.SaveSettings();
                         }
                         break;
+
                     case "MoonMage":
                         if (text.StartsWith("Your Servant is holding"))
                         {
                             ScanMode = null;
                             Host.EchoText("Scan Complete.");
-                            Host.SendText("#parse InventoryView scan complete");
+                            Host.SendText("#parse Scan Complete");
                             LoadSave.SaveSettings();
                         }
                         else
@@ -955,6 +1072,8 @@ namespace InventoryView
             }
             else
             {
+                if (mode == "Pocket")
+                    mode = "Pocket in "+ pocketContainer;
                 if (mode == "InVault")
                     mode = "Vault";
                 if (mode == "Standard")
@@ -973,7 +1092,7 @@ namespace InventoryView
 
         private static void PauseForRoundtime(string text)
         {
-            Match match = Regex.Match(text, @"^(Roundtime:|\.\.\.wait)\s{1,3}(\d{1,3})\s{1,3}(secs?|seconds?)\.$");
+            Match match = Regex.Match(text, @"^(Roundtime:|\.\.\.wait)\s{1,3}(\d{1,3})\s{1,3}(secs?|seconds?|Irenos?)\.$");
             int roundtime = int.Parse(match.Groups[2].Value);
             Host.EchoText($"Pausing {roundtime} seconds for RT.");
             Thread.Sleep(roundtime * 1000);
@@ -1004,7 +1123,7 @@ namespace InventoryView
                     {
                         ScanMode = null;
                         Host.EchoText("Scan Complete.");
-                        Host.SendText("#parse InventoryView scan complete");
+                        Host.SendText("#parse Scan Complete");
                         LoadSave.SaveSettings();
                     }
                     break;
@@ -1012,7 +1131,7 @@ namespace InventoryView
                 default:
                     ScanMode = null;
                     Host.EchoText("Scan Complete.");
-                    Host.SendText("#parse InventoryView scan complete");
+                    Host.SendText("#parse Scan Complete");
                     LoadSave.SaveSettings();
                     break;
             }
@@ -1096,7 +1215,16 @@ namespace InventoryView
                 "^You shouldn't do that while inside of a home\\.  Step outside if you need to check something\\.",
                 "^You shouldn't read somebody else's \\w+ \\w+\\.",
                 "^Now may not be the best time for that\\.",
-                "^\\[You don't have access to advanced vault urchins because you don't have a subscription\\.  To sign up for one, please visit https\\://www\\.play\\.net/dr/signup/subscribe\\.asp \\.\\]"
+                "^\\[You don't have access to advanced vault urchins because you don't have a subscription\\.  To sign up for one, please visit https\\://www\\.play\\.net/dr/signup/subscribe\\.asp \\.\\]",
+                "^While it's closed?",
+                "^There is nothing in there\\.",
+                "^I don't know what you are referring to\\.",
+                "^You rummage through a pocket but there is nothing in there\\.",
+                "^You rummage through a (?!pocket$).*$",
+                "^In the keyblank pocket you see",
+                "^You tap [A-z ]+ keyblank pocket",
+                "^You tap [A-z ]+ pocket that you are wearing\\.",
+                "^I could not find what you were referring to\\."
             };
 
             foreach (var pattern in deniedPatterns)
@@ -1213,7 +1341,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.2.24"; }
+            get { return "2.2.3c"; }
         }
 
         public string Description
@@ -1227,6 +1355,7 @@ namespace InventoryView
         }
 
         private bool _enabled = true;
+
         public bool Enabled
         {
             get { return _enabled; }
