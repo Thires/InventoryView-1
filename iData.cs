@@ -186,14 +186,12 @@ namespace InventoryView
                     familyNode.InnerText = ((InventoryViewForm)Class1.Form).toolStripFamily.Checked.ToString();
                 else
                 {
-                    // Otherwise, create new DarkModeState element and set its value to state of chkDarkMode control.
                     XmlElement familyElement = doc.CreateElement("Family");
                     familyElement.InnerText = ((InventoryViewForm)Class1.Form).toolStripFamily.Checked.ToString();
 
                     // Append DarkModeState element to root element of XmlDocument.
                     doc.DocumentElement.AppendChild(familyElement);
                 }
-
 
                 XmlNode alwaysTopNode = doc.SelectSingleNode("/Root/AlwaysTop");
 
@@ -208,6 +206,19 @@ namespace InventoryView
 
                     // Append DarkModeState element to root element of XmlDocument.
                     doc.DocumentElement.AppendChild(alwaysTopElement);
+                }
+
+                XmlNode pocketsNode = doc.SelectSingleNode("/Root/Pockets");
+
+                if (pocketsNode != null)
+                    pocketsNode.InnerText = ((InventoryViewForm)Class1.Form).toolStripPockets.Checked.ToString();
+                else
+                {
+                    XmlElement pocketsElement = doc.CreateElement("Pockets");
+                    pocketsElement.InnerText = ((InventoryViewForm)Class1.Form).toolStripPockets.Checked.ToString();
+
+                    // Append DarkModeState element to root element of XmlDocument.
+                    doc.DocumentElement.AppendChild(pocketsElement);
                 }
 
                 // Save changes to XML file.
@@ -265,7 +276,6 @@ namespace InventoryView
                         darkModeElement.InnerText = "False";
                         newRootNode.AppendChild(darkModeElement);
 
-                        // Create a new DarkModeState element and set its value to False
                         XmlElement familyElement = doc.CreateElement("Family");
                         familyElement.InnerText = "False";
                         newRootNode.AppendChild(familyElement);
@@ -274,6 +284,10 @@ namespace InventoryView
                         XmlElement alwaysTopElement = doc.CreateElement("AlwaysTop");
                         alwaysTopElement.InnerText = "False";
                         newRootNode.AppendChild(alwaysTopElement);
+
+                        XmlElement pocketsElement = doc.CreateElement("Pockets");
+                        pocketsElement.InnerText = "False";
+                        newRootNode.AppendChild(pocketsElement);
 
                         // Replace the old root node with the new root node
                         doc.ReplaceChild(newRootNode, doc.DocumentElement);
@@ -328,6 +342,10 @@ namespace InventoryView
                     XmlNode alwaystopNode = doc.SelectSingleNode("/Root/AlwaysTop");
                     if (alwaystopNode != null)
                         ((InventoryViewForm)Class1.Form).toolStripAlwaysTop.Checked = bool.Parse(alwaystopNode.InnerText);
+
+                    XmlNode pocketsNode = doc.SelectSingleNode("/Root/Pockets");
+                    if (pocketsNode != null)
+                        ((InventoryViewForm)Class1.Form).toolStripPockets.Checked = bool.Parse(pocketsNode.InnerText);
                 }
                 else
                     Class1.Host.EchoText("File does not exist");

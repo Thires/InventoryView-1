@@ -27,6 +27,7 @@ namespace InventoryView
         private ToolStripMenuItem optionsToolStripMenuItem;
         internal ToolStripMenuItem toolStripDarkMode;
         internal ToolStripMenuItem toolStripFamily;
+        internal ToolStripMenuItem toolStripPockets;
         internal ToolStripMenuItem toolStripMultilineTabs;
         private ToolStripMenuItem commandsToolStripMenuItem;
         internal ToolStripMenuItem toolStripScan;
@@ -1128,6 +1129,13 @@ namespace InventoryView
                 Class1.Host.EchoText("To use family vault, be inside the vault or have runners");
         }
 
+        public void Pockets_CheckedChanged(object sender, EventArgs e)
+        {
+            toolStripPockets.Enabled = false;
+            LoadSave.SaveSettings();
+            toolStripPockets.Enabled = true;
+        }
+
         public void DarkMode_CheckedChanged(object sender, EventArgs e)
         {
             // Define the color values for dark mode and light mode
@@ -1195,6 +1203,7 @@ namespace InventoryView
                 toolStripDarkMode,
                 toolStripFamily,
                 toolStripMultilineTabs,
+                toolStripPockets,
                 toolStripScan,
                 toolStripReload,
                 toolStripWiki,
@@ -1297,6 +1306,7 @@ namespace InventoryView
             toolStripDarkMode = new ToolStripMenuItem();
             toolStripFamily = new ToolStripMenuItem();
             toolStripMultilineTabs = new ToolStripMenuItem();
+            toolStripPockets = new ToolStripMenuItem();
             toolStripAlwaysTop = new ToolStripMenuItem();
             commandsToolStripMenuItem = new ToolStripMenuItem();
             toolStripScan = new ToolStripMenuItem();
@@ -1613,7 +1623,7 @@ namespace InventoryView
             // optionsToolStripMenuItem
             // 
             optionsToolStripMenuItem.BackColor = SystemColors.Control;
-            optionsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { toolStripDarkMode, toolStripFamily, toolStripMultilineTabs, toolStripAlwaysTop });
+            optionsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { toolStripDarkMode, toolStripFamily, toolStripMultilineTabs, toolStripPockets, toolStripAlwaysTop });
             optionsToolStripMenuItem.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
             optionsToolStripMenuItem.ForeColor = SystemColors.ControlText;
             optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
@@ -1626,7 +1636,7 @@ namespace InventoryView
             toolStripDarkMode.CheckOnClick = true;
             toolStripDarkMode.ForeColor = SystemColors.ControlText;
             toolStripDarkMode.Name = "toolStripDarkMode";
-            toolStripDarkMode.Size = new Size(151, 22);
+            toolStripDarkMode.Size = new Size(180, 22);
             toolStripDarkMode.Text = "Dark Mode";
             toolStripDarkMode.CheckedChanged += DarkMode_CheckedChanged;
             // 
@@ -1636,7 +1646,7 @@ namespace InventoryView
             toolStripFamily.CheckOnClick = true;
             toolStripFamily.ForeColor = SystemColors.ControlText;
             toolStripFamily.Name = "toolStripFamily";
-            toolStripFamily.Size = new Size(151, 22);
+            toolStripFamily.Size = new Size(180, 22);
             toolStripFamily.Text = "Family Vault";
             toolStripFamily.CheckedChanged += Family_CheckedChanged;
             // 
@@ -1646,15 +1656,25 @@ namespace InventoryView
             toolStripMultilineTabs.CheckOnClick = true;
             toolStripMultilineTabs.ForeColor = SystemColors.ControlText;
             toolStripMultilineTabs.Name = "toolStripMultilineTabs";
-            toolStripMultilineTabs.Size = new Size(151, 22);
+            toolStripMultilineTabs.Size = new Size(180, 22);
             toolStripMultilineTabs.Text = "Multiline Tabs";
             toolStripMultilineTabs.CheckedChanged += MultiLineTabs_CheckedChanged;
+            // 
+            // toolStripPockets
+            // 
+            toolStripPockets.BackColor = SystemColors.Control;
+            toolStripPockets.CheckOnClick = true;
+            toolStripPockets.ForeColor = SystemColors.ControlText;
+            toolStripPockets.Name = "toolStripPockets";
+            toolStripPockets.Size = new Size(180, 22);
+            toolStripPockets.Text = "Pockets";
+            toolStripPockets.CheckedChanged += Pockets_CheckedChanged;
             // 
             // toolStripAlwaysTop
             // 
             toolStripAlwaysTop.CheckOnClick = true;
             toolStripAlwaysTop.Name = "toolStripAlwaysTop";
-            toolStripAlwaysTop.Size = new Size(151, 22);
+            toolStripAlwaysTop.Size = new Size(180, 22);
             toolStripAlwaysTop.Text = "Always On top";
             toolStripAlwaysTop.CheckedChanged += ToolStripAlwaysTop_CheckedChanged;
             // 
