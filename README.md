@@ -1,17 +1,26 @@
-![image](https://github.com/Thires/InventoryView-1/assets/28072996/d1157e37-da27-4813-8772-85c3bf60c4d1)
+![image](https://github.com/user-attachments/assets/f5b3dc45-4851-4da5-bd9b-db1798b1c809)
 
-![image](https://github.com/Thires/InventoryView-1/assets/28072996/6c7c23c3-3a91-44cc-b735-007ac6f55861)
+![image](https://github.com/user-attachments/assets/694acae7-affc-4d1c-9140-c926c3710295)
 
-![image](https://github.com/Thires/InventoryView-1/assets/28072996/d121b19b-460c-4f7d-88fa-370725763b58)
+![image](https://github.com/user-attachments/assets/9df3230a-4d4c-478a-9f50-3f9e92145259)
 
-![image](https://github.com/Thires/InventoryView-1/assets/28072996/44e1de3b-4dce-420c-898c-ccba3ae6e33d)
+![image](https://github.com/user-attachments/assets/c6b54a3c-3533-4e80-8c42-4c1c4b29494c)
 
-![image](https://github.com/Thires/InventoryView-1/assets/28072996/ee41bca4-0f47-42c0-aabf-b120feaa0c91)
+![image](https://github.com/user-attachments/assets/0d0890da-5d7e-4217-abfa-34e2bfe8dc3c)
+
+![image](https://github.com/user-attachments/assets/3c4caaa4-5b26-4cc0-a3fe-19c8eb50e3e1)
 
 ![image](https://github.com/Thires/InventoryView-1/assets/28072996/02487956-5d2b-4aa5-9db2-b58ad6f5d1b7)
 
 
 # InventoryView
+Compact version
+* added menus for commmands and options
+* added pockets for containers that have hidden pockets, they will show in the contianer
+* added ability to archive tabs
+* added ability to color tabs
+* various others changes
+*
 * Added family vault
 * Made it so you don't need vault book, will use vault standard
 * Can still use vault book
@@ -36,13 +45,6 @@
 * Added check for guild
 * Added rummaging of vault and/or family vault, vault, both need to be inside the vault. Family vault is stand alone, just be inside of it and it will just do it. Both are only top level grabs
 * Added checkbox for on top
-
-Compact version
-* added menus for commmands and options
-* added pockets for containers that have hidden pockets, they will show in the contianer
-* added ability to archive tabs
-* added ability to color tabs
-* various others changes
 
 This plugin will record the items that each of your characters has in their inventory, vault (if you have a vault book), and home (if you have one) and make them searchable in a form.
 
