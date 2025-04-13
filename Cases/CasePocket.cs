@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 
 namespace InventoryView.Cases
@@ -118,6 +119,7 @@ namespace InventoryView.Cases
                 foreach (var container in plugin.closedContainers)
                 {
                     plugin.Host.SendText($"open my {container}");
+                    Thread.Sleep(500);
                 }
                 plugin.closedContainers.Clear();
             }
@@ -131,7 +133,6 @@ namespace InventoryView.Cases
             {
                 scanMode = "InVault";
                 plugin.Host.EchoText("Rummaging Vault.");
-                //plugin.ScanStart("InVault");
                 plugin.Host.SendText("open vault");
                 plugin.Host.SendText("rummage vault");
             }
