@@ -16,45 +16,46 @@ namespace InventoryView
         {
             if (string.IsNullOrEmpty(searchText))
             {
-                Class1.Host.EchoText("Provide a tap to use.");
+                plugin.Host.EchoText("Provide a tap to use.");
                 return;
             }
 
-            var matchingItems = SearchXmlData(searchText, style);
+            // Split the search text into individual words
+            var searchWords = searchText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            var matchingItems = SearchXmlData(searchWords, style);
 
             if (matchingItems.Count > 0)
             {
-                if (style == "path") Class1.Host.EchoText($"\nFull path for '{searchText}':\n");
-                else Class1.Host.EchoText($"\nFound {matchingItems.Count} items matching '{searchText}':\n");
+                if (style == "path") plugin.Host.EchoText($"\nFull path for '{searchText}':\n");
+                else plugin.Host.EchoText($"\nFound {matchingItems.Count} items matching '{searchText}':\n");
 
                 foreach (var item in matchingItems)
                 {
-                    if (style == "path") Class1.Host.EchoText(item);
-                    else Class1.Host.SendText("#link {" + item + "} {#put /iv path " + Regex.Replace(item, @"\w+ - ", "") + "}");
+                    if (style == "path") plugin.Host.EchoText(item);
+                    else plugin.Host.SendText("#link {" + item + "} {#put /iv path " + Regex.Replace(item, @"\w+ - ", "") + "}");
                 }
             }
             else
             {
-                Class1.Host.EchoText($"No matches found for '{searchText}'.");
+                plugin.Host.EchoText($"No matches found for '{searchText}'.");
             }
         }
 
-        public static List<string> SearchXmlData(string searchText, string style)
+        public static List<string> SearchXmlData(string[] searchWords, string style)
         {
-            basePath = Class1.Host.get_Variable("PluginPath");
+            basePath = plugin.Host.get_Variable("PluginPath");
             var matchingItems = new List<string>();
             string xmlPath = Path.Combine(basePath, "InventoryView.xml");
 
             if (!File.Exists(xmlPath))
             {
-                Class1.Host.EchoText("InventoryView.xml not found.");
+                plugin.Host.EchoText("InventoryView.xml not found.");
                 return matchingItems;
             }
 
             XmlDocument doc = new();
             doc.Load(xmlPath);
-
-            Regex regex = new(searchText, RegexOptions.IgnoreCase);
 
             // Navigate to the CharacterData elements
             XmlNodeList characterDataElements = doc.GetElementsByTagName("CharacterData");
@@ -79,18 +80,17 @@ namespace InventoryView
                     if (itemText == null)
                         continue;
 
-                    // Search for the searchText using a case-insensitive regex pattern
-                    if (regex.IsMatch(itemText))
+                    // Check if all search words are present in the item text
+                    bool allWordsMatch = searchWords.All(word => itemText.Contains(word, StringComparison.OrdinalIgnoreCase));
+
+                    if (allWordsMatch)
                     {
                         string single = Regex.Replace(itemText.TrimEnd('.'), @"\(\d+\)\s|\s\(closed\)", "");
                         string fullPath = GetItemPath(itemNode);
 
                         if (style == "path")
                         {
-                            if (single.Equals(searchText, StringComparison.OrdinalIgnoreCase))
-                            {
-                                matchingItems.Add($"{characterName}\n{fullPath}\n");
-                            }
+                            matchingItems.Add($"{characterName}\n{fullPath}\n");
                         }
                         else
                         {
@@ -134,6 +134,5 @@ namespace InventoryView
 
             return string.Join(Environment.NewLine, path.Select((part, index) => new string('-', index + 1) + " " + part));
         }
-
     }
 }
