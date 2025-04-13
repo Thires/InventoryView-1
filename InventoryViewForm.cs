@@ -83,6 +83,7 @@ namespace InventoryView
         private ToolStripSeparator toolStripSeparator1;
         private ToolStripSeparator toolStripSeparator2;
         private ToolStripMenuItem colorTabToolStrip;
+        private ToolStripMenuItem resetSingleTabStripMenu;
         private readonly Dictionary<string, List<MatchedItemInfo>> matchedItemsDictionary = new();
 
         public InventoryViewForm()
@@ -1539,6 +1540,38 @@ namespace InventoryView
             LoadSave.SaveSettings();  // Ensure settings are saved after reset
         }
 
+        private void ResetSingleSelectedTabColor()
+        {
+            if (tabControl1.SelectedTab != null)
+            {
+                // Reset the background color and text color to the default (Control color)
+                tabControl1.SelectedTab.BackColor = SystemColors.Control;
+                tabControl1.SelectedTab.ForeColor = SystemColors.ControlText;
+
+                // Optionally clear the custom color stored in the tab's tag
+                var characterName = tabControl1.SelectedTab.Tag as string;
+                if (!string.IsNullOrEmpty(characterName))
+                {
+                    var entries = plugin.CharacterData
+                        .Where(c => c.name.Equals(characterName, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+
+                    foreach (var entry in entries)
+                    {
+                        entry.TabColor = string.Empty;  // Clear the saved color
+                        entry.TabTextColor = string.Empty;  // Clear the saved text color (if applicable)
+                    }
+                }
+
+                // Redraw the selected tab
+                tabControl1.SelectedTab.Invalidate();
+
+                // Optionally save the changes
+                LoadSave.SaveSettings();  // Ensure settings are saved after reset
+            }
+        }
+
+
         private void filtarAlltoolStripMenuItem_Click(object sender, EventArgs e)
         {
             currentFilter = "All Tabs";
@@ -1583,6 +1616,11 @@ namespace InventoryView
                 ChangeTabColor(tabControl1);
                 break;
             }
+        }
+
+        private void ResetSelectedTabColorButton_Click(object sender, EventArgs e)
+        {
+            ResetSingleSelectedTabColor();
         }
 
         protected override void Dispose(bool disposing)
@@ -1636,6 +1674,7 @@ namespace InventoryView
             toolStripSeparator2 = new ToolStripSeparator();
             resetTabColorsMenuItem = new ToolStripMenuItem();
             colorTabToolStrip = new ToolStripMenuItem();
+            resetSingleTabStripMenu = new ToolStripMenuItem();
             filterToolStripMenuItem = new ToolStripMenuItem();
             filtarAlltoolStripMenuItem = new ToolStripMenuItem();
             filterActivetoolStripMenuItem = new ToolStripMenuItem();
@@ -2017,7 +2056,7 @@ namespace InventoryView
             // commandsToolStripMenuItem
             // 
             commandsToolStripMenuItem.BackColor = SystemColors.Control;
-            commandsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { toolStripScan, toolStripReload, toolStripSeparator1, toolStripWiki, toolStripExport, toolStripExportAll, toolStripSeparator2, resetTabColorsMenuItem, colorTabToolStrip });
+            commandsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { toolStripScan, toolStripReload, toolStripSeparator1, toolStripWiki, toolStripExport, toolStripExportAll, toolStripSeparator2, resetTabColorsMenuItem, resetSingleTabStripMenu, colorTabToolStrip });
             commandsToolStripMenuItem.ForeColor = SystemColors.ControlText;
             commandsToolStripMenuItem.Name = "commandsToolStripMenuItem";
             commandsToolStripMenuItem.Size = new Size(81, 20);
@@ -2087,6 +2126,13 @@ namespace InventoryView
             colorTabToolStrip.Size = new Size(221, 22);
             colorTabToolStrip.Text = "Change Selected Tab Colors";
             colorTabToolStrip.Click += colorTabToolStrip_Click;
+            // 
+            // resetSingleTabStripMenu
+            // 
+            resetSingleTabStripMenu.Name = "resetSingleTabStripMenu";
+            resetSingleTabStripMenu.Size = new Size(221, 22);
+            resetSingleTabStripMenu.Text = "Reset Selected Tab Colors";
+            resetSingleTabStripMenu.Click += ResetSelectedTabColorButton_Click;
             // 
             // filterToolStripMenuItem
             // 
