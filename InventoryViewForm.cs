@@ -10,6 +10,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Xml;
+using System.Runtime.InteropServices;
+
 
 namespace InventoryView
 {
@@ -34,15 +36,24 @@ namespace InventoryView
         internal ToolStripMenuItem toolStripReload;
         internal ToolStripMenuItem toolStripWiki;
         private ToolStripMenuItem toolStripExport;
+        private ToolStripContainer toolStripContainer1;
+        internal ToolStripMenuItem toolStripAlwaysTop;
+        private ToolStripMenuItem toolStripExportAll;
         private ToolStripMenuItem copySelectedToolStripMenuItem;
+        private ToolStripMenuItem filtarAlltoolStripMenuItem;
+        private ToolStripMenuItem filterActivetoolStripMenuItem;
+        private ToolStripMenuItem filterArchivedtoolStripMenuItem;
+        private ContextMenuStrip tabContextMenuStrip;
+        private ToolStripMenuItem resetTabColorsMenuItem;
+        private ToolStripMenuItem filterToolStripMenuItem;
 
         private bool clickSearch = false;
 
         // Create a new list to store the search matches for each TreeView control
-        private readonly List<InventoryViewForm.TreeViewSearchMatches> treeViewSearchMatchesList = new();
+        private readonly List<TreeViewSearchMatches> treeViewSearchMatchesList = new();
         // Create a list to store the hidden tab pages and their original positions
         private readonly List<(TabPage tabPage, int index)> hiddenTabPages = new();
-        private TabControl tabControl1;
+        internal TabControl tabControl1;
         private ListBox lblMatches;
         private TableLayoutPanel tableLayoutPanel1;
         private Panel panel1;
@@ -51,6 +62,7 @@ namespace InventoryView
         private Label infolabel;
         private Label lblFound;
         private Label lblSearch;
+        private Label label1;
 
         private Button btnRemoveCharacter;
         private Button btnFindPrev;
@@ -64,11 +76,13 @@ namespace InventoryView
 
         private Form customTooltip = null;
         private readonly Timer tooltipTimer = new();
+        internal static Form form;
 
         private static string basePath = Application.StartupPath;
-        private ToolStripContainer toolStripContainer1;
-        internal ToolStripMenuItem toolStripAlwaysTop;
-        private ToolStripMenuItem toolStripMenuItem1;
+        private string currentFilter = "All Tabs";
+        private ToolStripSeparator toolStripSeparator1;
+        private ToolStripSeparator toolStripSeparator2;
+        private ToolStripMenuItem colorTabToolStrip;
         private readonly Dictionary<string, List<MatchedItemInfo>> matchedItemsDictionary = new();
 
         public InventoryViewForm()
@@ -80,13 +94,13 @@ namespace InventoryView
         private void InventoryViewForm_Load(object sender, EventArgs e)
         {
             BindData();
-            basePath = Class1.Host.get_Variable("PluginPath");
+            basePath = plugin.Host.get_Variable("PluginPath");
 
             // Load the character data
             LoadSave.LoadSettings();
 
             // Get a list of distinct character names from the characterData list
-            List<string> characterNames = Class1.CharacterData.Select(c => c.name).Distinct().ToList();
+            List<string> characterNames = plugin.CharacterData.Select(c => c.name).Distinct().ToList();
 
             // Sort the character names
             characterNames.Sort();
@@ -100,6 +114,19 @@ namespace InventoryView
 
             toolStripAlwaysTop.CheckedChanged += ToolStripAlwaysTop_CheckedChanged;
 
+            tabControl1.DrawMode = TabDrawMode.OwnerDrawFixed;
+            tabControl1.DrawItem += tabControl1_DrawItem;
+
+            // In InventoryViewForm_Load or in a helper method:
+            tabContextMenuStrip = new ContextMenuStrip();
+            ToolStripMenuItem toggleArchiveMenuItem = new ToolStripMenuItem("Toggle Archive");
+            toggleArchiveMenuItem.Click += ToggleArchiveMenuItem_Click;
+            tabContextMenuStrip.Items.Add(toggleArchiveMenuItem);
+
+            // Attach a MouseUp event to the TabControl if not already attached.
+            tabControl1.MouseUp += TabControl1_MouseUp;
+            resetTabColorsMenuItem.Click += ResetAllTabColors_Click;
+
             if (tabControl1.SelectedTab?.Controls.Count > 0 && tabControl1.SelectedTab.Controls[0] is TreeView tv)
             {
                 // Expand root nodes for the selected tab
@@ -112,25 +139,42 @@ namespace InventoryView
 
         private void BindData()
         {
-            // Clear existing data
             tabControl1.TabPages.Clear();
 
-            // Get a distinct character list
+            // Use the global currentFilter.
+            string filter = currentFilter;
+
+            // Get a distinct character list.
             var characters = GetDistinctCharacters();
 
-            // Create a new tab page for each character
+            // Filter the character list
+            if (filter == "Active Tabs")
+            {
+                characters = characters.Where(ch => plugin.CharacterData
+                    .FirstOrDefault(c => c.name == ch && !c.Archived) != null).ToList(); // Only active characters
+            }
+            else if (filter == "Archived Tabs")
+            {
+                characters = characters.Where(ch => plugin.CharacterData
+                    .FirstOrDefault(c => c.name == ch && c.Archived) != null).ToList(); // Only archived characters
+            }
+
+            // For each character, create a tab
             foreach (var character in characters)
             {
-                // Create a new tab page
-                var tabPage = new TabPage(character);
+                // Determine archive state
+                bool isArchived = plugin.CharacterData.FirstOrDefault(c => c.name == character)?.Archived ?? false; // If no character found, assume not archived
+
+                // Create the tab page text
+                var tabPage = new TabPage(character + (isArchived ? " (Archived)" : " (Acivated)"));
+                tabPage.Tag = character; // store name
+
+                ApplyTabColorToPage(tabPage, character);
+
                 tabControl1.TabPages.Add(tabPage);
 
-                // Create a new TreeView control
-                var tv = new TreeView
-                {
-                    Dock = DockStyle.Fill
-                };
-
+                // Create a new TreeView for inventory.
+                var tv = new TreeView { Dock = DockStyle.Fill };
                 if (toolStripDarkMode.Checked)
                 {
                     tv.ForeColor = SystemColors.Control;
@@ -141,20 +185,14 @@ namespace InventoryView
                     tv.ForeColor = SystemColors.ControlText;
                     tv.BackColor = SystemColors.Control;
                 }
-
                 tabPage.Controls.Add(tv);
-
-                // Clear existing nodes
                 tv.Nodes.Clear();
 
                 // Create a new ContextMenuStrip for the TreeView control
                 var contextMenuStrip = CreateTreeViewContextMenuStrip(tv);
                 tv.ContextMenuStrip = contextMenuStrip;
 
-                // Add the character's data to the TreeView and get the total item count
                 int totalCount = AddCharacterDataToTreeView(tv, character);
-
-                // Update the tab page text with the total item count
                 tabPage.Text = $"{character} (T: {totalCount})";
 
                 foreach (TreeNode rootNode in tv.Nodes)
@@ -166,7 +204,7 @@ namespace InventoryView
 
         private static List<string> GetDistinctCharacters()
         {
-            var characters = Class1.CharacterData.Select(tbl => tbl.name).Distinct().ToList();
+            var characters = plugin.CharacterData.Select(tbl => tbl.name).Distinct().ToList();
             characters.Sort();
             return characters;
         }
@@ -176,7 +214,7 @@ namespace InventoryView
             int totalCount = 0;
 
             TreeNode charNode = tv.Nodes.Add(character);
-            foreach (var source in Class1.CharacterData.Where(tbl => tbl.name == character))
+            foreach (var source in plugin.CharacterData.Where(tbl => tbl.name == character))
             {
                 TreeNode sourceNode = charNode.Nodes.Add(source.source);
                 sourceNode.ToolTipText = sourceNode.FullPath;
@@ -223,7 +261,7 @@ namespace InventoryView
             };
             contextMenuStrip.Items.Add(wikiLookupToolStripMenuItem);
 
-            // Add the "Copy Text" option
+            // Adds the "Copy Text" option
             var copyTextToolStripMenuItem = new ToolStripMenuItem("Copy Text");
             copyTextToolStripMenuItem.Click += (sender, e) =>
             {
@@ -232,7 +270,7 @@ namespace InventoryView
             };
             contextMenuStrip.Items.Add(copyTextToolStripMenuItem);
 
-            // Add the "Copy Branch" option
+            // Adds the "Copy Branch" option
             var copyBranchToolStripMenuItem = new ToolStripMenuItem("Copy Branch");
             copyBranchToolStripMenuItem.Click += (sender, e) =>
             {
@@ -454,7 +492,6 @@ namespace InventoryView
             return isMatchFound;
         }
 
-
         private void LblMatches_MouseDown(object sender, MouseEventArgs e)
         {
             // Close the custom tooltip if it's open
@@ -462,6 +499,40 @@ namespace InventoryView
             {
                 customTooltip.Close();
                 tooltipTimer.Stop();
+            }
+        }
+
+        public static void HandleTabControlMouseUp(TabControl tabControl, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                // Check if Shift key was pressed using Control.ModifierKeys
+                if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift)
+                {
+                    for (int i = 0; i < tabControl.TabPages.Count; i++)
+                    {
+                        Rectangle tabRect = tabControl.GetTabRect(i);
+                        if (tabRect.Contains(e.Location))
+                        {
+                            tabControl.SelectedIndex = i;
+                            ChangeTabColor(tabControl);
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < tabControl.TabPages.Count; i++)
+                    {
+                        Rectangle tabRect = tabControl.GetTabRect(i);
+                        if (tabRect.Contains(e.Location))
+                        {
+                            tabControl.SelectedIndex = i;
+                            ToggleArchiveForSelectedTab(tabControl);  // Use ToggleArchiveForSelectedTab for archive toggling
+                            break;
+                        }
+                    }
+                }
             }
         }
 
@@ -651,8 +722,8 @@ namespace InventoryView
 
         private static void OpenWikiPage(string text)
         {
-            if (Class1.Host.InterfaceVersion == 4)
-                Class1.Host.SendText(string.Format("#browser https://elanthipedia.play.net/index.php?search={0}", Uri.EscapeDataString(Regex.Replace(text, @"\(\d+\)\s|\s\(closed\)|^(an?|some|several)\s|^\d+\s--\s(an?|some|several)\s", ""))));
+            if (plugin.Host.InterfaceVersion == 4)
+                plugin.Host.SendText(string.Format("#browser https://elanthipedia.play.net/index.php?search={0}", Uri.EscapeDataString(Regex.Replace(text, @"\(\d+\)\s|\s\(closed\)|^(an?|some|several)\s|^\d+\s--\s(an?|some|several)\s", ""))));
             else
                 Process.Start(new ProcessStartInfo(string.Format("https://elanthipedia.play.net/index.php?search={0}", Regex.Replace(text, @"\(\d+\)\s|\s\(closed\)|(^an?|some|several)\s|^\d+\s--\s(an?|some|several)\s", ""))) { UseShellExecute = true });
         }
@@ -742,7 +813,7 @@ namespace InventoryView
 
         private void Scan_Click(object sender, EventArgs e)
         {
-            Class1.Host.SendText("/InventoryView scan");
+            plugin.Host.SendText("/InventoryView scan");
             Close();
         }
 
@@ -784,19 +855,19 @@ namespace InventoryView
                         }
                         else
                         {
-                            Class1.Host.EchoText($"Could not find any CharacterData elements with a name element value of '{characterName}' in the XML file.");
+                            plugin.Host.EchoText($"Could not find any CharacterData elements with a name element value of '{characterName}' in the XML file.");
                         }
                     }
                     catch (Exception ex)
                     {
                         // Handle the exception here
-                        Class1.Host.EchoText($"An exception occurred: {ex.Message}");
+                        plugin.Host.EchoText($"An exception occurred: {ex.Message}");
                     }
                 }
             }
             else
             {
-                Class1.Host.EchoText("Please select a character name.");
+                plugin.Host.EchoText("Please select a character name.");
             }
         }
 
@@ -825,7 +896,6 @@ namespace InventoryView
         private void ReloadData()
         {
             LoadSave.LoadSettings();
-            //Class1._host.EchoText("Inventory reloaded.");
             BindData();
             UpdateCboCharacters();
         }
@@ -994,9 +1064,9 @@ namespace InventoryView
             _ = (int)saveFileDialog.ShowDialog();
             if (!(saveFileDialog.FileName != ""))
                 return;
-            using (StreamWriter text = File.CreateText(saveFileDialog.FileName))
+            using (StreamWriter text = System.IO.File.CreateText(saveFileDialog.FileName))
             {
-                List<InventoryViewForm.ExportData> list = new();
+                List<ExportData> list = new();
 
                 // Get the TreeView control on the currently selected tab page
                 var tv = tabControl1.SelectedTab.Controls[0] as TreeView;
@@ -1005,7 +1075,7 @@ namespace InventoryView
                 ExportBranch(tv.Nodes, list, 1);
 
                 text.WriteLine("Character,Tap,Path");
-                foreach (InventoryViewForm.ExportData exportData in list)
+                foreach (ExportData exportData in list)
                 {
                     if (exportData.Path.Count >= 1)
                     {
@@ -1035,7 +1105,7 @@ namespace InventoryView
             _ = (int)saveFileDialog.ShowDialog();
             if (!(saveFileDialog.FileName != ""))
                 return;
-            using (StreamWriter text = File.CreateText(saveFileDialog.FileName))
+            using (StreamWriter text = System.IO.File.CreateText(saveFileDialog.FileName))
             {
                 text.WriteLine("Character,Tap,Path");
 
@@ -1046,11 +1116,11 @@ namespace InventoryView
                     var tv = tabPage.Controls[0] as TreeView;
 
                     // Add the TreeView's data to the list
-                    List<InventoryViewForm.ExportData> list = new();
+                    List<ExportData> list = new();
                     ExportBranch(tv.Nodes, list, 1);
 
                     // Write data from the current tab page to the CSV file
-                    foreach (InventoryViewForm.ExportData exportData in list)
+                    foreach (ExportData exportData in list)
                     {
                         if (exportData.Path.Count >= 1)
                         {
@@ -1076,12 +1146,12 @@ namespace InventoryView
 
         private static void ExportBranch(
           TreeNodeCollection nodes,
-          List<InventoryViewForm.ExportData> list,
+          List<ExportData> list,
           int level)
         {
             foreach (TreeNode node in nodes)
             {
-                InventoryViewForm.ExportData exportData = new()
+                ExportData exportData = new()
                 {
                     Tap = node.Text
                 };
@@ -1098,20 +1168,6 @@ namespace InventoryView
             }
         }
 
-        public class TreeViewSearchMatches
-        {
-            public TreeView TreeView { get; set; }
-            public List<TreeNode> SearchMatches { get; set; } = new List<TreeNode>();
-            public TreeNode CurrentMatch { get; set; }
-        }
-
-        public class ExportData
-        {
-            public string Character { get; set; }
-            public string Tap { get; set; }
-            public List<string> Path { get; set; } = new List<string>();
-        }
-
         public void MultiLineTabs_CheckedChanged(object sender, EventArgs e)
         {
             tabControl1.Multiline = toolStripMultilineTabs.Checked;
@@ -1126,7 +1182,7 @@ namespace InventoryView
             LoadSave.SaveSettings();
             toolStripFamily.Enabled = true;
             if (toolStripFamily.Checked)
-                Class1.Host.EchoText("To use family vault, be inside the vault or have runners");
+                plugin.Host.EchoText("To use family vault, be inside the vault or have runners");
         }
 
         public void Pockets_CheckedChanged(object sender, EventArgs e)
@@ -1200,6 +1256,10 @@ namespace InventoryView
             {
                 optionsToolStripMenuItem,
                 commandsToolStripMenuItem,
+                filterToolStripMenuItem,
+                filtarAlltoolStripMenuItem,
+                filterActivetoolStripMenuItem,
+                filterArchivedtoolStripMenuItem,
                 toolStripDarkMode,
                 toolStripFamily,
                 toolStripMultilineTabs,
@@ -1216,6 +1276,35 @@ namespace InventoryView
             }
 
             LoadSave.SaveSettings();
+        }
+
+        // Toggles the archive state for the currently selected tab.
+        public static void ToggleArchiveForSelectedTab(TabControl tabControl)
+        {
+            if (tabControl.SelectedTab != null)
+            {
+                // Retrieve the character name from the TabPage's Tag (if you stored it as a string)
+                string characterName = tabControl.SelectedTab.Tag as string;
+                if (string.IsNullOrEmpty(characterName))
+                    return;
+
+                var entries = plugin.CharacterData
+                    .Where(c => c.name.Equals(characterName, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                if (entries.Count > 0)
+                {
+                    bool currentlyArchived = entries.All(c => c.Archived);
+                    bool newArchiveState = !currentlyArchived;
+                    foreach (var entry in entries)
+                    {
+                        entry.Archived = newArchiveState;
+                    }
+                    tabControl.SelectedTab.Text = characterName + (newArchiveState ? " (Archived)" : " (Activated)");
+                }
+                tabControl.Invalidate();
+                LoadSave.SaveSettings();
+            }
         }
 
         private void UpdateNodeColors(TreeNodeCollection nodes, Color foreColor, Color backColor)
@@ -1268,6 +1357,234 @@ namespace InventoryView
             this.TopMost = toolStripAlwaysTop.Checked;
         }
 
+        private void ApplyTabColorToPage(TabPage tabPage, string characterName)
+        {
+            var character = plugin.CharacterData.FirstOrDefault(c => c.name == characterName);
+            if (character != null)
+            {
+                try
+                {
+                    if (!string.IsNullOrEmpty(character.TabColor))
+                        tabPage.BackColor = ColorTranslator.FromHtml(character.TabColor);
+
+                    if (!string.IsNullOrEmpty(character.TabTextColor))
+                        tabPage.ForeColor = ColorTranslator.FromHtml(character.TabTextColor);
+                }
+                catch
+                {
+                    // Fallback to defaults
+                    tabPage.BackColor = SystemColors.Control;
+                    tabPage.ForeColor = SystemColors.ControlText;
+                }
+            }
+        }
+
+        private void tabControl1_DrawItem(object sender, DrawItemEventArgs e)
+        {
+            TabPage page = tabControl1.TabPages[e.Index];
+            Color backColor = page.BackColor;
+            Color textColor = Color.Black; // Default fallback
+
+            // Get text color from character data
+            var character = plugin.CharacterData.FirstOrDefault(c => c.name == page.Tag?.ToString());
+            if (character != null && !string.IsNullOrEmpty(character.TabTextColor))
+            {
+                try { textColor = ColorTranslator.FromHtml(character.TabTextColor); }
+                catch { textColor = SystemColors.ControlText; }
+            }
+
+            using (SolidBrush brush = new SolidBrush(backColor))
+            {
+                e.Graphics.FillRectangle(brush, e.Bounds);
+            }
+
+            //if (backColor.GetBrightness() < 0.5)
+            //{
+            //    textColor = Color.White;  // Use white text for dark background
+            //}
+
+            TextRenderer.DrawText(
+                e.Graphics,
+                page.Text,
+                tabControl1.Font,
+                e.Bounds,
+                textColor,  // Use the custom text color
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter
+            );
+        }
+
+        public static void ChangeTabColor(TabControl tabControl)
+        {
+            // First dialog: Background color
+            using (var bgDialog = new TitledColorDialog { DialogTitle = "Select Background Color" })
+            {
+                if (bgDialog.ShowDialog() == DialogResult.OK)
+                {
+                    Color bgColor = bgDialog.Color;
+
+                    // Second dialog: Text color with contrast suggestion
+                    using (var textDialog = new TitledColorDialog
+                    {
+                        DialogTitle = "Select Text Color",
+                        Color = GetContrastColor(bgColor)  // Auto-suggest contrast
+                    })
+                    {
+                        if (textDialog.ShowDialog() == DialogResult.OK)
+                        {
+                            ApplyColorsToTab(tabControl, bgColor, textDialog.Color);
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void ApplyColorsToTab(TabControl tabControl, Color bgColor, Color textColor)
+        {
+            if (tabControl.SelectedTab != null)
+            {
+                string characterName = tabControl.SelectedTab.Tag as string;
+                var character = plugin.CharacterData.FirstOrDefault(c => c.name == characterName);
+                if (character != null)
+                {
+                    character.TabColor = ColorTranslator.ToHtml(bgColor);
+                    character.TabTextColor = ColorTranslator.ToHtml(textColor);
+
+                    tabControl.SelectedTab.BackColor = bgColor;
+                    tabControl.SelectedTab.ForeColor = textColor;
+                    tabControl.Invalidate();
+                    LoadSave.SaveSettings();
+                }
+            }
+        }
+
+        private static Color GetContrastColor(Color bgColor)
+        {
+            // WCAG 2.0 contrast calculation
+            double luminance = (0.2126 * bgColor.R + 0.7152 * bgColor.G + 0.0722 * bgColor.B) / 255;
+            return luminance > 0.4 ? Color.Black : Color.White;
+        }
+
+
+        public static void DrawTab(DrawItemEventArgs e, TabControl tabControl)
+        {
+            TabPage page = tabControl.TabPages[e.Index];
+            Color baseColor = Color.White;  // Default to white if no color is set
+
+            // Retrieve the color from TabPage's Tag (if it's set)
+            if (page.Tag is string tabColorString && !string.IsNullOrEmpty(tabColorString))
+            {
+                try
+                {
+                    baseColor = ColorTranslator.FromHtml(tabColorString);  // Convert the string to a Color
+                }
+                catch
+                {
+                    baseColor = Color.White; // In case of an error in conversion, fallback to white
+                }
+            }
+
+            using (SolidBrush brush = new SolidBrush(baseColor))
+            {
+                e.Graphics.FillRectangle(brush, e.Bounds);  // Fill the background with the color
+            }
+
+            bool isSelected = (tabControl.SelectedIndex == e.Index);
+            TextRenderer.DrawText(e.Graphics, page.Text, tabControl.Font, e.Bounds, Color.Black, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+        }
+
+        public static void UpdateFilterMenuItems(string currentFilter, ToolStripMenuItem filterMenuItem)
+        {
+            if (currentFilter == "All Tabs")
+            {
+                filterMenuItem.Text = "Filter All Tabs";
+            }
+            else if (currentFilter == "Active Tabs")
+            {
+                filterMenuItem.Text = "Filter Active Tabs";
+            }
+            else if (currentFilter == "Archived Tabs")
+            {
+                filterMenuItem.Text = "Filter Archived Tabs";
+            }
+        }
+
+        private void ResetAllTabColors()
+        {
+            foreach (TabPage tabPage in tabControl1.TabPages)
+            {
+                tabPage.BackColor = SystemColors.Control;
+
+                // Optionally reset text color as well
+                tabPage.ForeColor = SystemColors.ControlText;
+
+                // You can also clear any custom color stored in the tab's tag if needed
+                var characterName = tabPage.Tag as string;
+                if (!string.IsNullOrEmpty(characterName))
+                {
+                    var entries = plugin.CharacterData
+                        .Where(c => c.name.Equals(characterName, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+
+                    foreach (var entry in entries)
+                    {
+                        entry.TabColor = string.Empty;  // Clear the saved color
+                        entry.TabTextColor = string.Empty;
+                    }
+                }
+            }
+
+            tabControl1.Invalidate();  // Redraw the tabs
+
+            // Optionally save the changes
+            LoadSave.SaveSettings();  // Ensure settings are saved after reset
+        }
+
+        private void filtarAlltoolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            currentFilter = "All Tabs";
+            UpdateFilterMenuItems(currentFilter, filterToolStripMenuItem);
+            BindData();
+        }
+
+        private void filterActivetoolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            currentFilter = "Active Tabs";
+            UpdateFilterMenuItems(currentFilter, filterToolStripMenuItem);
+            BindData();
+        }
+
+        private void filterArchivedtoolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            currentFilter = "Archived Tabs";
+            UpdateFilterMenuItems(currentFilter, filterToolStripMenuItem);
+            BindData();
+        }
+
+        private void TabControl1_MouseUp(object sender, MouseEventArgs e)
+        {
+            HandleTabControlMouseUp(tabControl1, e);
+        }
+
+        private void ToggleArchiveMenuItem_Click(object sender, EventArgs e)
+        {
+            ToggleArchiveForSelectedTab(tabControl1);
+        }
+
+        private void ResetAllTabColors_Click(object sender, EventArgs e)
+        {
+            ResetAllTabColors();  // Call the method to reset all tab colors
+        }
+
+
+        private void colorTabToolStrip_Click(object sender, EventArgs e)
+        {
+            for (int i = 0; i < tabControl1.TabPages.Count; i++)
+            {
+                ChangeTabColor(tabControl1);
+                break;
+            }
+        }
+
         protected override void Dispose(bool disposing)
         {
             if (disposing && components != null)
@@ -1289,6 +1606,7 @@ namespace InventoryView
             lblMatches = new ListBox();
             tableLayoutPanel1 = new TableLayoutPanel();
             panel1 = new Panel();
+            label1 = new Label();
             infolabel = new Label();
             cboCharacters = new ComboBox();
             btnRemoveCharacter = new Button();
@@ -1311,9 +1629,17 @@ namespace InventoryView
             commandsToolStripMenuItem = new ToolStripMenuItem();
             toolStripScan = new ToolStripMenuItem();
             toolStripReload = new ToolStripMenuItem();
+            toolStripSeparator1 = new ToolStripSeparator();
             toolStripWiki = new ToolStripMenuItem();
             toolStripExport = new ToolStripMenuItem();
-            toolStripMenuItem1 = new ToolStripMenuItem();
+            toolStripExportAll = new ToolStripMenuItem();
+            toolStripSeparator2 = new ToolStripSeparator();
+            resetTabColorsMenuItem = new ToolStripMenuItem();
+            colorTabToolStrip = new ToolStripMenuItem();
+            filterToolStripMenuItem = new ToolStripMenuItem();
+            filtarAlltoolStripMenuItem = new ToolStripMenuItem();
+            filterActivetoolStripMenuItem = new ToolStripMenuItem();
+            filterArchivedtoolStripMenuItem = new ToolStripMenuItem();
             toolStripContainer1 = new ToolStripContainer();
             listBox_Menu.SuspendLayout();
             tableLayoutPanel1.SuspendLayout();
@@ -1428,6 +1754,7 @@ namespace InventoryView
             // 
             panel1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             panel1.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            panel1.Controls.Add(label1);
             panel1.Controls.Add(infolabel);
             panel1.Controls.Add(cboCharacters);
             panel1.Controls.Add(btnRemoveCharacter);
@@ -1444,6 +1771,15 @@ namespace InventoryView
             panel1.Name = "panel1";
             panel1.Size = new Size(726, 73);
             panel1.TabIndex = 0;
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(1, 1);
+            label1.Name = "label1";
+            label1.Size = new Size(200, 15);
+            label1.TabIndex = 17;
+            label1.Text = "Right click tabs to archive or activate";
             // 
             // infolabel
             // 
@@ -1510,7 +1846,7 @@ namespace InventoryView
             // 
             lblFound.AutoSize = true;
             lblFound.Font = new Font("Segoe UI", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
-            lblFound.Location = new Point(261, 51);
+            lblFound.Location = new Point(261, 50);
             lblFound.Margin = new Padding(4, 0, 4, 0);
             lblFound.Name = "lblFound";
             lblFound.Size = new Size(58, 17);
@@ -1520,7 +1856,7 @@ namespace InventoryView
             // lblSearch
             // 
             lblSearch.AutoSize = true;
-            lblSearch.Location = new Point(2, 29);
+            lblSearch.Location = new Point(2, 30);
             lblSearch.Margin = new Padding(4, 0, 4, 0);
             lblSearch.Name = "lblSearch";
             lblSearch.Size = new Size(45, 15);
@@ -1576,10 +1912,10 @@ namespace InventoryView
             btnReset.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnReset.AutoSize = true;
             btnReset.ForeColor = SystemColors.ControlText;
-            btnReset.Location = new Point(325, 22);
+            btnReset.Location = new Point(327, 24);
             btnReset.Margin = new Padding(4, 3, 4, 3);
             btnReset.Name = "btnReset";
-            btnReset.Size = new Size(88, 29);
+            btnReset.Size = new Size(75, 25);
             btnReset.TabIndex = 5;
             btnReset.Text = "Reset";
             btnReset.UseVisualStyleBackColor = true;
@@ -1612,7 +1948,7 @@ namespace InventoryView
             menuStrip.BackColor = SystemColors.Control;
             menuStrip.Dock = DockStyle.None;
             menuStrip.GripMargin = new Padding(0);
-            menuStrip.Items.AddRange(new ToolStripItem[] { optionsToolStripMenuItem, commandsToolStripMenuItem });
+            menuStrip.Items.AddRange(new ToolStripItem[] { optionsToolStripMenuItem, commandsToolStripMenuItem, filterToolStripMenuItem });
             menuStrip.LayoutStyle = ToolStripLayoutStyle.HorizontalStackWithOverflow;
             menuStrip.Location = new Point(0, 0);
             menuStrip.Name = "menuStrip";
@@ -1636,7 +1972,7 @@ namespace InventoryView
             toolStripDarkMode.CheckOnClick = true;
             toolStripDarkMode.ForeColor = SystemColors.ControlText;
             toolStripDarkMode.Name = "toolStripDarkMode";
-            toolStripDarkMode.Size = new Size(180, 22);
+            toolStripDarkMode.Size = new Size(151, 22);
             toolStripDarkMode.Text = "Dark Mode";
             toolStripDarkMode.CheckedChanged += DarkMode_CheckedChanged;
             // 
@@ -1646,7 +1982,7 @@ namespace InventoryView
             toolStripFamily.CheckOnClick = true;
             toolStripFamily.ForeColor = SystemColors.ControlText;
             toolStripFamily.Name = "toolStripFamily";
-            toolStripFamily.Size = new Size(180, 22);
+            toolStripFamily.Size = new Size(151, 22);
             toolStripFamily.Text = "Family Vault";
             toolStripFamily.CheckedChanged += Family_CheckedChanged;
             // 
@@ -1656,7 +1992,7 @@ namespace InventoryView
             toolStripMultilineTabs.CheckOnClick = true;
             toolStripMultilineTabs.ForeColor = SystemColors.ControlText;
             toolStripMultilineTabs.Name = "toolStripMultilineTabs";
-            toolStripMultilineTabs.Size = new Size(180, 22);
+            toolStripMultilineTabs.Size = new Size(151, 22);
             toolStripMultilineTabs.Text = "Multiline Tabs";
             toolStripMultilineTabs.CheckedChanged += MultiLineTabs_CheckedChanged;
             // 
@@ -1666,7 +2002,7 @@ namespace InventoryView
             toolStripPockets.CheckOnClick = true;
             toolStripPockets.ForeColor = SystemColors.ControlText;
             toolStripPockets.Name = "toolStripPockets";
-            toolStripPockets.Size = new Size(180, 22);
+            toolStripPockets.Size = new Size(151, 22);
             toolStripPockets.Text = "Pockets";
             toolStripPockets.CheckedChanged += Pockets_CheckedChanged;
             // 
@@ -1674,14 +2010,14 @@ namespace InventoryView
             // 
             toolStripAlwaysTop.CheckOnClick = true;
             toolStripAlwaysTop.Name = "toolStripAlwaysTop";
-            toolStripAlwaysTop.Size = new Size(180, 22);
+            toolStripAlwaysTop.Size = new Size(151, 22);
             toolStripAlwaysTop.Text = "Always On top";
             toolStripAlwaysTop.CheckedChanged += ToolStripAlwaysTop_CheckedChanged;
             // 
             // commandsToolStripMenuItem
             // 
             commandsToolStripMenuItem.BackColor = SystemColors.Control;
-            commandsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { toolStripScan, toolStripReload, toolStripWiki, toolStripExport, toolStripMenuItem1 });
+            commandsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { toolStripScan, toolStripReload, toolStripSeparator1, toolStripWiki, toolStripExport, toolStripExportAll, toolStripSeparator2, resetTabColorsMenuItem, colorTabToolStrip });
             commandsToolStripMenuItem.ForeColor = SystemColors.ControlText;
             commandsToolStripMenuItem.Name = "commandsToolStripMenuItem";
             commandsToolStripMenuItem.Size = new Size(81, 20);
@@ -1692,7 +2028,7 @@ namespace InventoryView
             toolStripScan.BackColor = SystemColors.Control;
             toolStripScan.ForeColor = SystemColors.ControlText;
             toolStripScan.Name = "toolStripScan";
-            toolStripScan.Size = new Size(153, 22);
+            toolStripScan.Size = new Size(221, 22);
             toolStripScan.Text = "Scan Character";
             toolStripScan.Click += Scan_Click;
             // 
@@ -1701,32 +2037,84 @@ namespace InventoryView
             toolStripReload.BackColor = SystemColors.Control;
             toolStripReload.ForeColor = SystemColors.ControlText;
             toolStripReload.Name = "toolStripReload";
-            toolStripReload.Size = new Size(153, 22);
+            toolStripReload.Size = new Size(221, 22);
             toolStripReload.Text = "Reload File";
             toolStripReload.Click += Reload_Click;
+            // 
+            // toolStripSeparator1
+            // 
+            toolStripSeparator1.Name = "toolStripSeparator1";
+            toolStripSeparator1.Size = new Size(218, 6);
             // 
             // toolStripWiki
             // 
             toolStripWiki.BackColor = SystemColors.Control;
             toolStripWiki.ForeColor = SystemColors.ControlText;
             toolStripWiki.Name = "toolStripWiki";
-            toolStripWiki.Size = new Size(153, 22);
+            toolStripWiki.Size = new Size(221, 22);
             toolStripWiki.Text = "Wiki Lookup";
             toolStripWiki.Click += Wiki_Click;
             // 
             // toolStripExport
             // 
             toolStripExport.Name = "toolStripExport";
-            toolStripExport.Size = new Size(153, 22);
+            toolStripExport.Size = new Size(221, 22);
             toolStripExport.Text = "Export Current";
             toolStripExport.Click += Export_Click;
             // 
-            // toolStripMenuItem1
+            // toolStripExportAll
             // 
-            toolStripMenuItem1.Name = "toolStripMenuItem1";
-            toolStripMenuItem1.Size = new Size(153, 22);
-            toolStripMenuItem1.Text = "Export All";
-            toolStripMenuItem1.Click += ExportAll_Click;
+            toolStripExportAll.Name = "toolStripExportAll";
+            toolStripExportAll.Size = new Size(221, 22);
+            toolStripExportAll.Text = "Export All";
+            toolStripExportAll.Click += ExportAll_Click;
+            // 
+            // toolStripSeparator2
+            // 
+            toolStripSeparator2.Name = "toolStripSeparator2";
+            toolStripSeparator2.Size = new Size(218, 6);
+            // 
+            // resetTabColorsMenuItem
+            // 
+            resetTabColorsMenuItem.Name = "resetTabColorsMenuItem";
+            resetTabColorsMenuItem.Size = new Size(221, 22);
+            resetTabColorsMenuItem.Text = "Reset All Tab Colors";
+            resetTabColorsMenuItem.Click += ResetAllTabColors_Click;
+            // 
+            // colorTabToolStrip
+            // 
+            colorTabToolStrip.Name = "colorTabToolStrip";
+            colorTabToolStrip.Size = new Size(221, 22);
+            colorTabToolStrip.Text = "Change Selected Tab Colors";
+            colorTabToolStrip.Click += colorTabToolStrip_Click;
+            // 
+            // filterToolStripMenuItem
+            // 
+            filterToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { filtarAlltoolStripMenuItem, filterActivetoolStripMenuItem, filterArchivedtoolStripMenuItem });
+            filterToolStripMenuItem.Name = "filterToolStripMenuItem";
+            filterToolStripMenuItem.Size = new Size(72, 20);
+            filterToolStripMenuItem.Text = "Filter Tabs";
+            // 
+            // filtarAlltoolStripMenuItem
+            // 
+            filtarAlltoolStripMenuItem.Name = "filtarAlltoolStripMenuItem";
+            filtarAlltoolStripMenuItem.Size = new Size(121, 22);
+            filtarAlltoolStripMenuItem.Text = "All";
+            filtarAlltoolStripMenuItem.Click += filtarAlltoolStripMenuItem_Click;
+            // 
+            // filterActivetoolStripMenuItem
+            // 
+            filterActivetoolStripMenuItem.Name = "filterActivetoolStripMenuItem";
+            filterActivetoolStripMenuItem.Size = new Size(121, 22);
+            filterActivetoolStripMenuItem.Text = "Active";
+            filterActivetoolStripMenuItem.Click += filterActivetoolStripMenuItem_Click;
+            // 
+            // filterArchivedtoolStripMenuItem
+            // 
+            filterArchivedtoolStripMenuItem.Name = "filterArchivedtoolStripMenuItem";
+            filterArchivedtoolStripMenuItem.Size = new Size(121, 22);
+            filterArchivedtoolStripMenuItem.Text = "Archived";
+            filterArchivedtoolStripMenuItem.Click += filterArchivedtoolStripMenuItem_Click;
             // 
             // toolStripContainer1
             // 
