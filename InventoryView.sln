@@ -2,7 +2,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.1.32328.378
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InventoryView", "InventoryView.csproj", "{ED643773-8241-415F-B286-AFAC4D277D33}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InventoryView", "InventoryView.csproj", "{ED643773-8241-415F-B286-AFAC4D277D33}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
