@@ -25,14 +25,14 @@ namespace InventoryView.Cases
 
                 if (trimtext.StartsWith("Your documentation filed with the Estate Holders", StringComparison.OrdinalIgnoreCase))
                 {
-                    plugin.Host.EchoText("Skipping Home (no home detected).");
+                    plugin.Host.EchoText("Skipping Home");
                     plugin.GuildCheck(trimtext);
                     return;
                 }
 
                 if (plugin.IsDenied(trimtext))
                 {
-                    plugin.Host.EchoText("Skipping Home (denied).");
+                    plugin.Host.EchoText("Skipping Home");
                     plugin.GuildCheck(trimtext);
                     return;
                 }
