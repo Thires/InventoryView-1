@@ -460,19 +460,19 @@ namespace InventoryView
                     mode = "Shadow Servant";
                 currentData = new CharacterData() { name = Host.get_Variable("charactername"), source = mode };
 
-                currentData = new CharacterData()
-                {
-                    name = Host.get_Variable("charactername"),
-                    source = mode
-                };
+                        currentData = new CharacterData() 
+        { 
+            name = Host.get_Variable("charactername"), 
+            source = mode 
+        };
 
-                // Apply preserved properties if available
-                if (_preservedProperties != null && _preservedProperties.TryGetValue(mode, out var props))
-                {
-                    currentData.Archived = props.Archived;
-                    currentData.TabColor = props.TabColor;
-                    currentData.TabTextColor = props.TabTextColor;
-                }
+        // Apply preserved properties if available
+        if (_preservedProperties != null && _preservedProperties.TryGetValue(mode, out var props))
+        {
+            currentData.Archived = props.Archived;
+            currentData.TabColor = props.TabColor;
+            currentData.TabTextColor = props.TabTextColor;
+        }
 
                 CharacterData.Add(currentData);
                 level = 1;
