@@ -46,6 +46,10 @@ namespace InventoryView
         private ContextMenuStrip tabContextMenuStrip;
         private ToolStripMenuItem resetTabColorsMenuItem;
         private ToolStripMenuItem filterToolStripMenuItem;
+        private ToolStripSeparator toolStripSeparator1;
+        private ToolStripSeparator toolStripSeparator2;
+        private ToolStripMenuItem colorTabToolStrip;
+        private ToolStripMenuItem resetSingleTabStripMenu;
 
         private bool clickSearch = false;
 
@@ -79,11 +83,8 @@ namespace InventoryView
         internal static Form form;
 
         private static string basePath = Application.StartupPath;
-        private string currentFilter = "All Tabs";
-        private ToolStripSeparator toolStripSeparator1;
-        private ToolStripSeparator toolStripSeparator2;
-        private ToolStripMenuItem colorTabToolStrip;
-        private ToolStripMenuItem resetSingleTabStripMenu;
+        private string currentFilter;
+
         private readonly Dictionary<string, List<MatchedItemInfo>> matchedItemsDictionary = new();
 
         public InventoryViewForm()
@@ -170,7 +171,7 @@ namespace InventoryView
                 var tabPage = new TabPage(character + (isArchived ? " (Archived)" : " (Acivated)"));
                 tabPage.Tag = character; // store name
 
-                ApplyTabColorToPage(tabPage, character);
+                ApplyTabColor(tabPage, character);
 
                 tabControl1.TabPages.Add(tabPage);
 
@@ -1358,24 +1359,40 @@ namespace InventoryView
             this.TopMost = toolStripAlwaysTop.Checked;
         }
 
-        private void ApplyTabColorToPage(TabPage tabPage, string characterName)
+        private void ApplyTabColor(TabPage tabPage, string characterName)
         {
             var character = plugin.CharacterData.FirstOrDefault(c => c.name == characterName);
+
             if (character != null)
             {
-                try
+                // Apply TabColor (Background Color) from stored character data
+                if (!string.IsNullOrEmpty(character.TabColor))
                 {
-                    if (!string.IsNullOrEmpty(character.TabColor))
-                        tabPage.BackColor = ColorTranslator.FromHtml(character.TabColor);
-
-                    if (!string.IsNullOrEmpty(character.TabTextColor))
-                        tabPage.ForeColor = ColorTranslator.FromHtml(character.TabTextColor);
+                    try
+                    {
+                        var color = ColorTranslator.FromHtml(character.TabColor);  // Convert hex string to color
+                        tabPage.BackColor = color;  // Apply the color to the tab's background
+                    }
+                    catch
+                    {
+                        // Handle invalid color string (fallback to default color)
+                        tabPage.BackColor = Color.White;
+                    }
                 }
-                catch
+
+                // Apply TabTextColor (Text Color)
+                if (!string.IsNullOrEmpty(character.TabTextColor))
                 {
-                    // Fallback to defaults
-                    tabPage.BackColor = SystemColors.Control;
-                    tabPage.ForeColor = SystemColors.ControlText;
+                    try
+                    {
+                        var textColor = ColorTranslator.FromHtml(character.TabTextColor);  // Convert hex string to color
+                        tabPage.ForeColor = textColor;  // Apply the color to the tab's text
+                    }
+                    catch
+                    {
+                        // Handle invalid color string (fallback to default text color)
+                        tabPage.ForeColor = Color.Black;
+                    }
                 }
             }
         }
@@ -1673,8 +1690,8 @@ namespace InventoryView
             toolStripExportAll = new ToolStripMenuItem();
             toolStripSeparator2 = new ToolStripSeparator();
             resetTabColorsMenuItem = new ToolStripMenuItem();
-            colorTabToolStrip = new ToolStripMenuItem();
             resetSingleTabStripMenu = new ToolStripMenuItem();
+            colorTabToolStrip = new ToolStripMenuItem();
             filterToolStripMenuItem = new ToolStripMenuItem();
             filtarAlltoolStripMenuItem = new ToolStripMenuItem();
             filterActivetoolStripMenuItem = new ToolStripMenuItem();
@@ -2011,7 +2028,7 @@ namespace InventoryView
             toolStripDarkMode.CheckOnClick = true;
             toolStripDarkMode.ForeColor = SystemColors.ControlText;
             toolStripDarkMode.Name = "toolStripDarkMode";
-            toolStripDarkMode.Size = new Size(151, 22);
+            toolStripDarkMode.Size = new Size(199, 22);
             toolStripDarkMode.Text = "Dark Mode";
             toolStripDarkMode.CheckedChanged += DarkMode_CheckedChanged;
             // 
@@ -2021,7 +2038,7 @@ namespace InventoryView
             toolStripFamily.CheckOnClick = true;
             toolStripFamily.ForeColor = SystemColors.ControlText;
             toolStripFamily.Name = "toolStripFamily";
-            toolStripFamily.Size = new Size(151, 22);
+            toolStripFamily.Size = new Size(199, 22);
             toolStripFamily.Text = "Family Vault";
             toolStripFamily.CheckedChanged += Family_CheckedChanged;
             // 
@@ -2031,25 +2048,27 @@ namespace InventoryView
             toolStripMultilineTabs.CheckOnClick = true;
             toolStripMultilineTabs.ForeColor = SystemColors.ControlText;
             toolStripMultilineTabs.Name = "toolStripMultilineTabs";
-            toolStripMultilineTabs.Size = new Size(151, 22);
+            toolStripMultilineTabs.Size = new Size(199, 22);
             toolStripMultilineTabs.Text = "Multiline Tabs";
             toolStripMultilineTabs.CheckedChanged += MultiLineTabs_CheckedChanged;
             // 
             // toolStripPockets
             // 
             toolStripPockets.BackColor = SystemColors.Control;
+            toolStripPockets.Checked = true;
             toolStripPockets.CheckOnClick = true;
+            toolStripPockets.CheckState = CheckState.Checked;
             toolStripPockets.ForeColor = SystemColors.ControlText;
             toolStripPockets.Name = "toolStripPockets";
-            toolStripPockets.Size = new Size(151, 22);
-            toolStripPockets.Text = "Pockets";
+            toolStripPockets.Size = new Size(199, 22);
+            toolStripPockets.Text = "Pocket inside Container";
             toolStripPockets.CheckedChanged += Pockets_CheckedChanged;
             // 
             // toolStripAlwaysTop
             // 
             toolStripAlwaysTop.CheckOnClick = true;
             toolStripAlwaysTop.Name = "toolStripAlwaysTop";
-            toolStripAlwaysTop.Size = new Size(151, 22);
+            toolStripAlwaysTop.Size = new Size(199, 22);
             toolStripAlwaysTop.Text = "Always On top";
             toolStripAlwaysTop.CheckedChanged += ToolStripAlwaysTop_CheckedChanged;
             // 
@@ -2120,19 +2139,19 @@ namespace InventoryView
             resetTabColorsMenuItem.Text = "Reset All Tab Colors";
             resetTabColorsMenuItem.Click += ResetAllTabColors_Click;
             // 
-            // colorTabToolStrip
-            // 
-            colorTabToolStrip.Name = "colorTabToolStrip";
-            colorTabToolStrip.Size = new Size(221, 22);
-            colorTabToolStrip.Text = "Change Selected Tab Colors";
-            colorTabToolStrip.Click += colorTabToolStrip_Click;
-            // 
             // resetSingleTabStripMenu
             // 
             resetSingleTabStripMenu.Name = "resetSingleTabStripMenu";
             resetSingleTabStripMenu.Size = new Size(221, 22);
             resetSingleTabStripMenu.Text = "Reset Selected Tab Colors";
             resetSingleTabStripMenu.Click += ResetSelectedTabColorButton_Click;
+            // 
+            // colorTabToolStrip
+            // 
+            colorTabToolStrip.Name = "colorTabToolStrip";
+            colorTabToolStrip.Size = new Size(221, 22);
+            colorTabToolStrip.Text = "Change Selected Tab Colors";
+            colorTabToolStrip.Click += colorTabToolStrip_Click;
             // 
             // filterToolStripMenuItem
             // 

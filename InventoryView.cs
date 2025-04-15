@@ -19,6 +19,9 @@ namespace InventoryView
         internal static Form form;
         public static Form Form { get => form; set => form = value; }
 
+        private Dictionary<string, (bool Archived, string TabColor, string TabTextColor)> _preservedProperties;
+
+
         // This contains all the of the inventory data.
         private static List<CharacterData> characterData = new();
         public static List<CharacterData> CharacterData { get => characterData; set => characterData = value; }
@@ -409,11 +412,14 @@ namespace InventoryView
         internal void ScanStart(string mode)
         {
             ScanMode = mode;
-            processedPockets.Clear();
-            pocketScanStarted = false;
-            handledCurrentPocket = false;
-            pocketContainer = null;
-            pocketContainerShort = null;
+            if (!mode.StartsWith("Pocket in") && mode != "Pocket")
+            {
+                processedPockets.Clear();
+                pocketScanStarted = false;
+                handledCurrentPocket = false;
+                pocketContainer = null;
+                pocketContainerShort = null;
+            }
 
             if (mode == "FamilyVault")
             {
@@ -436,6 +442,12 @@ namespace InventoryView
             }
             else
             {
+                if (!((InventoryViewForm)Form).toolStripPockets.Checked)
+                {
+                    if (mode == "Pocket")
+                        mode = $"Pocket in {pocketContainer}";
+
+                }
                 if (mode == "InVault")
                     mode = "Vault";
                 if (mode == "Standard")
@@ -447,6 +459,21 @@ namespace InventoryView
                 if (mode == "MoonMage")
                     mode = "Shadow Servant";
                 currentData = new CharacterData() { name = Host.get_Variable("charactername"), source = mode };
+
+                currentData = new CharacterData()
+                {
+                    name = Host.get_Variable("charactername"),
+                    source = mode
+                };
+
+                // Apply preserved properties if available
+                if (_preservedProperties != null && _preservedProperties.TryGetValue(mode, out var props))
+                {
+                    currentData.Archived = props.Archived;
+                    currentData.TabColor = props.TabColor;
+                    currentData.TabTextColor = props.TabTextColor;
+                }
+
                 CharacterData.Add(currentData);
                 level = 1;
             }
@@ -499,7 +526,7 @@ namespace InventoryView
             }
         }
 
-        private static bool RummageCheck(string trimtext, string currentSurface, out string resultText)
+        internal static bool RummageCheck(string trimtext, string currentSurface, out string resultText)
         {
             resultText = null;
 
@@ -518,7 +545,7 @@ namespace InventoryView
         }
 
 
-        private void SurfaceRummage(string surfaceType, string rummageText)
+        internal void SurfaceRummage(string surfaceType, string rummageText)
         {
             lastItem = currentData.AddItem(new ItemData() { tap = surfaceType, storage = true });
             if (Regex.Match(rummageText, $"^You rummage(?: through| around on) (?:a|an) {Regex.Escape(surfaceType)} and see (.+\\.?)").Success)
@@ -627,10 +654,19 @@ namespace InventoryView
                     {
                         LoadSave.LoadSettings();
                         ScanMode = "Start";
-                        while (CharacterData.Where(tbl => tbl.name == Host.get_Variable("charactername")).Any())
+
+                        var characterName = Host.get_Variable("charactername");
+                        var existingEntries = CharacterData.Where(tbl => tbl.name == characterName).ToList();
+                        _preservedProperties = new Dictionary<string, (bool, string, string)>();
+                        foreach (var entry in existingEntries)
                         {
-                            CharacterData.Remove(CharacterData.Where(tbl => tbl.name == Host.get_Variable("charactername")).First());
+                            _preservedProperties[entry.source] = (entry.Archived, entry.TabColor, entry.TabTextColor);
                         }
+
+                        // Remove existing entries for the character
+                        CharacterData.RemoveAll(tbl => tbl.name == characterName);
+
+
                         if (((InventoryViewForm)Form).toolStripFamily.Checked)
                             Host.SendText("played");
                         Host.SendText("info");
@@ -692,6 +728,7 @@ namespace InventoryView
             Host.EchoText("/InventoryView search keyword -- Will search xml for matches from command line.");
             Host.EchoText("/InvenotryView path tap -- Will show the path from command line.");
             Host.EchoText("All of these can also be done using /IV as well.");
+            Host.EchoText("Shift + Right click on a tab will open colors for it");
         }
 
         public void ParseXML(string xml)

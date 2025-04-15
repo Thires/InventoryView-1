@@ -44,7 +44,8 @@ namespace InventoryView
         public bool storage;
         public string tap;
         public ItemData parent;
-        public List<ItemData> items = new();
+        //public List<ItemData> items = new();
+        public List<ItemData> items { get; set; } = new List<ItemData>();
 
         public ItemData AddItem(ItemData newItem)
         {
@@ -126,6 +127,7 @@ namespace InventoryView
         {
             basePath = plugin.Host.get_Variable("PluginPath");
             string configFile = Path.Combine(basePath, "InventoryView.xml");
+
             try
             {
                 // Can't serialize a class with circular references, so I have to remove the parent links first.
@@ -261,6 +263,19 @@ namespace InventoryView
                     doc.DocumentElement.AppendChild(pocketsElement);
                 }
 
+                //XmlNode filterNode = doc.SelectSingleNode("/Root/Filter");
+
+                //if (filterNode != null)
+                //    filterNode.InnerText = ((InventoryViewForm)plugin.Form).currentFilter;
+                //else
+                //{
+                //    XmlElement filterElement = doc.CreateElement("Filter");
+                //    filterElement.InnerText = ((InventoryViewForm)plugin.Form).currentFilter;
+
+                //    // Append DarkModeState element to root element of XmlDocument.
+                //    doc.DocumentElement.AppendChild(filterElement);
+                //}
+
                 foreach (var character in plugin.CharacterData)
                 {
                     XmlNode characterNode = doc.SelectSingleNode($"/Root/ArrayOfCharacterData/CharacterData[name='{character.name}']");
@@ -289,7 +304,6 @@ namespace InventoryView
                             characterNode.AppendChild(colorTextNode);
                         }
                         colorTextNode.InnerText = character.TabTextColor.ToString();
-
                     }
 
                 }
@@ -367,6 +381,10 @@ namespace InventoryView
                         archiveElement.InnerText = "False";
                         newRootNode.AppendChild(archiveElement);
 
+                        //XmlElement filterElement = doc.CreateElement("Filter");
+                        //filterElement.InnerText = ("Filter Tabs");
+                        //newRootNode.AppendChild(filterElement);
+
                         // Replace the old root node with the new root node
                         doc.ReplaceChild(newRootNode, doc.DocumentElement);
 
@@ -442,6 +460,12 @@ namespace InventoryView
                     XmlNode pocketsNode = doc.SelectSingleNode("/Root/Pockets");
                     if (pocketsNode != null)
                         ((InventoryViewForm)plugin.Form).toolStripPockets.Checked = bool.Parse(pocketsNode.InnerText);
+
+                    //XmlNode filterNode = doc.SelectSingleNode("/Root/Filter");
+                    //if (filterNode != null)
+                    //    ((InventoryViewForm)plugin.Form).currentFilter = filterNode.InnerText;
+
+
                 }
                 else
                     plugin.Host.EchoText("File does not exist");
