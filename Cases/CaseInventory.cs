@@ -26,31 +26,11 @@
 
         private static void InventoryEnd(ref string scanMode)
         {
-            InventoryViewForm form = (InventoryViewForm)plugin.Form;
-
-            if (form.toolStripPockets.Checked)
-            {
-                plugin.Host.EchoText("Checking Pocket");
-                plugin.Host.SendText("tap pocket");
-                scanMode = "PocketStart";
-            }
-            else
-            {
-                if (plugin.Host.get_Variable("roomname").Contains("Carousel Chamber"))
-                {
-                    scanMode = "InVault";
-                    plugin.Host.EchoText("Rummaging Vault.");
-                    //plugin.ScanStart("InVault");
-                    plugin.Host.SendText("open vault");
-                    plugin.Host.SendText("rummage vault");
-                }
-                else
-                {
-                    scanMode = "VaultStart";
-                    plugin.Host.SendText("get my vault book");
-                }
-            }
+            plugin.Host.EchoText("Checking Pocket");
+            plugin.Host.SendText("tap pocket");
+            scanMode = "PocketStart";
         }
+
 
         private static void InventoryItems(string trimtext, string originalText, ref int level, ref ItemData lastItem, CharacterData currentData)
         {

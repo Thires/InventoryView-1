@@ -16,55 +16,91 @@ namespace InventoryView.Cases
 
         public void InVaultCase(string trimtext, string fullText, ref string scanMode, ref ItemData lastItem, CharacterData currentData, List<string> surfaces, List<string> SurfacesEncountered)
         {
-            if (scanMode == "InVault")
-            {
-                if (Regex.IsMatch(trimtext, "You rummage through a secure vault but there is nothing in there\\."))
-                {
-                    scanMode = null;
-                    Thread.Sleep(500);
-                    plugin.Host.SendText("close vault");
-                    Thread.Sleep(500);
-                    plugin.Host.SendText("go door");
-                    Thread.Sleep(500);
-                    plugin.Host.SendText("go arch");
-                    Thread.Sleep(2000);
-                    scanMode = "DeedStart";
-                    plugin.Host.SendText("get my deed register");
-                    return;
-                }
-
-                var match = Regex.Match(trimtext, "^You rummage through a(?: secure)? vault and see (.+)\\.");
-                if (match.Success)
-                {
-                    string vaultInv = match.Groups[1].Value;
-
-                    if (!string.IsNullOrWhiteSpace(vaultInv))
-                    {
-                        plugin.ScanStart("InVault");
-
-                        if (Regex.Match(vaultInv, @"\\b\\sand\\s(?:a|an|some|several)\\s\\b").Success)
-                            vaultInv = Regex.Replace(vaultInv, @"\\b\\sand\\s(a|an|some|several)\\s\\b", ", $1 ");
-
-                        List<string> items = new(vaultInv.Split(','));
-
-                        foreach (string itemText in items)
+                         if (Regex.IsMatch(trimtext, "^You rummage through a(?: secure)? vault and see (.+)\\."))
                         {
-                            string tap = itemText.Trim();
-                            if (surfaces.Contains(tap))
+                            string vaultInv = Regex.Match(trimtext, "^You rummage through a(?: secure)? vault and see (.+)\\.").Groups[1].Value;
+
+                            if (Regex.Match(vaultInv, @"\b\sand\s(?:a|an|some|several)\s\b").Success)
+                                vaultInv = Regex.Replace(vaultInv, @"\b\sand\s(a|an|some|several)\s\b", ", $1 ");
+
+                            List<string> items = new(vaultInv.Split(','));
+
+                            if (Regex.IsMatch(items[^1], @"\b\s(?:a|an|some|several)\s\b"))
                             {
-                                tap = Regex.Replace(tap, @"^(an?|some|several)\\s", "");
-                                SurfacesEncountered.Add(tap);
+                                // Split the last item by "and" and articles
+                                string[] lastItemSplit = Regex.Split(items[^1], @"\b^\s(?:a|an|some|several)\s\b");
+
+                                items.RemoveAt(items.Count - 1);
+
+                                if (Regex.IsMatch(lastItemSplit[0], @"\band\s(?:a|an|some|several)\s\b"))
+                                {
+                                    items[^1] += " " + lastItemSplit[0];
+                                    Array.Copy(lastItemSplit, 1, lastItemSplit, 0, lastItemSplit.Length - 1);
+                                }
+
+                                items.AddRange(lastItemSplit);
                             }
-                            else
+
+                            foreach (string itemText in items)
                             {
-                                tap = Regex.Replace(tap, @"^(an?|some|several)\\s", "");
-                                lastItem = currentData.AddItem(new ItemData { tap = tap });
+                                string tap = itemText.Trim();
+                                if (surfaces.Contains(tap))
+                                {
+                                    tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
+                                    SurfacesEncountered.Add(tap);
+                                    
+                                }
+                                else
+                                {
+                                    tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
+                                    lastItem = currentData.AddItem(new ItemData() { tap = tap });
+                                }
+                            }                        
+                        
+                        if (Regex.IsMatch(trimtext, "^You rummage through a(?: secure)? vault and see (.+)\\."))
+                        {
+                            vaultInv = Regex.Match(trimtext, "^You rummage through a(?: secure)? vault and see (.+)\\.").Groups[1].Value;
+
+                            if (Regex.Match(vaultInv, @"\b\sand\s(?:a|an|some|several)\s\b").Success)
+                                vaultInv = Regex.Replace(vaultInv, @"\b\sand\s(a|an|some|several)\s\b", ", $1 ");
+
+                            //List<string> items = new(vaultInv.Split(','));
+
+                            if (Regex.IsMatch(items[^1], @"\b\s(?:a|an|some|several)\s\b"))
+                            {
+                                // Split the last item by "and" and articles
+                                string[] lastItemSplit = Regex.Split(items[^1], @"\b^\s(?:a|an|some|several)\s\b");
+
+                                items.RemoveAt(items.Count - 1);
+
+                                if (Regex.IsMatch(lastItemSplit[0], @"\band\s(?:a|an|some|several)\s\b"))
+                                {
+                                    items[^1] += " " + lastItemSplit[0];
+                                    Array.Copy(lastItemSplit, 1, lastItemSplit, 0, lastItemSplit.Length - 1);
+                                }
+
+                                items.AddRange(lastItemSplit);
                             }
-                        }
+
+                            foreach (string itemText in items)
+                            {
+                                string tap = itemText.Trim();
+                                if (surfaces.Contains(tap))
+                                {
+                                    tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
+                                    SurfacesEncountered.Add(tap);
+                                    
+                                }
+                                else
+                                {
+                                    tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
+                                    lastItem = currentData.AddItem(new ItemData() { tap = tap });
+                                }
+                            }
                         scanMode = "Surface";
                     }
                 }
-            }
+            
             else if (scanMode == "Surface")
             {
                 if (SurfacesEncountered.Count == 0)
@@ -85,19 +121,18 @@ namespace InventoryView.Cases
                 {
                     string surface = SurfacesEncountered[i];
 
-                    plugin.Host.EchoText($"[DEBUG] SurfaceRummage check: '{plugin.currentSurface}', incoming: '{trimtext}'");
-
                     if (!trimtext.StartsWith("You rummage"))
-                        break;
+                        return;
+                            if (plugin.RummageCheck(trimtext, plugin.currentSurface, out _))
+                            {
+                                plugin.SurfaceRummage(SurfacesEncountered[i], trimtext);
+                                SurfacesEncountered.RemoveAt(i); // Remove the surface
 
-                    //if (plugin.RummageCheck(trimtext, plugin.currentSurface, out _))
-                    //{
-                    //    plugin.SurfaceRummage(surface, trimtext);
-                    //    SurfacesEncountered.RemoveAt(i);
-                    //    Thread.Sleep(100);
-                    //    scanMode = "Surface";
-                    //    break;
-                    //}
+                                Thread.Sleep(100);
+
+                                scanMode = "Surface";
+                                return;
+                            }
                 }
 
                 if (SurfacesEncountered.Count == 0)
