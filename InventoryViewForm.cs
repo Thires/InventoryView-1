@@ -195,12 +195,15 @@ namespace InventoryView
                 tv.ContextMenuStrip = contextMenuStrip;
 
                 int totalCount = AddCharacterDataToTreeView(tv, character);
-                tabPage.Text = $"{character} (T: {totalCount})";
+                if (isArchived)
+                    tabPage.Text = $"{character} (T: {totalCount}) *";
+                else
+                    tabPage.Text = $"{character} (T: {totalCount})";
 
                 foreach (TreeNode rootNode in tv.Nodes)
-                {
-                    rootNode.Expand();
-                }
+                    {
+                        rootNode.Expand();
+                    }
             }
         }
 
