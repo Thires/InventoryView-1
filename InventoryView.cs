@@ -748,7 +748,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "2.3c"; }
+            get { return "3.0c"; }
         }
 
         public string Description
