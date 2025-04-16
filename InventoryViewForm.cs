@@ -83,7 +83,7 @@ namespace InventoryView
         internal static Form form;
 
         private static string basePath = Application.StartupPath;
-        private string currentFilter;
+        private string currentFilter = "Active Tabs";
 
         private readonly Dictionary<string, List<MatchedItemInfo>> matchedItemsDictionary = new();
 
@@ -2160,27 +2160,27 @@ namespace InventoryView
             // 
             filterToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { filtarAlltoolStripMenuItem, filterActivetoolStripMenuItem, filterArchivedtoolStripMenuItem });
             filterToolStripMenuItem.Name = "filterToolStripMenuItem";
-            filterToolStripMenuItem.Size = new Size(72, 20);
-            filterToolStripMenuItem.Text = "Filter Tabs";
+            filterToolStripMenuItem.Size = new Size(108, 20);
+            filterToolStripMenuItem.Text = "Filter Active Tabs";
             // 
             // filtarAlltoolStripMenuItem
             // 
             filtarAlltoolStripMenuItem.Name = "filtarAlltoolStripMenuItem";
-            filtarAlltoolStripMenuItem.Size = new Size(121, 22);
+            filtarAlltoolStripMenuItem.Size = new Size(180, 22);
             filtarAlltoolStripMenuItem.Text = "All";
             filtarAlltoolStripMenuItem.Click += filtarAlltoolStripMenuItem_Click;
             // 
             // filterActivetoolStripMenuItem
             // 
             filterActivetoolStripMenuItem.Name = "filterActivetoolStripMenuItem";
-            filterActivetoolStripMenuItem.Size = new Size(121, 22);
+            filterActivetoolStripMenuItem.Size = new Size(180, 22);
             filterActivetoolStripMenuItem.Text = "Active";
             filterActivetoolStripMenuItem.Click += filterActivetoolStripMenuItem_Click;
             // 
             // filterArchivedtoolStripMenuItem
             // 
             filterArchivedtoolStripMenuItem.Name = "filterArchivedtoolStripMenuItem";
-            filterArchivedtoolStripMenuItem.Size = new Size(121, 22);
+            filterArchivedtoolStripMenuItem.Size = new Size(180, 22);
             filterArchivedtoolStripMenuItem.Text = "Archived";
             filterArchivedtoolStripMenuItem.Click += filterArchivedtoolStripMenuItem_Click;
             // 
