@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Xml;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 
 namespace InventoryView
@@ -80,7 +81,6 @@ namespace InventoryView
 
         private Form customTooltip = null;
         private readonly Timer tooltipTimer = new();
-        internal static Form form;
 
         private static string basePath = Application.StartupPath;
         private string currentFilter = "Active Tabs";
@@ -96,13 +96,13 @@ namespace InventoryView
         private void InventoryViewForm_Load(object sender, EventArgs e)
         {
             BindData();
-            basePath = plugin.Host.get_Variable("PluginPath");
+            basePath = Plugin.Host.get_Variable("PluginPath");
 
             // Load the character data
             LoadSave.LoadSettings();
 
             // Get a list of distinct character names from the characterData list
-            List<string> characterNames = plugin.CharacterData.Select(c => c.name).Distinct().ToList();
+            List<string> characterNames = Plugin.CharacterData.Select(c => c.name).Distinct().ToList();
 
             // Sort the character names
             characterNames.Sort();
@@ -117,7 +117,7 @@ namespace InventoryView
             toolStripAlwaysTop.CheckedChanged += ToolStripAlwaysTop_CheckedChanged;
 
             tabControl1.DrawMode = TabDrawMode.OwnerDrawFixed;
-            tabControl1.DrawItem += tabControl1_DrawItem;
+            tabControl1.DrawItem += TabControl1_DrawItem;
 
             // In InventoryViewForm_Load or in a helper method:
             tabContextMenuStrip = new ContextMenuStrip();
@@ -152,12 +152,12 @@ namespace InventoryView
             // Filter the character list
             if (filter == "Active Tabs")
             {
-                characters = characters.Where(ch => plugin.CharacterData
+                characters = characters.Where(ch => Plugin.CharacterData
                     .FirstOrDefault(c => c.name == ch && !c.Archived) != null).ToList(); // Only active characters
             }
             else if (filter == "Archived Tabs")
             {
-                characters = characters.Where(ch => plugin.CharacterData
+                characters = characters.Where(ch => Plugin.CharacterData
                     .FirstOrDefault(c => c.name == ch && c.Archived) != null).ToList(); // Only archived characters
             }
 
@@ -165,7 +165,7 @@ namespace InventoryView
             foreach (var character in characters)
             {
                 // Determine archive state
-                bool isArchived = plugin.CharacterData.FirstOrDefault(c => c.name == character)?.Archived ?? false; // If no character found, assume not archived
+                bool isArchived = Plugin.CharacterData.FirstOrDefault(c => c.name == character)?.Archived ?? false; // If no character found, assume not archived
 
                 // Create the tab page text
                 var tabPage = new TabPage(character + (isArchived ? " (Archived)" : " (Acivated)"));
@@ -209,7 +209,7 @@ namespace InventoryView
 
         private static List<string> GetDistinctCharacters()
         {
-            var characters = plugin.CharacterData.Select(tbl => tbl.name).Distinct().ToList();
+            var characters = Plugin.CharacterData.Select(tbl => tbl.name).Distinct().ToList();
             characters.Sort();
             return characters;
         }
@@ -219,7 +219,7 @@ namespace InventoryView
             int totalCount = 0;
 
             TreeNode charNode = tv.Nodes.Add(character);
-            foreach (var source in plugin.CharacterData.Where(tbl => tbl.name == character))
+            foreach (var source in Plugin.CharacterData.Where(tbl => tbl.name == character))
             {
                 TreeNode sourceNode = charNode.Nodes.Add(source.source);
                 sourceNode.ToolTipText = sourceNode.FullPath;
@@ -244,8 +244,8 @@ namespace InventoryView
                     totalCount++;
                 }
 
-                if (itemData.items.Count > 0)
-                    totalCount += PopulateTree(treeNode1, itemData.items);
+                if (itemData.Items.Count > 0)
+                    totalCount += PopulateTree(treeNode1, itemData.Items);
             }
 
             return totalCount;
@@ -727,8 +727,8 @@ namespace InventoryView
 
         private static void OpenWikiPage(string text)
         {
-            if (plugin.Host.InterfaceVersion == 4)
-                plugin.Host.SendText(string.Format("#browser https://elanthipedia.play.net/index.php?search={0}", Uri.EscapeDataString(Regex.Replace(text, @"\(\d+\)\s|\s\(closed\)|^(an?|some|several)\s|^\d+\s--\s(an?|some|several)\s", ""))));
+            if (Plugin.Host.InterfaceVersion == 4)
+                Plugin.Host.SendText(string.Format("#browser https://elanthipedia.play.net/index.php?search={0}", Uri.EscapeDataString(Regex.Replace(text, @"\(\d+\)\s|\s\(closed\)|^(an?|some|several)\s|^\d+\s--\s(an?|some|several)\s", ""))));
             else
                 Process.Start(new ProcessStartInfo(string.Format("https://elanthipedia.play.net/index.php?search={0}", Regex.Replace(text, @"\(\d+\)\s|\s\(closed\)|(^an?|some|several)\s|^\d+\s--\s(an?|some|several)\s", ""))) { UseShellExecute = true });
         }
@@ -818,7 +818,7 @@ namespace InventoryView
 
         private void Scan_Click(object sender, EventArgs e)
         {
-            plugin.Host.SendText("/InventoryView scan");
+            Plugin.Host.SendText("/InventoryView scan");
             Close();
         }
 
@@ -860,19 +860,19 @@ namespace InventoryView
                         }
                         else
                         {
-                            plugin.Host.EchoText($"Could not find any CharacterData elements with a name element value of '{characterName}' in the XML file.");
+                            Plugin.Host.EchoText($"Could not find any CharacterData elements with a name element value of '{characterName}' in the XML file.");
                         }
                     }
                     catch (Exception ex)
                     {
                         // Handle the exception here
-                        plugin.Host.EchoText($"An exception occurred: {ex.Message}");
+                        Plugin.Host.EchoText($"An exception occurred: {ex.Message}");
                     }
                 }
             }
             else
             {
-                plugin.Host.EchoText("Please select a character name.");
+                Plugin.Host.EchoText("Please select a character name.");
             }
         }
 
@@ -1187,7 +1187,7 @@ namespace InventoryView
             LoadSave.SaveSettings();
             toolStripFamily.Enabled = true;
             if (toolStripFamily.Checked)
-                plugin.Host.EchoText("To use family vault, be inside the vault or have runners");
+                Plugin.Host.EchoText("To use family vault, be inside the vault or have runners");
         }
 
         public void Pockets_CheckedChanged(object sender, EventArgs e)
@@ -1293,7 +1293,7 @@ namespace InventoryView
                 if (string.IsNullOrEmpty(characterName))
                     return;
 
-                var entries = plugin.CharacterData
+                var entries = Plugin.CharacterData
                     .Where(c => c.name.Equals(characterName, StringComparison.OrdinalIgnoreCase))
                     .ToList();
 
@@ -1362,9 +1362,9 @@ namespace InventoryView
             this.TopMost = toolStripAlwaysTop.Checked;
         }
 
-        private void ApplyTabColor(TabPage tabPage, string characterName)
+        private static void ApplyTabColor(TabPage tabPage, string characterName)
         {
-            var character = plugin.CharacterData.FirstOrDefault(c => c.name == characterName);
+            var character = Plugin.CharacterData.FirstOrDefault(c => c.name == characterName);
 
             if (character != null)
             {
@@ -1400,14 +1400,14 @@ namespace InventoryView
             }
         }
 
-        private void tabControl1_DrawItem(object sender, DrawItemEventArgs e)
+        private void TabControl1_DrawItem(object sender, DrawItemEventArgs e)
         {
             TabPage page = tabControl1.TabPages[e.Index];
             Color backColor = page.BackColor;
             Color textColor = Color.Black; // Default fallback
 
             // Get text color from character data
-            var character = plugin.CharacterData.FirstOrDefault(c => c.name == page.Tag?.ToString());
+            var character = Plugin.CharacterData.FirstOrDefault(c => c.name == page.Tag?.ToString());
             if (character != null && !string.IsNullOrEmpty(character.TabTextColor))
             {
                 try { textColor = ColorTranslator.FromHtml(character.TabTextColor); }
@@ -1464,7 +1464,7 @@ namespace InventoryView
             if (tabControl.SelectedTab != null)
             {
                 string characterName = tabControl.SelectedTab.Tag as string;
-                var character = plugin.CharacterData.FirstOrDefault(c => c.name == characterName);
+                var character = Plugin.CharacterData.FirstOrDefault(c => c.name == characterName);
                 if (character != null)
                 {
                     character.TabColor = ColorTranslator.ToHtml(bgColor);
@@ -1529,84 +1529,21 @@ namespace InventoryView
             }
         }
 
-        private void ResetAllTabColors()
-        {
-            foreach (TabPage tabPage in tabControl1.TabPages)
-            {
-                tabPage.BackColor = SystemColors.Control;
-
-                // Optionally reset text color as well
-                tabPage.ForeColor = SystemColors.ControlText;
-
-                // You can also clear any custom color stored in the tab's tag if needed
-                var characterName = tabPage.Tag as string;
-                if (!string.IsNullOrEmpty(characterName))
-                {
-                    var entries = plugin.CharacterData
-                        .Where(c => c.name.Equals(characterName, StringComparison.OrdinalIgnoreCase))
-                        .ToList();
-
-                    foreach (var entry in entries)
-                    {
-                        entry.TabColor = string.Empty;  // Clear the saved color
-                        entry.TabTextColor = string.Empty;
-                    }
-                }
-            }
-
-            tabControl1.Invalidate();  // Redraw the tabs
-
-            // Optionally save the changes
-            LoadSave.SaveSettings();  // Ensure settings are saved after reset
-        }
-
-        private void ResetSingleSelectedTabColor()
-        {
-            if (tabControl1.SelectedTab != null)
-            {
-                // Reset the background color and text color to the default (Control color)
-                tabControl1.SelectedTab.BackColor = SystemColors.Control;
-                tabControl1.SelectedTab.ForeColor = SystemColors.ControlText;
-
-                // Optionally clear the custom color stored in the tab's tag
-                var characterName = tabControl1.SelectedTab.Tag as string;
-                if (!string.IsNullOrEmpty(characterName))
-                {
-                    var entries = plugin.CharacterData
-                        .Where(c => c.name.Equals(characterName, StringComparison.OrdinalIgnoreCase))
-                        .ToList();
-
-                    foreach (var entry in entries)
-                    {
-                        entry.TabColor = string.Empty;  // Clear the saved color
-                        entry.TabTextColor = string.Empty;  // Clear the saved text color (if applicable)
-                    }
-                }
-
-                // Redraw the selected tab
-                tabControl1.SelectedTab.Invalidate();
-
-                // Optionally save the changes
-                LoadSave.SaveSettings();  // Ensure settings are saved after reset
-            }
-        }
-
-
-        private void filtarAlltoolStripMenuItem_Click(object sender, EventArgs e)
+        private void FiltarAlltoolStripMenuItem_Click(object sender, EventArgs e)
         {
             currentFilter = "All Tabs";
             UpdateFilterMenuItems(currentFilter, filterToolStripMenuItem);
             BindData();
         }
 
-        private void filterActivetoolStripMenuItem_Click(object sender, EventArgs e)
+        private void FilterActivetoolStripMenuItem_Click(object sender, EventArgs e)
         {
             currentFilter = "Active Tabs";
             UpdateFilterMenuItems(currentFilter, filterToolStripMenuItem);
             BindData();
         }
 
-        private void filterArchivedtoolStripMenuItem_Click(object sender, EventArgs e)
+        private void FilterArchivedtoolStripMenuItem_Click(object sender, EventArgs e)
         {
             currentFilter = "Archived Tabs";
             UpdateFilterMenuItems(currentFilter, filterToolStripMenuItem);
@@ -1623,24 +1560,91 @@ namespace InventoryView
             ToggleArchiveForSelectedTab(tabControl1);
         }
 
-        private void ResetAllTabColors_Click(object sender, EventArgs e)
-        {
-            ResetAllTabColors();  // Call the method to reset all tab colors
-        }
+        private bool isResetting = false;
 
-
-        private void colorTabToolStrip_Click(object sender, EventArgs e)
+        private async void ResetAllTabColors_Click(object sender, EventArgs e)
         {
-            for (int i = 0; i < tabControl1.TabPages.Count; i++)
+            if (isResetting)
+                return;
+
+            isResetting = true;
+
+            DialogResult result = MessageBox.Show("Are you sure you want to reset all tab colors to default?",
+                                                 "Confirm Reset", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+            if (result == DialogResult.Yes)
             {
-                ChangeTabColor(tabControl1);
-                break;
+                foreach (TabPage tabPage in tabControl1.TabPages)
+                {
+                    tabPage.BackColor = SystemColors.Control;
+
+                    tabPage.ForeColor = SystemColors.ControlText;
+
+                    var characterName = tabPage.Tag as string;
+                    if (!string.IsNullOrEmpty(characterName))
+                    {
+                        var entries = Plugin.CharacterData
+                            .Where(c => c.name.Equals(characterName, StringComparison.OrdinalIgnoreCase))
+                            .ToList();
+
+                        foreach (var entry in entries)
+                        {
+                            entry.TabColor = string.Empty;
+                            entry.TabTextColor = string.Empty;
+                        }
+                    }
+                }
+
+                tabControl1.Invalidate();
+                LoadSave.SaveSettings();
             }
+
+            await Task.Delay(500);
+            isResetting = false;
         }
 
-        private void ResetSelectedTabColorButton_Click(object sender, EventArgs e)
+
+        private void ColorTabToolStrip_Click(object sender, EventArgs e)
         {
-            ResetSingleSelectedTabColor();
+            ChangeTabColor(tabControl1);
+        }
+
+        private async void ResetSelectedTabColorButton_Click(object sender, EventArgs e)
+        {
+            if (isResetting)
+                return;
+
+            isResetting = true;
+
+            DialogResult result = MessageBox.Show("Are you sure you want to reset tab colors to default?",
+                                                 "Confirm Reset", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (result == DialogResult.Yes)
+            {
+                if (tabControl1.SelectedTab != null)
+                {
+                    tabControl1.SelectedTab.BackColor = SystemColors.Control;
+                    tabControl1.SelectedTab.ForeColor = SystemColors.ControlText;
+
+                    var characterName = tabControl1.SelectedTab.Tag as string;
+                    if (!string.IsNullOrEmpty(characterName))
+                    {
+                        var entries = Plugin.CharacterData
+                            .Where(c => c.name.Equals(characterName, StringComparison.OrdinalIgnoreCase))
+                            .ToList();
+
+                        foreach (var entry in entries)
+                        {
+                            entry.TabColor = string.Empty;
+                            entry.TabTextColor = string.Empty;
+                        }
+
+                        tabControl1.SelectedTab.Invalidate();
+                        LoadSave.SaveSettings();
+                    }
+                }
+            }
+                await Task.Delay(500);
+                isResetting = false;
         }
 
         protected override void Dispose(bool disposing)
@@ -2154,7 +2158,7 @@ namespace InventoryView
             colorTabToolStrip.Name = "colorTabToolStrip";
             colorTabToolStrip.Size = new Size(221, 22);
             colorTabToolStrip.Text = "Change Selected Tab Colors";
-            colorTabToolStrip.Click += colorTabToolStrip_Click;
+            colorTabToolStrip.Click += ColorTabToolStrip_Click;
             // 
             // filterToolStripMenuItem
             // 
@@ -2168,21 +2172,21 @@ namespace InventoryView
             filtarAlltoolStripMenuItem.Name = "filtarAlltoolStripMenuItem";
             filtarAlltoolStripMenuItem.Size = new Size(180, 22);
             filtarAlltoolStripMenuItem.Text = "All";
-            filtarAlltoolStripMenuItem.Click += filtarAlltoolStripMenuItem_Click;
+            filtarAlltoolStripMenuItem.Click += FiltarAlltoolStripMenuItem_Click;
             // 
             // filterActivetoolStripMenuItem
             // 
             filterActivetoolStripMenuItem.Name = "filterActivetoolStripMenuItem";
             filterActivetoolStripMenuItem.Size = new Size(180, 22);
             filterActivetoolStripMenuItem.Text = "Active";
-            filterActivetoolStripMenuItem.Click += filterActivetoolStripMenuItem_Click;
+            filterActivetoolStripMenuItem.Click += FilterActivetoolStripMenuItem_Click;
             // 
             // filterArchivedtoolStripMenuItem
             // 
             filterArchivedtoolStripMenuItem.Name = "filterArchivedtoolStripMenuItem";
             filterArchivedtoolStripMenuItem.Size = new Size(180, 22);
             filterArchivedtoolStripMenuItem.Text = "Archived";
-            filterArchivedtoolStripMenuItem.Click += filterArchivedtoolStripMenuItem_Click;
+            filterArchivedtoolStripMenuItem.Click += FilterArchivedtoolStripMenuItem_Click;
             // 
             // toolStripContainer1
             // 

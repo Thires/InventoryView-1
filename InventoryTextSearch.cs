@@ -16,7 +16,7 @@ namespace InventoryView
         {
             if (string.IsNullOrEmpty(searchText))
             {
-                plugin.Host.EchoText("Provide a tap to use.");
+                Plugin.Host.EchoText("Provide a tap to use.");
                 return;
             }
 
@@ -27,30 +27,30 @@ namespace InventoryView
 
             if (matchingItems.Count > 0)
             {
-                if (style == "path") plugin.Host.EchoText($"\nFull path for '{searchText}':\n");
-                else plugin.Host.EchoText($"\nFound {matchingItems.Count} items matching '{searchText}':\n");
+                if (style == "path") Plugin.Host.EchoText($"\nFull path for '{searchText}':\n");
+                else Plugin.Host.EchoText($"\nFound {matchingItems.Count} items matching '{searchText}':\n");
 
                 foreach (var item in matchingItems)
                 {
-                    if (style == "path") plugin.Host.EchoText(item);
-                    else plugin.Host.SendText("#link {" + item + "} {#put /iv path " + Regex.Replace(item, @"\w+ - ", "") + "}");
+                    if (style == "path") Plugin.Host.EchoText(item);
+                    else Plugin.Host.SendText("#link {" + item + "} {#put /iv path " + Regex.Replace(item, @"\w+ - ", "") + "}");
                 }
             }
             else
             {
-                plugin.Host.EchoText($"No matches found for '{searchText}'.");
+                Plugin.Host.EchoText($"No matches found for '{searchText}'.");
             }
         }
 
         public static List<string> SearchXmlData(string[] searchWords, string style)
         {
-            basePath = plugin.Host.get_Variable("PluginPath");
+            basePath = Plugin.Host.get_Variable("PluginPath");
             var matchingItems = new List<string>();
             string xmlPath = Path.Combine(basePath, "InventoryView.xml");
 
             if (!File.Exists(xmlPath))
             {
-                plugin.Host.EchoText("InventoryView.xml not found.");
+                Plugin.Host.EchoText("InventoryView.xml not found.");
                 return matchingItems;
             }
 

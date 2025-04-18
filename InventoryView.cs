@@ -9,7 +9,7 @@ using InventoryView.Cases;
 
 namespace InventoryView
 {
-    public class plugin : GeniePlugin.Interfaces.IPlugin
+    public class Plugin : GeniePlugin.Interfaces.IPlugin
     {
         // Genie host.
         private static IHost host;
@@ -146,7 +146,7 @@ namespace InventoryView
                         break;
 
                     case "Inventory":
-                        inventory.InventoryCase(trimtext, text, ref ScanMode, ref level, ref lastItem, currentData);
+                        CaseInventory.InventoryCase(trimtext, text, ref ScanMode, ref level, ref lastItem, currentData);
                         break;
 
                     case "PocketStart":
@@ -748,7 +748,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "3.0c"; }
+            get { return "3.0.1c"; }
         }
 
         public string Description
