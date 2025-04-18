@@ -5,9 +5,9 @@ namespace InventoryView.Cases
 {
     public class CaseHome
     {
-        private readonly plugin plugin;
+        private readonly Plugin plugin;
 
-        public CaseHome(plugin pluginInstance)
+        public CaseHome(Plugin pluginInstance)
         {
             plugin = pluginInstance;
         }
@@ -18,21 +18,21 @@ namespace InventoryView.Cases
             {
                 if (trimtext == "The home contains:")
                 {
-                    plugin.Host.EchoText("Scanning Home.");
+                    Plugin.Host.EchoText("Scanning Home.");
                     plugin.ScanStart("Home");
                     return;
                 }
 
                 if (trimtext.StartsWith("Your documentation filed with the Estate Holders", StringComparison.OrdinalIgnoreCase))
                 {
-                    plugin.Host.EchoText("Skipping Home");
+                    Plugin.Host.EchoText("Skipping Home");
                     plugin.GuildCheck(trimtext);
                     return;
                 }
 
-                if (plugin.IsDenied(trimtext))
+                if (Plugin.IsDenied(trimtext))
                 {
-                    plugin.Host.EchoText("Skipping Home");
+                    Plugin.Host.EchoText("Skipping Home");
                     plugin.GuildCheck(trimtext);
                     return;
                 }

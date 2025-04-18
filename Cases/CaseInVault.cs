@@ -7,9 +7,9 @@ namespace InventoryView.Cases
 {
     public class CaseInVault
     {
-        private readonly plugin plugin;
+        private readonly Plugin plugin;
 
-        public CaseInVault(plugin pluginInstance)
+        public CaseInVault(Plugin pluginInstance)
         {
             plugin = pluginInstance;
         }
@@ -109,7 +109,7 @@ namespace InventoryView.Cases
                 if (plugin.currentSurface == "steel wire rack")
                     plugin.currentSurface = "wire rack";
                 if (!trimtext.StartsWith("You rummage"))
-                    plugin.Host.SendText("rummage " + plugin.currentSurface);
+                    Plugin.Host.SendText("rummage " + plugin.currentSurface);
                 scanMode = "SurfaceRummage";
             }
             else if (scanMode == "SurfaceRummage")
@@ -123,7 +123,7 @@ namespace InventoryView.Cases
 
                     if (!trimtext.StartsWith("You rummage"))
                         return;
-                            if (plugin.RummageCheck(trimtext, plugin.currentSurface, out _))
+                            if (Plugin.RummageCheck(trimtext, plugin.currentSurface, out _))
                             {
                                 plugin.SurfaceRummage(SurfacesEncountered[i], trimtext);
                                 SurfacesEncountered.RemoveAt(i); // Remove the surface
@@ -141,22 +141,22 @@ namespace InventoryView.Cases
                     {
                         plugin.InFamVault = false;
                         scanMode = null;
-                        plugin.Host.EchoText("Scan Complete.");
-                        plugin.Host.SendText("#parse Scan Complete");
+                        Plugin.Host.EchoText("Scan Complete.");
+                        Plugin.Host.SendText("#parse Scan Complete");
                         LoadSave.SaveSettings();
                     }
                     else
                     {
                         Thread.Sleep(500);
-                        plugin.Host.SendText("close vault");
+                        Plugin.Host.SendText("close vault");
                         Thread.Sleep(500);
-                        plugin.Host.SendText("go door");
+                        Plugin.Host.SendText("go door");
                         Thread.Sleep(500);
-                        plugin.Host.SendText("go arch");
+                        Plugin.Host.SendText("go arch");
                         Thread.Sleep(2000);
 
                         scanMode = "DeedStart";
-                        plugin.Host.SendText("get my deed register");
+                        Plugin.Host.SendText("get my deed register");
                     }
                 }
             }
@@ -167,10 +167,10 @@ namespace InventoryView.Cases
                 {
                     plugin.InFamVault = true;
                     plugin.ScanStart("FamilyVault");
-                    plugin.Host.SendText("turn vault");
-                    plugin.Host.SendText("open vault");
+                    Plugin.Host.SendText("turn vault");
+                    Plugin.Host.SendText("open vault");
                     Thread.Sleep(6000);
-                    plugin.Host.SendText("rummage vault");
+                    Plugin.Host.SendText("rummage vault");
                     scanMode = "InVault";
                 }
             }

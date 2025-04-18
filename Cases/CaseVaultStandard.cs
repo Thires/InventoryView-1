@@ -4,9 +4,9 @@ namespace InventoryView.Cases
 {
     public class CaseVaultStandard
     {
-        private readonly plugin plugin;
+        private readonly Plugin plugin;
 
-        public CaseVaultStandard(plugin pluginInstance)
+        public CaseVaultStandard(Plugin pluginInstance)
         {
             plugin = pluginInstance;
         }
@@ -18,7 +18,7 @@ namespace InventoryView.Cases
                 if (Regex.IsMatch(fullText, @"^You flag down a local you know works with the Estate Holders' Council and send \w+ to the nearest carousel\.") ||
                     trimtext == "You are already holding that.")
                 {
-                    plugin.Host.EchoText("Scanning Standard Vault.");
+                    Plugin.Host.EchoText("Scanning Standard Vault.");
                     return;
                 }
 
@@ -28,19 +28,19 @@ namespace InventoryView.Cases
                     return;
                 }
 
-                if (plugin.IsDenied(trimtext))
+                if (Plugin.IsDenied(trimtext))
                 {
-                    if (((InventoryViewForm)plugin.Form).toolStripFamily.Checked)
+                    if (((InventoryViewForm)Plugin.Form).toolStripFamily.Checked)
                     {
-                        plugin.Host.EchoText("Skipping Standard Vault.");
+                        Plugin.Host.EchoText("Skipping Standard Vault.");
                         scanMode = "FamilyStart";
-                        plugin.Host.SendText("vault family");
+                        Plugin.Host.SendText("vault family");
                     }
                     else
                     {
-                        plugin.Host.EchoText("Skipping Family Vault");
+                        Plugin.Host.EchoText("Skipping Family Vault");
                         scanMode = "DeedStart";
-                        plugin.Host.SendText("get my deed register");
+                        Plugin.Host.SendText("get my deed register");
                     }
                 }
 
@@ -51,7 +51,7 @@ namespace InventoryView.Cases
             {
                 if (trimtext.StartsWith("The last note indicates that your vault contains"))
                 {
-                    if (((InventoryViewForm)plugin.Form).toolStripFamily.Checked)
+                    if (((InventoryViewForm)Plugin.Form).toolStripFamily.Checked)
                         plugin.ScanMode = "FamilyStart";
                     else
                     {

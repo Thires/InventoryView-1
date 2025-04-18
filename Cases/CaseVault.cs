@@ -4,9 +4,9 @@ namespace InventoryView.Cases
 {
     public class CaseVault
     {
-        private readonly plugin plugin;
+        private readonly Plugin plugin;
 
-        public CaseVault(plugin pluginInstance)
+        public CaseVault(Plugin pluginInstance)
         {
             plugin = pluginInstance;
         }
@@ -30,8 +30,8 @@ namespace InventoryView.Cases
                             _ => words[0]
                         };
 
-                        plugin.Host.EchoText("Scanning Book Vault.");
-                        plugin.Host.SendText("read my vault book");
+                        Plugin.Host.EchoText("Scanning Book Vault.");
+                        Plugin.Host.SendText("read my vault book");
                     }
 
                     return;
@@ -43,17 +43,17 @@ namespace InventoryView.Cases
                     return;
                 }
 
-                if (Regex.IsMatch(fullText, "^What were you referring to\\?") || plugin.IsDenied(trimtext))
+                if (Regex.IsMatch(fullText, "^What were you referring to\\?") || Plugin.IsDenied(trimtext))
                 {
-                    plugin.Host.EchoText("Skipping Book Vault.");
+                    Plugin.Host.EchoText("Skipping Book Vault.");
                     if (!string.IsNullOrEmpty(plugin.bookContainer))
-                        plugin.Host.SendText($"put my vault book in my {plugin.bookContainer}");
+                        Plugin.Host.SendText($"put my vault book in my {plugin.bookContainer}");
                     else
-                        plugin.Host.SendText("stow my vault book");
+                        Plugin.Host.SendText("stow my vault book");
 
                     plugin.bookContainer = "";
                     scanMode = "StandardStart";
-                    plugin.Host.SendText("vault standard");
+                    Plugin.Host.SendText("vault standard");
                     return;
                 }
             }
@@ -62,28 +62,28 @@ namespace InventoryView.Cases
             {
                 if (fullText.StartsWith("The last note in your book indicates that your vault contains"))
                 {
-                    if (((InventoryViewForm)plugin.Form).toolStripFamily.Checked)
+                    if (((InventoryViewForm)Plugin.Form).toolStripFamily.Checked)
                     {
                         scanMode = "FamilyStart";
                         if (!string.IsNullOrEmpty(plugin.bookContainer))
-                            plugin.Host.SendText($"put my vault book in my {plugin.bookContainer}");
+                            Plugin.Host.SendText($"put my vault book in my {plugin.bookContainer}");
                         else
-                            plugin.Host.SendText("stow my vault book");
+                            Plugin.Host.SendText("stow my vault book");
 
                         plugin.bookContainer = "";
-                        plugin.Host.SendText("vault family");
+                        Plugin.Host.SendText("vault family");
                     }
                     else
                     {
                         scanMode = "DeedStart";
-                        plugin.Host.EchoText("Skipping Family Vault");
+                        Plugin.Host.EchoText("Skipping Family Vault");
                         if (!string.IsNullOrEmpty(plugin.bookContainer))
-                            plugin.Host.SendText($"put my vault book in my {plugin.bookContainer}");
+                            Plugin.Host.SendText($"put my vault book in my {plugin.bookContainer}");
                         else
-                            plugin.Host.SendText("stow my vault book");
+                            Plugin.Host.SendText("stow my vault book");
 
                         plugin.bookContainer = "";
-                        plugin.Host.SendText("get my deed register");
+                        Plugin.Host.SendText("get my deed register");
                     }
 
                     return;

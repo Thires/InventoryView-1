@@ -2,18 +2,18 @@
 {
     public class CaseInventory
     {
-        private readonly plugin plugin;
+        private readonly Plugin plugin;
 
-        public CaseInventory(plugin pluginInstance)
+        public CaseInventory(Plugin pluginInstance)
         {
             plugin = pluginInstance;
         }
 
-        public void InventoryCase(string trimtext, string originalText, ref string scanMode, ref int level, ref ItemData lastItem, CharacterData currentData)
+        public static void InventoryCase(string trimtext, string originalText, ref string scanMode, ref int level, ref ItemData lastItem, CharacterData currentData)
         {
             if (trimtext.StartsWith("Roundtime:"))
             {
-                plugin.PauseForRoundtime(trimtext);
+                Plugin.PauseForRoundtime(trimtext);
                 InventoryEnd(ref scanMode);
                 return;
             }
@@ -26,8 +26,8 @@
 
         private static void InventoryEnd(ref string scanMode)
         {
-            plugin.Host.EchoText("Checking Pocket");
-            plugin.Host.SendText("tap pocket");
+            Plugin.Host.EchoText("Checking Pocket");
+            Plugin.Host.SendText("tap pocket");
             scanMode = "PocketStart";
         }
 
@@ -37,7 +37,7 @@
             int spaces = originalText.Length - originalText.TrimStart().Length;
             int newlevel = (spaces + 1) / 3;
 
-            string tap = plugin.CleanTapText(trimtext);
+            string tap = Plugin.CleanTapText(trimtext);
 
             if (newlevel == 1)
             {

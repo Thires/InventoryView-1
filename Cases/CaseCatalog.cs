@@ -4,9 +4,9 @@ namespace InventoryView.Cases
 {
     public class CaseCatalog
     {
-        private readonly plugin plugin;
+        private readonly Plugin plugin;
 
-        public CaseCatalog(plugin pluginInstance)
+        public CaseCatalog(Plugin pluginInstance)
         {
             plugin = pluginInstance;
         }
@@ -17,9 +17,9 @@ namespace InventoryView.Cases
             {
                 if (trimtext.StartsWith("Roundtime:"))
                 {
-                    plugin.PauseForRoundtime(trimtext);
+                    Plugin.PauseForRoundtime(trimtext);
                     scanMode = "CatalogStart";
-                    plugin.Host.SendText("get my tool catalog");
+                    Plugin.Host.SendText("get my tool catalog");
                     return;
                 }
 
@@ -38,9 +38,9 @@ namespace InventoryView.Cases
                             _ => words[0]
                         };
 
-                        plugin.Host.EchoText("Scanning tool catalog.");
-                        plugin.Host.SendText("turn my tool catalog to contents");
-                        plugin.Host.SendText("read my tool catalog");
+                        Plugin.Host.EchoText("Scanning tool catalog.");
+                        Plugin.Host.SendText("turn my tool catalog to contents");
+                        Plugin.Host.SendText("read my tool catalog");
                     }
 
                     return;
@@ -52,17 +52,17 @@ namespace InventoryView.Cases
                     return;
                 }
 
-                if (Regex.IsMatch(trimtext, "^What were you referring to\\?") || plugin.IsDenied(trimtext))
+                if (Regex.IsMatch(trimtext, "^What were you referring to\\?") || Plugin.IsDenied(trimtext))
                 {
-                    plugin.Host.EchoText("Skipping Tool Catalog.");
+                    Plugin.Host.EchoText("Skipping Tool Catalog.");
                     if (!string.IsNullOrEmpty(plugin.bookContainer))
-                        plugin.Host.SendText($"put my tool catalog in my {plugin.bookContainer}");
+                        Plugin.Host.SendText($"put my tool catalog in my {plugin.bookContainer}");
                     else
-                        plugin.Host.SendText("stow my tool catalog");
+                        Plugin.Host.SendText("stow my tool catalog");
 
                     plugin.bookContainer = "";
                     scanMode = "HomeStart";
-                    plugin.Host.SendText("home recall");
+                    Plugin.Host.SendText("home recall");
                 }
 
                 return;
@@ -73,13 +73,13 @@ namespace InventoryView.Cases
                 if (trimtext.StartsWith("Currently stored:"))
                 {
                     if (!string.IsNullOrEmpty(plugin.bookContainer))
-                        plugin.Host.SendText($"put my tool catalog in my {plugin.bookContainer}");
+                        Plugin.Host.SendText($"put my tool catalog in my {plugin.bookContainer}");
                     else
-                        plugin.Host.SendText("stow my tool catalog");
+                        Plugin.Host.SendText("stow my tool catalog");
 
                     plugin.bookContainer = "";
                     scanMode = "HomeStart";
-                    plugin.Host.SendText("home recall");
+                    Plugin.Host.SendText("home recall");
                 }
                 else
                 {

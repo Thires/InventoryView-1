@@ -10,9 +10,9 @@ namespace InventoryView.Cases
 {
     public class CasePocket
     {
-        private readonly plugin plugin;
+        private readonly Plugin plugin;
 
-        public CasePocket(plugin pluginInstance)
+        public CasePocket(Plugin pluginInstance)
         {
             plugin = pluginInstance;
         }
@@ -32,7 +32,7 @@ namespace InventoryView.Cases
                 }
 
                 plugin.processedPockets.Add(plugin.pocketContainerShort);
-                plugin.Host.SendText($"tap my {plugin.pocketContainerShort}");
+                Plugin.Host.SendText($"tap my {plugin.pocketContainerShort}");
                 scanMode = "PocketStart";
                 return;
             }
@@ -44,15 +44,15 @@ namespace InventoryView.Cases
                 if (match.Success)
                 {
                     plugin.pocketContainer = match.Groups[1].Value.Trim();
-                    plugin.Host.SendText("rummage pocket");
+                    Plugin.Host.SendText("rummage pocket");
                     scanMode = "Pocket";
                     return;
                 }
             }
 
-            if (plugin.IsDenied(trimtext) || trimtext.StartsWith("What were you referring"))
+            if (Plugin.IsDenied(trimtext) || trimtext.StartsWith("What were you referring"))
             {
-                plugin.Host.EchoText("Skipping current pocket.");
+                Plugin.Host.EchoText("Skipping current pocket.");
                 AfterPocket(ref scanMode);
                 plugin.pocketScanStarted = false;
             }
@@ -68,14 +68,14 @@ namespace InventoryView.Cases
                 string pocketInv = Regex.Match(trimtext, "^You rummage through a pocket and see (.+)\\.").Groups[1].Value;
                 pocketInv = Regex.Replace(pocketInv, @"\band\s(a|an|some|several)\s", ", $1 ");
 
-                if (!((InventoryViewForm)plugin.Form).toolStripPockets.Checked &&
+                if (!((InventoryViewForm)Plugin.Form).toolStripPockets.Checked &&
                     plugin.currentData != null &&
                     !plugin.currentData.source.StartsWith("Pocket in"))
                 {
                     plugin.ScanStart("Pocket");
                 }
 
-                if (!((InventoryViewForm)plugin.Form).toolStripPockets.Checked)
+                if (!((InventoryViewForm)Plugin.Form).toolStripPockets.Checked)
                 {
                     if (plugin.currentData == null || plugin.currentData.source != $"Pocket in {plugin.pocketContainer}")
                     {
@@ -95,14 +95,14 @@ namespace InventoryView.Cases
 
                     foreach (string itemText in pocketInv.Split(','))
                     {
-                        string tap = plugin.CleanTapText(itemText.Trim());
+                        string tap = Plugin.CleanTapText(itemText.Trim());
                         lastItem.AddItem(new ItemData { tap = tap });
                     }
                 }
 
                 foreach (string itemText in pocketInv.Split(','))
                 {
-                    string tap = plugin.CleanTapText(itemText.Trim());
+                    string tap = Plugin.CleanTapText(itemText.Trim());
 
                         plugin.currentData.AddItem(new ItemData { tap = tap });
                 }
@@ -112,20 +112,20 @@ namespace InventoryView.Cases
                 if (!plugin.closedContainers.Contains(plugin.pocketContainerShort))
                 {
                     plugin.closedContainers.Add(plugin.pocketContainerShort);
-                    plugin.Host.SendText($"close my {plugin.pocketContainerShort}");
+                    Plugin.Host.SendText($"close my {plugin.pocketContainerShort}");
                 }
 
                 plugin.handledCurrentPocket = false;
                 scanMode = "PocketStart";
-                plugin.Host.SendText("tap pocket");
+                Plugin.Host.SendText("tap pocket");
             }
             else if (Regex.IsMatch(trimtext, "^You close your .+\\.$"))
             {
                 plugin.handledCurrentPocket = false;
                 scanMode = "PocketStart";
-                plugin.Host.SendText("tap pocket");
+                Plugin.Host.SendText("tap pocket");
             }
-            else if (plugin.IsDenied(trimtext))
+            else if (Plugin.IsDenied(trimtext))
             {
                 AfterPocket(ref scanMode);
                 plugin.pocketScanStarted = false;
@@ -137,10 +137,10 @@ namespace InventoryView.Cases
         {
             if (plugin.closedContainers.Count > 0)
             {
-                plugin.Host.EchoText("Reopening closed pocket containers");
+                Plugin.Host.EchoText("Reopening closed pocket containers");
                 foreach (var container in plugin.closedContainers)
                 {
-                    plugin.Host.SendText($"open my {container}");
+                    Plugin.Host.SendText($"open my {container}");
                     Thread.Sleep(500);
                 }
                 plugin.closedContainers.Clear();
@@ -151,17 +151,17 @@ namespace InventoryView.Cases
         {
             ReopenContainers();
 
-            if (plugin.Host.get_Variable("roomname").Contains("Carousel Chamber"))
+            if (Plugin.Host.get_Variable("roomname").Contains("Carousel Chamber"))
             {
                 scanMode = "InVault";
-                plugin.Host.EchoText("Rummaging Vault.");
-                plugin.Host.SendText("open vault");
-                plugin.Host.SendText("rummage vault");
+                Plugin.Host.EchoText("Rummaging Vault.");
+                Plugin.Host.SendText("open vault");
+                Plugin.Host.SendText("rummage vault");
             }
             else
             {
                 scanMode = "VaultStart";
-                plugin.Host.SendText("get my vault book");
+                Plugin.Host.SendText("get my vault book");
             }
         }
     }

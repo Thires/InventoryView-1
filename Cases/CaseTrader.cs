@@ -4,9 +4,9 @@ namespace InventoryView.Cases
 {
     public class CaseTrader
     {
-        private readonly plugin plugin;
+        private readonly Plugin plugin;
 
-        public CaseTrader(plugin pluginInstance)
+        public CaseTrader(Plugin pluginInstance)
         {
             plugin = pluginInstance;
         }
@@ -17,9 +17,9 @@ namespace InventoryView.Cases
             {
                 if (trimtext.StartsWith("Roundtime:"))
                 {
-                    plugin.PauseForRoundtime(trimtext);
+                    Plugin.PauseForRoundtime(trimtext);
                     scanMode = "TraderStart";
-                    plugin.Host.SendText("get my storage book"); // ✅ add this
+                    Plugin.Host.SendText("get my storage book"); // ✅ add this
                     return;
                 }
 
@@ -38,8 +38,8 @@ namespace InventoryView.Cases
                             _ => words[0]
                         };
 
-                        plugin.Host.EchoText("Scanning Trader Storage.");
-                        plugin.Host.SendText("read my storage book");
+                        Plugin.Host.EchoText("Scanning Trader Storage.");
+                        Plugin.Host.SendText("read my storage book");
                     }
 
                     return;
@@ -51,12 +51,12 @@ namespace InventoryView.Cases
                     return;
                 }
 
-                if (Regex.IsMatch(fullText, "^What were you referring to\\?") || plugin.IsDenied(trimtext))
+                if (Regex.IsMatch(fullText, "^What were you referring to\\?") || Plugin.IsDenied(trimtext))
                 {
                     scanMode = null;
-                    plugin.Host.EchoText("Skipping Trader Storage.");
-                    plugin.Host.EchoText("Scan Complete.");
-                    plugin.Host.SendText("#parse Scan Complete");
+                    Plugin.Host.EchoText("Skipping Trader Storage.");
+                    Plugin.Host.EchoText("Scan Complete.");
+                    Plugin.Host.SendText("#parse Scan Complete");
                     plugin.bookContainer = "";
                     LoadSave.SaveSettings();
                     return;
@@ -68,13 +68,13 @@ namespace InventoryView.Cases
                 if (fullText.StartsWith("A notation at the bottom indicates"))
                 {
                     scanMode = null;
-                    plugin.Host.EchoText("Scan Complete.");
+                    Plugin.Host.EchoText("Scan Complete.");
                     if (!string.IsNullOrEmpty(plugin.bookContainer))
-                        plugin.Host.SendText($"put my storage book in my {plugin.bookContainer}");
+                        Plugin.Host.SendText($"put my storage book in my {plugin.bookContainer}");
                     else
-                        plugin.Host.SendText("stow my storage book");
+                        Plugin.Host.SendText("stow my storage book");
 
-                    plugin.Host.SendText("#parse Scan Complete");
+                    Plugin.Host.SendText("#parse Scan Complete");
                     plugin.bookContainer = "";
                     LoadSave.SaveSettings();
                     return;

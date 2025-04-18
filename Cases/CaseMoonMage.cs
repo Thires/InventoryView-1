@@ -4,9 +4,9 @@ namespace InventoryView.Cases
 {
     public class CaseMoonMage
     {
-        private readonly plugin plugin;
+        private readonly Plugin plugin;
 
-        public CaseMoonMage(plugin pluginInstance)
+        public CaseMoonMage(Plugin pluginInstance)
         {
             plugin = pluginInstance;
         }
@@ -17,8 +17,8 @@ namespace InventoryView.Cases
             {
                 if (Regex.IsMatch(trimtext, @"^You feel fully prepared to cast your spell\."))
                 {
-                    plugin.Host.EchoText("Scanning Shadow Servant.");
-                    plugin.Host.SendText("cast servant");
+                    Plugin.Host.EchoText("Scanning Shadow Servant.");
+                    Plugin.Host.SendText("cast servant");
                     return;
                 }
 
@@ -28,12 +28,12 @@ namespace InventoryView.Cases
                     return;
                 }
 
-                if (plugin.IsDenied(trimtext))
+                if (Plugin.IsDenied(trimtext))
                 {
                     scanMode = null;
-                    plugin.Host.EchoText("Skipping Servant, Piercing Gaze required.");
-                    plugin.Host.EchoText("Scan Complete.");
-                    plugin.Host.SendText("#parse Scan Complete");
+                    Plugin.Host.EchoText("Skipping Servant, Piercing Gaze required.");
+                    Plugin.Host.EchoText("Scan Complete.");
+                    Plugin.Host.SendText("#parse Scan Complete");
                     LoadSave.SaveSettings();
                     return;
                 }
@@ -46,8 +46,8 @@ namespace InventoryView.Cases
                 if (fullText.StartsWith("Your Servant is holding"))
                 {
                     scanMode = null;
-                    plugin.Host.EchoText("Scan Complete.");
-                    plugin.Host.SendText("#parse Scan Complete");
+                    Plugin.Host.EchoText("Scan Complete.");
+                    Plugin.Host.SendText("#parse Scan Complete");
                     LoadSave.SaveSettings();
                     return;
                 }

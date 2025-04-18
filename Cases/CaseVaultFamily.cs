@@ -4,9 +4,9 @@ namespace InventoryView.Cases
 {
     public class CaseVaultFamily
     {
-        private readonly plugin plugin;
+        private readonly Plugin plugin;
 
-        public CaseVaultFamily(plugin pluginInstance)
+        public CaseVaultFamily(Plugin pluginInstance)
         {
             plugin = pluginInstance;
         }
@@ -17,15 +17,15 @@ namespace InventoryView.Cases
             {
                 if (fullText.StartsWith("Roundtime:"))
                 {
-                    plugin.PauseForRoundtime(trimtext);
+                    Plugin.PauseForRoundtime(trimtext);
                     scanMode = "FamilyStart";
-                    plugin.Host.SendText("vault family");
+                    Plugin.Host.SendText("vault family");
                     return;
                 }
 
                 if (Regex.IsMatch(trimtext, "You flag down an urchin and direct (him|her) to the nearest carousel"))
                 {
-                    plugin.Host.EchoText("Scanning Family Vault.");
+                    Plugin.Host.EchoText("Scanning Family Vault.");
                     return;
                 }
 
@@ -35,15 +35,15 @@ namespace InventoryView.Cases
                     return;
                 }
 
-                if (plugin.IsDenied(trimtext))
+                if (Plugin.IsDenied(trimtext))
                 {
                     if (fullText.StartsWith("Roundtime:"))
                     {
-                        plugin.PauseForRoundtime(trimtext);
+                        Plugin.PauseForRoundtime(trimtext);
                     }
-                    plugin.Host.EchoText("Skipping Family Vault.");
+                    Plugin.Host.EchoText("Skipping Family Vault.");
                     scanMode = "DeedStart";
-                    plugin.Host.SendText("get my deed register");
+                    Plugin.Host.SendText("get my deed register");
                     return;
                 }
             }
@@ -52,7 +52,7 @@ namespace InventoryView.Cases
                 if (fullText.StartsWith("The last note indicates that your vault contains"))
                 {
                     scanMode = "DeedStart";
-                    plugin.Host.SendText("get my deed register");
+                    Plugin.Host.SendText("get my deed register");
                     return;
                 }
 

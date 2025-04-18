@@ -4,9 +4,9 @@ namespace InventoryView.Cases
 {
     public class CaseDeed
     {
-        private readonly plugin plugin;
+        private readonly Plugin plugin;
 
-        public CaseDeed(plugin pluginInstance)
+        public CaseDeed(Plugin pluginInstance)
         {
             plugin = pluginInstance;
         }
@@ -17,9 +17,9 @@ namespace InventoryView.Cases
             {
                 if (trimtext.StartsWith("Roundtime:"))
                 {
-                    plugin.PauseForRoundtime(trimtext);
+                    Plugin.PauseForRoundtime(trimtext);
                     scanMode = "DeedStart";
-                    plugin.Host.SendText("get my deed register");
+                    Plugin.Host.SendText("get my deed register");
                     return;
                 }
 
@@ -38,9 +38,9 @@ namespace InventoryView.Cases
                             _ => words[0]
                         };
 
-                        plugin.Host.EchoText("Scanning Deed Register.");
-                        plugin.Host.SendText("turn my deed register to contents");
-                        plugin.Host.SendText("read my deed register");
+                        Plugin.Host.EchoText("Scanning Deed Register.");
+                        Plugin.Host.SendText("turn my deed register to contents");
+                        Plugin.Host.SendText("read my deed register");
                     }
 
                     return;
@@ -60,18 +60,18 @@ namespace InventoryView.Cases
                     return;
                 }
 
-                if (Regex.IsMatch(trimtext, "^What were you referring to\\?") || plugin.IsDenied(trimtext))
+                if (Regex.IsMatch(trimtext, "^What were you referring to\\?") || Plugin.IsDenied(trimtext))
                 {
-                    plugin.Host.EchoText("Skipping Deed Register.");
+                    Plugin.Host.EchoText("Skipping Deed Register.");
 
                     if (!string.IsNullOrEmpty(plugin.bookContainer))
-                        plugin.Host.SendText($"put my deed register in my {plugin.bookContainer}");
+                        Plugin.Host.SendText($"put my deed register in my {plugin.bookContainer}");
                     else
-                        plugin.Host.SendText("stow my deed register");
+                        Plugin.Host.SendText("stow my deed register");
 
                     plugin.bookContainer = "";
                     scanMode = "CatalogStart";
-                    plugin.Host.SendText("get my tool catalog");
+                    Plugin.Host.SendText("get my tool catalog");
                     return;
                 }
 
@@ -83,13 +83,13 @@ namespace InventoryView.Cases
                 if (Regex.IsMatch(trimtext, @"^Currently [Ss]tored"))
                 {
                     if (!string.IsNullOrEmpty(plugin.bookContainer))
-                        plugin.Host.SendText($"put my deed register in my {plugin.bookContainer}");
+                        Plugin.Host.SendText($"put my deed register in my {plugin.bookContainer}");
                     else
-                        plugin.Host.SendText("stow my deed register");
+                        Plugin.Host.SendText("stow my deed register");
 
                     plugin.bookContainer = "";
                     scanMode = "CatalogStart";
-                    plugin.Host.SendText("get my tool catalog");
+                    Plugin.Host.SendText("get my tool catalog");
                     return;
                 }
 
