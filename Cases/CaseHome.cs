@@ -12,7 +12,7 @@ namespace InventoryView.Cases
             Plugin = PluginInstance;
         }
 
-        public void HomeCase(string trimtext, string fullText, ref string scanMode, ref ItemData lastItem, CharacterData currentData)
+        public void HomeCase(string trimtext, ref string scanMode, ref ItemData lastItem, CharacterData currentData)
         {
             if (scanMode == "HomeStart")
             {
@@ -39,10 +39,10 @@ namespace InventoryView.Cases
             }
 
             if (scanMode == "Home")
-                HandleHomeInventory(trimtext, fullText, ref scanMode, ref lastItem, currentData);
+                HandleHomeInventory(trimtext, ref lastItem, currentData);
         }
 
-        private void HandleHomeInventory(string trimtext, string fullText, ref string scanMode, ref ItemData lastItem, CharacterData currentData)
+        private void HandleHomeInventory(string trimtext, ref ItemData lastItem, CharacterData currentData)
         {
             // Home list ends when a prompt or roundtime appears
             if (Regex.IsMatch(trimtext, @"\^[^>]*>|[^>]*\>|>|\^\>|^Roundtime:"))

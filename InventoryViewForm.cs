@@ -44,7 +44,6 @@ namespace InventoryView
         private ToolStripMenuItem filtarAlltoolStripMenuItem;
         private ToolStripMenuItem filterActivetoolStripMenuItem;
         private ToolStripMenuItem filterArchivedtoolStripMenuItem;
-        private ContextMenuStrip tabContextMenuStrip;
         private ToolStripMenuItem resetTabColorsMenuItem;
         private ToolStripMenuItem filterToolStripMenuItem;
         private ToolStripSeparator toolStripSeparator1;
@@ -119,13 +118,6 @@ namespace InventoryView
             tabControl1.DrawMode = TabDrawMode.OwnerDrawFixed;
             tabControl1.DrawItem += TabControl1_DrawItem;
 
-            // In InventoryViewForm_Load or in a helper method:
-            tabContextMenuStrip = new ContextMenuStrip();
-            ToolStripMenuItem toggleArchiveMenuItem = new ToolStripMenuItem("Toggle Archive");
-            toggleArchiveMenuItem.Click += ToggleArchiveMenuItem_Click;
-            tabContextMenuStrip.Items.Add(toggleArchiveMenuItem);
-
-            // Attach a MouseUp event to the TabControl if not already attached.
             tabControl1.MouseUp += TabControl1_MouseUp;
             resetTabColorsMenuItem.Click += ResetAllTabColors_Click;
 
@@ -168,8 +160,10 @@ namespace InventoryView
                 bool isArchived = Plugin.CharacterData.FirstOrDefault(c => c.name == character)?.Archived ?? false; // If no character found, assume not archived
 
                 // Create the tab page text
-                var tabPage = new TabPage(character + (isArchived ? " (Archived)" : " (Acivated)"));
-                tabPage.Tag = character; // store name
+                var tabPage = new TabPage(character + (isArchived ? " (Archived)" : " (Acivated)"))
+                {
+                    Tag = character // store name
+                };
 
                 ApplyTabColor(tabPage, character);
 
@@ -433,7 +427,7 @@ namespace InventoryView
                 }
 
                 // Check if the node's text contains all search words
-                bool allWordsMatch = searchWords.All(word => node.Text.IndexOf(word, StringComparison.OrdinalIgnoreCase) >= 0);
+                bool allWordsMatch = searchWords.All(word => node.Text.Contains(word, StringComparison.OrdinalIgnoreCase));
 
                 if (allWordsMatch)
                 {
@@ -1414,10 +1408,12 @@ namespace InventoryView
                 catch { textColor = SystemColors.ControlText; }
             }
 
-            using (SolidBrush brush = new SolidBrush(backColor))
+#pragma warning disable CA1416 // Validate platform compatibility
+            using (SolidBrush brush = new(backColor))
             {
                 e.Graphics.FillRectangle(brush, e.Bounds);
             }
+#pragma warning restore CA1416 // Validate platform compatibility
 
             //if (backColor.GetBrightness() < 0.5)
             //{
@@ -1437,24 +1433,20 @@ namespace InventoryView
         public static void ChangeTabColor(TabControl tabControl)
         {
             // First dialog: Background color
-            using (var bgDialog = new TitledColorDialog { DialogTitle = "Select Background Color" })
+            using var bgDialog = new TitledColorDialog { DialogTitle = "Select Background Color" };
+            if (bgDialog.ShowDialog() == DialogResult.OK)
             {
-                if (bgDialog.ShowDialog() == DialogResult.OK)
-                {
-                    Color bgColor = bgDialog.Color;
+                Color bgColor = bgDialog.Color;
 
-                    // Second dialog: Text color with contrast suggestion
-                    using (var textDialog = new TitledColorDialog
-                    {
-                        DialogTitle = "Select Text Color",
-                        Color = GetContrastColor(bgColor)  // Auto-suggest contrast
-                    })
-                    {
-                        if (textDialog.ShowDialog() == DialogResult.OK)
-                        {
-                            ApplyColorsToTab(tabControl, bgColor, textDialog.Color);
-                        }
-                    }
+                // Second dialog: Text color with contrast suggestion
+                using var textDialog = new TitledColorDialog
+                {
+                    DialogTitle = "Select Text Color",
+                    Color = GetContrastColor(bgColor)  // Auto-suggest contrast
+                };
+                if (textDialog.ShowDialog() == DialogResult.OK)
+                {
+                    ApplyColorsToTab(tabControl, bgColor, textDialog.Color);
                 }
             }
         }
@@ -1504,12 +1496,14 @@ namespace InventoryView
                 }
             }
 
-            using (SolidBrush brush = new SolidBrush(baseColor))
+#pragma warning disable CA1416 // Validate platform compatibility
+            using (SolidBrush brush = new(baseColor))
             {
                 e.Graphics.FillRectangle(brush, e.Bounds);  // Fill the background with the color
             }
+#pragma warning restore CA1416 // Validate platform compatibility
 
-            bool isSelected = (tabControl.SelectedIndex == e.Index);
+            _ = (tabControl.SelectedIndex == e.Index);
             TextRenderer.DrawText(e.Graphics, page.Text, tabControl.Font, e.Bounds, Color.Black, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
         }
 
@@ -1555,10 +1549,10 @@ namespace InventoryView
             HandleTabControlMouseUp(tabControl1, e);
         }
 
-        private void ToggleArchiveMenuItem_Click(object sender, EventArgs e)
-        {
-            ToggleArchiveForSelectedTab(tabControl1);
-        }
+        //private void ToggleArchiveMenuItem_Click(object sender, EventArgs e)
+        //{
+        //    ToggleArchiveForSelectedTab(tabControl1);
+        //}
 
         private bool isResetting = false;
 

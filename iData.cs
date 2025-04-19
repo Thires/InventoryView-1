@@ -86,7 +86,7 @@ namespace InventoryView
     {
         public string DialogTitle { get; set; } = "Choose Color";
 
-        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, string lParam);
 
         private const int WM_SETTEXT = 0x000C;
@@ -349,10 +349,6 @@ namespace InventoryView
                         XmlElement pocketsElement = doc.CreateElement("Pockets");
                         pocketsElement.InnerText = "False";
                         newRootNode.AppendChild(pocketsElement);
-
-                        XmlElement archiveElement = doc.CreateElement("Archived");
-                        archiveElement.InnerText = "False";
-                        newRootNode.AppendChild(archiveElement);
 
                         //XmlElement filterElement = doc.CreateElement("Filter");
                         //filterElement.InnerText = ("Filter Tabs");

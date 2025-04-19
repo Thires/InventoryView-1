@@ -146,7 +146,7 @@ namespace InventoryView
                         break;
 
                     case "Inventory":
-                        inventory.InventoryCase(trimtext, text, ref ScanMode, ref level, ref lastItem, currentData);
+                        CaseInventory.InventoryCase(trimtext, text, ref ScanMode, ref level, ref lastItem, currentData);
                         break;
 
                     case "PocketStart":
@@ -154,7 +154,7 @@ namespace InventoryView
                         break;
 
                     case "Pocket":
-                        pocket.PocketCase(trimtext, ref ScanMode, ref lastItem, currentData);
+                        pocket.PocketCase(trimtext, ref ScanMode, ref lastItem);
                         break;
 
                     case "InVault":
@@ -387,7 +387,7 @@ namespace InventoryView
 
                     case "HomeStart":
                     case "Home":
-                        home.HomeCase(trimtext, text, ref ScanMode, ref lastItem, currentData);
+                        home.HomeCase(trimtext, ref ScanMode, ref lastItem, currentData);
                         break;
 
                     case "TraderStart":
@@ -748,7 +748,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "3.0.1c"; }
+            get { return "3.0.2c"; }
         }
 
         public string Description

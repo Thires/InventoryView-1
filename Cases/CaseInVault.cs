@@ -14,7 +14,7 @@ namespace InventoryView.Cases
             Plugin = PluginInstance;
         }
 
-        public void InVaultCase(string trimtext, string fullText, ref string scanMode, ref ItemData lastItem, CharacterData currentData, List<string> surfaces, List<string> SurfacesEncountered)
+        public void InVaultCase(string trimtext, ref string scanMode, ref ItemData lastItem, CharacterData currentData, List<string> surfaces, List<string> SurfacesEncountered)
         {
                          if (Regex.IsMatch(trimtext, "^You rummage through a(?: secure)? vault and see (.+)\\."))
                         {
@@ -62,7 +62,7 @@ namespace InventoryView.Cases
                             vaultInv = Regex.Match(trimtext, "^You rummage through a(?: secure)? vault and see (.+)\\.").Groups[1].Value;
 
                             if (Regex.Match(vaultInv, @"\b\sand\s(?:a|an|some|several)\s\b").Success)
-                                vaultInv = Regex.Replace(vaultInv, @"\b\sand\s(a|an|some|several)\s\b", ", $1 ");
+                                _ = Regex.Replace(vaultInv, @"\b\sand\s(a|an|some|several)\s\b", ", $1 ");
 
                             //List<string> items = new(vaultInv.Split(','));
 
@@ -119,7 +119,7 @@ namespace InventoryView.Cases
 
                 for (int i = 0; i < SurfacesEncountered.Count; i++)
                 {
-                    string surface = SurfacesEncountered[i];
+                    _ = SurfacesEncountered[i];
 
                     if (!trimtext.StartsWith("You rummage"))
                         return;

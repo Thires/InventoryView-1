@@ -58,7 +58,7 @@ namespace InventoryView.Cases
             }
         }
 
-        public void PocketCase(string trimtext, ref string scanMode, ref ItemData lastItem, CharacterData currentData)
+        public void PocketCase(string trimtext, ref string scanMode, ref ItemData lastItem)
         {
             if (Plugin.handledCurrentPocket)
                 return;
@@ -88,8 +88,7 @@ namespace InventoryView.Cases
                     var containerItem = Plugin.currentData.items
                         .FirstOrDefault(i => i.tap.Equals(Plugin.pocketContainer, StringComparison.OrdinalIgnoreCase));
 
-                    if (containerItem == null)
-                            containerItem = Plugin.currentData.AddItem(new ItemData { tap = Plugin.pocketContainer });
+                    containerItem ??= Plugin.currentData.AddItem(new ItemData { tap = Plugin.pocketContainer });
 
                     lastItem = containerItem.AddItem(new ItemData { tap = "hidden pocket" });
 

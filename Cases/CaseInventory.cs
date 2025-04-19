@@ -9,7 +9,7 @@
             Plugin = PluginInstance;
         }
 
-        public void InventoryCase(string trimtext, string originalText, ref string scanMode, ref int level, ref ItemData lastItem, CharacterData currentData)
+        public static void InventoryCase(string trimtext, string originalText, ref string scanMode, ref int level, ref ItemData lastItem, CharacterData currentData)
         {
             if (trimtext.StartsWith("Roundtime:"))
             {
