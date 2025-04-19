@@ -2,14 +2,14 @@
 {
     public class CaseInventory
     {
-        private readonly Plugin plugin;
+        private readonly Plugin Plugin;
 
-        public CaseInventory(Plugin pluginInstance)
+        public CaseInventory(Plugin PluginInstance)
         {
-            plugin = pluginInstance;
+            Plugin = PluginInstance;
         }
 
-        public static void InventoryCase(string trimtext, string originalText, ref string scanMode, ref int level, ref ItemData lastItem, CharacterData currentData)
+        public void InventoryCase(string trimtext, string originalText, ref string scanMode, ref int level, ref ItemData lastItem, CharacterData currentData)
         {
             if (trimtext.StartsWith("Roundtime:"))
             {

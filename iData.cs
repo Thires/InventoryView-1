@@ -44,20 +44,20 @@ namespace InventoryView
         public bool storage;
         public string tap;
         public ItemData parent;
-        //public List<ItemData> items = new();
-        public List<ItemData> Items { get; set; } = new List<ItemData>();
+        public List<ItemData> items = new();
+        //public List<ItemData> items { get; set; } = new List<ItemData>();
 
         public ItemData AddItem(ItemData newItem)
         {
             newItem.parent = this;
-            Items.Add(newItem);
+            items.Add(newItem);
             return newItem;
         }
 
         public ItemData AddItem(string tap, bool storage = false)
         {
             ItemData newItem = new() { tap = tap, storage = storage, parent = this };
-            Items.Add(newItem);
+            items.Add(newItem);
             return newItem;
         }
     }
@@ -110,7 +110,7 @@ namespace InventoryView
             foreach (var iData in iList)
             {
                 iData.parent = null;
-                RemoveParents(iData.Items);
+                RemoveParents(iData.items);
             }
         }
 
@@ -119,7 +119,7 @@ namespace InventoryView
             foreach (var iData in iList)
             {
                 iData.parent = parent;
-                AddParents(iData.Items, iData);
+                AddParents(iData.items, iData);
             }
         }
 
@@ -189,92 +189,7 @@ namespace InventoryView
                     arrayOfCharacterDataNode.InnerXml += characterDataXml;
                 }
 
-                // Get CheckBoxState element.
-                XmlNode multilinetabsNode = doc.SelectSingleNode("/Root/MultilineTabs");
-
-                // If CheckBoxState element exists, update its value.
-                if (multilinetabsNode != null)
-                    multilinetabsNode.InnerText = ((InventoryViewForm)Plugin.Form).toolStripMultilineTabs.Checked.ToString();
-                else
-                {
-                    // Otherwise, create new CheckBoxState element and set its value to state of checkBox1 control.
-                    XmlElement multilineTabsElemnt = doc.CreateElement("MultilineTabs");
-                    multilineTabsElemnt.InnerText = ((InventoryViewForm)Plugin.Form).toolStripMultilineTabs.Checked.ToString();
-
-                    // Append CheckBoxState element to root element of XmlDocument.
-                    doc.DocumentElement.AppendChild(multilineTabsElemnt);
-                }
-
-                // Get DarkModeState element.
-                XmlNode darkModeNode = doc.SelectSingleNode("/Root/DarkMode");
-
-                // If DarkModeState element exists, update its value.
-                if (darkModeNode != null)
-                    darkModeNode.InnerText = ((InventoryViewForm)Plugin.Form).toolStripDarkMode.Checked.ToString();
-                else
-                {
-                    // Otherwise, create new DarkModeState element and set its value to state of chkDarkMode control.
-                    XmlElement darkModeElement = doc.CreateElement("DarkMode");
-                    darkModeElement.InnerText = ((InventoryViewForm)Plugin.Form).toolStripDarkMode.Checked.ToString();
-
-                    // Append DarkModeState element to root element of XmlDocument.
-                    doc.DocumentElement.AppendChild(darkModeElement);
-                }
-
-                XmlNode familyNode = doc.SelectSingleNode("/Root/Family");
-
-                // If FamilyModeState element exists, update its value.
-                if (familyNode != null)
-                    familyNode.InnerText = ((InventoryViewForm)Plugin.Form).toolStripFamily.Checked.ToString();
-                else
-                {
-                    XmlElement familyElement = doc.CreateElement("Family");
-                    familyElement.InnerText = ((InventoryViewForm)Plugin.Form).toolStripFamily.Checked.ToString();
-
-                    // Append DarkModeState element to root element of XmlDocument.
-                    doc.DocumentElement.AppendChild(familyElement);
-                }
-
-                XmlNode alwaysTopNode = doc.SelectSingleNode("/Root/AlwaysTop");
-
-                // If AlwaysTopState element exists, update its value.
-                if (alwaysTopNode != null)
-                    alwaysTopNode.InnerText = ((InventoryViewForm)Plugin.Form).toolStripAlwaysTop.Checked.ToString();
-                else
-                {
-                    // Otherwise, create new DarkModeState element and set its value to state of chkDarkMode control.
-                    XmlElement alwaysTopElement = doc.CreateElement("AlwaysTop");
-                    alwaysTopElement.InnerText = ((InventoryViewForm)Plugin.Form).toolStripAlwaysTop.Checked.ToString();
-
-                    // Append DarkModeState element to root element of XmlDocument.
-                    doc.DocumentElement.AppendChild(alwaysTopElement);
-                }
-
-                XmlNode pocketsNode = doc.SelectSingleNode("/Root/Pockets");
-
-                if (pocketsNode != null)
-                    pocketsNode.InnerText = ((InventoryViewForm)Plugin.Form).toolStripPockets.Checked.ToString();
-                else
-                {
-                    XmlElement pocketsElement = doc.CreateElement("Pockets");
-                    pocketsElement.InnerText = ((InventoryViewForm)Plugin.Form).toolStripPockets.Checked.ToString();
-
-                    // Append DarkModeState element to root element of XmlDocument.
-                    doc.DocumentElement.AppendChild(pocketsElement);
-                }
-
-                //XmlNode filterNode = doc.SelectSingleNode("/Root/Filter");
-
-                //if (filterNode != null)
-                //    filterNode.InnerText = ((InventoryViewForm)plugin.Form).currentFilter;
-                //else
-                //{
-                //    XmlElement filterElement = doc.CreateElement("Filter");
-                //    filterElement.InnerText = ((InventoryViewForm)plugin.Form).currentFilter;
-
-                //    // Append DarkModeState element to root element of XmlDocument.
-                //    doc.DocumentElement.AppendChild(filterElement);
-                //}
+                SaveConfigOptions(doc);
 
                 foreach (var character in Plugin.CharacterData)
                 {
@@ -323,6 +238,64 @@ namespace InventoryView
             catch (IOException ex)
             {
                 Plugin.Host.EchoText("Error writing to InventoryView file: " + ex.Message);
+            }
+        }
+
+        private static void SaveConfigOptions(XmlDocument doc)
+        {
+            // MultilineTabs
+            XmlNode multilineTabsNode = doc.SelectSingleNode("/Root/MultilineTabs");
+            if (multilineTabsNode != null)
+                multilineTabsNode.InnerText = ((InventoryViewForm)Plugin.Form).toolStripMultilineTabs.Checked.ToString();
+            else
+            {
+                XmlElement multilineTabsElement = doc.CreateElement("MultilineTabs");
+                multilineTabsElement.InnerText = ((InventoryViewForm)Plugin.Form).toolStripMultilineTabs.Checked.ToString();
+                doc.DocumentElement.AppendChild(multilineTabsElement);
+            }
+
+            // DarkMode
+            XmlNode darkModeNode = doc.SelectSingleNode("/Root/DarkMode");
+            if (darkModeNode != null)
+                darkModeNode.InnerText = ((InventoryViewForm)Plugin.Form).toolStripDarkMode.Checked.ToString();
+            else
+            {
+                XmlElement darkModeElement = doc.CreateElement("DarkMode");
+                darkModeElement.InnerText = ((InventoryViewForm)Plugin.Form).toolStripDarkMode.Checked.ToString();
+                doc.DocumentElement.AppendChild(darkModeElement);
+            }
+
+            // Family
+            XmlNode familyNode = doc.SelectSingleNode("/Root/Family");
+            if (familyNode != null)
+                familyNode.InnerText = ((InventoryViewForm)Plugin.Form).toolStripFamily.Checked.ToString();
+            else
+            {
+                XmlElement familyElement = doc.CreateElement("Family");
+                familyElement.InnerText = ((InventoryViewForm)Plugin.Form).toolStripFamily.Checked.ToString();
+                doc.DocumentElement.AppendChild(familyElement);
+            }
+
+            // AlwaysTop
+            XmlNode alwaysTopNode = doc.SelectSingleNode("/Root/AlwaysTop");
+            if (alwaysTopNode != null)
+                alwaysTopNode.InnerText = ((InventoryViewForm)Plugin.Form).toolStripAlwaysTop.Checked.ToString();
+            else
+            {
+                XmlElement alwaysTopElement = doc.CreateElement("AlwaysTop");
+                alwaysTopElement.InnerText = ((InventoryViewForm)Plugin.Form).toolStripAlwaysTop.Checked.ToString();
+                doc.DocumentElement.AppendChild(alwaysTopElement);
+            }
+
+            // Pockets
+            XmlNode pocketsNode = doc.SelectSingleNode("/Root/Pockets");
+            if (pocketsNode != null)
+                pocketsNode.InnerText = ((InventoryViewForm)Plugin.Form).toolStripPockets.Checked.ToString();
+            else
+            {
+                XmlElement pocketsElement = doc.CreateElement("Pockets");
+                pocketsElement.InnerText = ((InventoryViewForm)Plugin.Form).toolStripPockets.Checked.ToString();
+                doc.DocumentElement.AppendChild(pocketsElement);
             }
         }
 

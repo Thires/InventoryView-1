@@ -4,11 +4,11 @@ namespace InventoryView.Cases
 {
     public class CaseVaultStandard
     {
-        private readonly Plugin plugin;
+        private readonly Plugin Plugin;
 
-        public CaseVaultStandard(Plugin pluginInstance)
+        public CaseVaultStandard(Plugin PluginInstance)
         {
-            plugin = pluginInstance;
+            Plugin = PluginInstance;
         }
 
         public void StandardVaultCase(string trimtext, string fullText, ref string scanMode, ref int level, ref ItemData lastItem, CharacterData currentData)
@@ -24,7 +24,7 @@ namespace InventoryView.Cases
 
                 else if (trimtext == "Vault Inventory:")
                 {
-                    plugin.ScanStart("Standard");
+                    Plugin.ScanStart("Standard");
                     return;
                 }
 
@@ -52,10 +52,10 @@ namespace InventoryView.Cases
                 if (trimtext.StartsWith("The last note indicates that your vault contains"))
                 {
                     if (((InventoryViewForm)Plugin.Form).toolStripFamily.Checked)
-                        plugin.ScanMode = "FamilyStart";
+                        Plugin.ScanMode = "FamilyStart";
                     else
                     {
-                        plugin.ScanMode = "DeedStart";
+                        Plugin.ScanMode = "DeedStart";
                     }
                 }
                 else

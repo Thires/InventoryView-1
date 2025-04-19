@@ -244,8 +244,8 @@ namespace InventoryView
                     totalCount++;
                 }
 
-                if (itemData.Items.Count > 0)
-                    totalCount += PopulateTree(treeNode1, itemData.Items);
+                if (itemData.items.Count > 0)
+                    totalCount += PopulateTree(treeNode1, itemData.items);
             }
 
             return totalCount;

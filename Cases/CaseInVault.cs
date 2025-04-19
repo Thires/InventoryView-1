@@ -7,11 +7,11 @@ namespace InventoryView.Cases
 {
     public class CaseInVault
     {
-        private readonly Plugin plugin;
+        private readonly Plugin Plugin;
 
-        public CaseInVault(Plugin pluginInstance)
+        public CaseInVault(Plugin PluginInstance)
         {
-            plugin = pluginInstance;
+            Plugin = PluginInstance;
         }
 
         public void InVaultCase(string trimtext, string fullText, ref string scanMode, ref ItemData lastItem, CharacterData currentData, List<string> surfaces, List<string> SurfacesEncountered)
@@ -105,17 +105,17 @@ namespace InventoryView.Cases
             {
                 if (SurfacesEncountered.Count == 0)
                     return;
-                plugin.currentSurface = SurfacesEncountered[0];
-                if (plugin.currentSurface == "steel wire rack")
-                    plugin.currentSurface = "wire rack";
+                Plugin.currentSurface = SurfacesEncountered[0];
+                if (Plugin.currentSurface == "steel wire rack")
+                    Plugin.currentSurface = "wire rack";
                 if (!trimtext.StartsWith("You rummage"))
-                    Plugin.Host.SendText("rummage " + plugin.currentSurface);
+                    Plugin.Host.SendText("rummage " + Plugin.currentSurface);
                 scanMode = "SurfaceRummage";
             }
             else if (scanMode == "SurfaceRummage")
             {
-                if (plugin.currentSurface == "wire rack")
-                    plugin.currentSurface = "steel wire rack";
+                if (Plugin.currentSurface == "wire rack")
+                    Plugin.currentSurface = "steel wire rack";
 
                 for (int i = 0; i < SurfacesEncountered.Count; i++)
                 {
@@ -123,9 +123,9 @@ namespace InventoryView.Cases
 
                     if (!trimtext.StartsWith("You rummage"))
                         return;
-                            if (Plugin.RummageCheck(trimtext, plugin.currentSurface, out _))
+                            if (Plugin.RummageCheck(trimtext, Plugin.currentSurface, out _))
                             {
-                                plugin.SurfaceRummage(SurfacesEncountered[i], trimtext);
+                                Plugin.SurfaceRummage(SurfacesEncountered[i], trimtext);
                                 SurfacesEncountered.RemoveAt(i); // Remove the surface
 
                                 Thread.Sleep(100);
@@ -137,9 +137,9 @@ namespace InventoryView.Cases
 
                 if (SurfacesEncountered.Count == 0)
                 {
-                    if (plugin.InFamVault)
+                    if (Plugin.InFamVault)
                     {
-                        plugin.InFamVault = false;
+                        Plugin.InFamVault = false;
                         scanMode = null;
                         Plugin.Host.EchoText("Scan Complete.");
                         Plugin.Host.SendText("#parse Scan Complete");
@@ -163,10 +163,10 @@ namespace InventoryView.Cases
 
             else if (scanMode == "InFamilyCheck")
             {
-                if (!plugin.InFamVault)
+                if (!Plugin.InFamVault)
                 {
-                    plugin.InFamVault = true;
-                    plugin.ScanStart("FamilyVault");
+                    Plugin.InFamVault = true;
+                    Plugin.ScanStart("FamilyVault");
                     Plugin.Host.SendText("turn vault");
                     Plugin.Host.SendText("open vault");
                     Thread.Sleep(6000);

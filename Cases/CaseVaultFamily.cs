@@ -4,11 +4,11 @@ namespace InventoryView.Cases
 {
     public class CaseVaultFamily
     {
-        private readonly Plugin plugin;
+        private readonly Plugin Plugin;
 
-        public CaseVaultFamily(Plugin pluginInstance)
+        public CaseVaultFamily(Plugin PluginInstance)
         {
-            plugin = pluginInstance;
+            Plugin = PluginInstance;
         }
 
         public void FamilyVaultCase(string trimtext, string fullText, ref string scanMode, ref int level, ref ItemData lastItem, CharacterData currentData)
@@ -31,7 +31,7 @@ namespace InventoryView.Cases
 
                 if (trimtext == "Vault Inventory:")
                 {
-                    plugin.ScanStart("FamilyVault");
+                    Plugin.ScanStart("FamilyVault");
                     return;
                 }
 

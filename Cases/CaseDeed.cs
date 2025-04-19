@@ -4,11 +4,11 @@ namespace InventoryView.Cases
 {
     public class CaseDeed
     {
-        private readonly Plugin plugin;
+        private readonly Plugin Plugin;
 
-        public CaseDeed(Plugin pluginInstance)
+        public CaseDeed(Plugin PluginInstance)
         {
-            plugin = pluginInstance;
+            Plugin = PluginInstance;
         }
 
         public void DeedCase(string trimtext, string fullText, ref string scanMode, ref ItemData lastItem, CharacterData currentData)
@@ -26,12 +26,12 @@ namespace InventoryView.Cases
                 if (Regex.IsMatch(trimtext, "^You get a.*deed register.*from") || trimtext == "You are already holding that.")
                 {
                     Match match = Regex.Match(trimtext, "^You get a.*deed register.*from.+your (.+)\\.");
-                    plugin.bookContainer = match.Success ? match.Groups[1].Value : "";
+                    Plugin.bookContainer = match.Success ? match.Groups[1].Value : "";
 
-                    if (!string.IsNullOrEmpty(plugin.bookContainer))
+                    if (!string.IsNullOrEmpty(Plugin.bookContainer))
                     {
-                        string[] words = plugin.bookContainer.Split(' ');
-                        plugin.bookContainer = words.Length switch
+                        string[] words = Plugin.bookContainer.Split(' ');
+                        Plugin.bookContainer = words.Length switch
                         {
                             3 => $"{words[0]} {words[2]}",
                             2 => $"{words[0]} {words[1]}",
@@ -48,15 +48,15 @@ namespace InventoryView.Cases
 
                 if (Regex.IsMatch(trimtext, @"^\|\s*Page\s*\|\s*Type\s*\|\s*Deed\s*\|\s*Notes\s*\|"))
                 {
-                    plugin.togglecraft = true;
-                    plugin.ScanStart("Deed");
+                    Plugin.togglecraft = true;
+                    Plugin.ScanStart("Deed");
                     return;
                 }
 
                 if (fullText.StartsWith("   Page -- [Type]       Deed"))
                 {
-                    plugin.togglecraft = false;
-                    plugin.ScanStart("Deed");
+                    Plugin.togglecraft = false;
+                    Plugin.ScanStart("Deed");
                     return;
                 }
 
@@ -64,12 +64,12 @@ namespace InventoryView.Cases
                 {
                     Plugin.Host.EchoText("Skipping Deed Register.");
 
-                    if (!string.IsNullOrEmpty(plugin.bookContainer))
-                        Plugin.Host.SendText($"put my deed register in my {plugin.bookContainer}");
+                    if (!string.IsNullOrEmpty(Plugin.bookContainer))
+                        Plugin.Host.SendText($"put my deed register in my {Plugin.bookContainer}");
                     else
                         Plugin.Host.SendText("stow my deed register");
 
-                    plugin.bookContainer = "";
+                    Plugin.bookContainer = "";
                     scanMode = "CatalogStart";
                     Plugin.Host.SendText("get my tool catalog");
                     return;
@@ -82,18 +82,18 @@ namespace InventoryView.Cases
             {
                 if (Regex.IsMatch(trimtext, @"^Currently [Ss]tored"))
                 {
-                    if (!string.IsNullOrEmpty(plugin.bookContainer))
-                        Plugin.Host.SendText($"put my deed register in my {plugin.bookContainer}");
+                    if (!string.IsNullOrEmpty(Plugin.bookContainer))
+                        Plugin.Host.SendText($"put my deed register in my {Plugin.bookContainer}");
                     else
                         Plugin.Host.SendText("stow my deed register");
 
-                    plugin.bookContainer = "";
+                    Plugin.bookContainer = "";
                     scanMode = "CatalogStart";
                     Plugin.Host.SendText("get my tool catalog");
                     return;
                 }
 
-                if (plugin.togglecraft)
+                if (Plugin.togglecraft)
                 {
                     if (!Regex.IsMatch(trimtext, @"\| Page\| Type"))
                     {

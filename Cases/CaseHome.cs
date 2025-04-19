@@ -5,11 +5,11 @@ namespace InventoryView.Cases
 {
     public class CaseHome
     {
-        private readonly Plugin plugin;
+        private readonly Plugin Plugin;
 
-        public CaseHome(Plugin pluginInstance)
+        public CaseHome(Plugin PluginInstance)
         {
-            plugin = pluginInstance;
+            Plugin = PluginInstance;
         }
 
         public void HomeCase(string trimtext, string fullText, ref string scanMode, ref ItemData lastItem, CharacterData currentData)
@@ -19,21 +19,21 @@ namespace InventoryView.Cases
                 if (trimtext == "The home contains:")
                 {
                     Plugin.Host.EchoText("Scanning Home.");
-                    plugin.ScanStart("Home");
+                    Plugin.ScanStart("Home");
                     return;
                 }
 
                 if (trimtext.StartsWith("Your documentation filed with the Estate Holders", StringComparison.OrdinalIgnoreCase))
                 {
                     Plugin.Host.EchoText("Skipping Home");
-                    plugin.GuildCheck(trimtext);
+                    Plugin.GuildCheck(trimtext);
                     return;
                 }
 
                 if (Plugin.IsDenied(trimtext))
                 {
                     Plugin.Host.EchoText("Skipping Home");
-                    plugin.GuildCheck(trimtext);
+                    Plugin.GuildCheck(trimtext);
                     return;
                 }
             }
@@ -47,7 +47,7 @@ namespace InventoryView.Cases
             // Home list ends when a prompt or roundtime appears
             if (Regex.IsMatch(trimtext, @"\^[^>]*>|[^>]*\>|>|\^\>|^Roundtime:"))
             {
-                plugin.GuildCheck(trimtext);
+                Plugin.GuildCheck(trimtext);
                 return;
             }
 

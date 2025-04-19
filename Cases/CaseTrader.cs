@@ -4,11 +4,11 @@ namespace InventoryView.Cases
 {
     public class CaseTrader
     {
-        private readonly Plugin plugin;
+        private readonly Plugin Plugin;
 
-        public CaseTrader(Plugin pluginInstance)
+        public CaseTrader(Plugin PluginInstance)
         {
-            plugin = pluginInstance;
+            Plugin = PluginInstance;
         }
 
         public void TraderCase(string trimtext, string fullText, ref string scanMode, ref int level, ref ItemData lastItem, CharacterData currentData)
@@ -26,12 +26,12 @@ namespace InventoryView.Cases
                 if (Regex.IsMatch(trimtext, "^You get a.*storage book.*from") || trimtext == "You are already holding that.")
                 {
                     Match match = Regex.Match(trimtext, "^You get a.*storage book.*from.+your (.+)\\.");
-                    plugin.bookContainer = match.Success ? match.Groups[1].Value : "";
+                    Plugin.bookContainer = match.Success ? match.Groups[1].Value : "";
 
-                    if (!string.IsNullOrEmpty(plugin.bookContainer))
+                    if (!string.IsNullOrEmpty(Plugin.bookContainer))
                     {
-                        string[] words = plugin.bookContainer.Split(' ');
-                        plugin.bookContainer = words.Length switch
+                        string[] words = Plugin.bookContainer.Split(' ');
+                        Plugin.bookContainer = words.Length switch
                         {
                             3 => $"{words[0]} {words[2]}",
                             2 => $"{words[0]} {words[1]}",
@@ -47,7 +47,7 @@ namespace InventoryView.Cases
 
                 if (trimtext == "in the known realms since 402.") // Start of the list
                 {
-                    plugin.ScanStart("Trader");
+                    Plugin.ScanStart("Trader");
                     return;
                 }
 
@@ -57,7 +57,7 @@ namespace InventoryView.Cases
                     Plugin.Host.EchoText("Skipping Trader Storage.");
                     Plugin.Host.EchoText("Scan Complete.");
                     Plugin.Host.SendText("#parse Scan Complete");
-                    plugin.bookContainer = "";
+                    Plugin.bookContainer = "";
                     LoadSave.SaveSettings();
                     return;
                 }
@@ -69,13 +69,13 @@ namespace InventoryView.Cases
                 {
                     scanMode = null;
                     Plugin.Host.EchoText("Scan Complete.");
-                    if (!string.IsNullOrEmpty(plugin.bookContainer))
-                        Plugin.Host.SendText($"put my storage book in my {plugin.bookContainer}");
+                    if (!string.IsNullOrEmpty(Plugin.bookContainer))
+                        Plugin.Host.SendText($"put my storage book in my {Plugin.bookContainer}");
                     else
                         Plugin.Host.SendText("stow my storage book");
 
                     Plugin.Host.SendText("#parse Scan Complete");
-                    plugin.bookContainer = "";
+                    Plugin.bookContainer = "";
                     LoadSave.SaveSettings();
                     return;
                 }

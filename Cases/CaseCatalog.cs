@@ -4,11 +4,11 @@ namespace InventoryView.Cases
 {
     public class CaseCatalog
     {
-        private readonly Plugin plugin;
+        private readonly Plugin Plugin;
 
-        public CaseCatalog(Plugin pluginInstance)
+        public CaseCatalog(Plugin PluginInstance)
         {
-            plugin = pluginInstance;
+            Plugin = PluginInstance;
         }
 
         public void CatalogCase(string trimtext, string fullText, ref string scanMode, ref ItemData lastItem, CharacterData currentData)
@@ -26,12 +26,12 @@ namespace InventoryView.Cases
                 if (Regex.IsMatch(trimtext, "^You get a.*tool catalog.*from") || trimtext == "You are already holding that.")
                 {
                     Match match = Regex.Match(trimtext, "^You get a.*tool catalog.*from.+your (.+)\\.");
-                    plugin.bookContainer = match.Success ? match.Groups[1].Value : "";
+                    Plugin.bookContainer = match.Success ? match.Groups[1].Value : "";
 
-                    if (!string.IsNullOrEmpty(plugin.bookContainer))
+                    if (!string.IsNullOrEmpty(Plugin.bookContainer))
                     {
-                        string[] words = plugin.bookContainer.Split(' ');
-                        plugin.bookContainer = words.Length switch
+                        string[] words = Plugin.bookContainer.Split(' ');
+                        Plugin.bookContainer = words.Length switch
                         {
                             3 => $"{words[0]} {words[2]}",
                             2 => $"{words[0]} {words[1]}",
@@ -48,19 +48,19 @@ namespace InventoryView.Cases
 
                 if (fullText.StartsWith("   Page -- Tool"))
                 {
-                    plugin.ScanStart("Catalog");
+                    Plugin.ScanStart("Catalog");
                     return;
                 }
 
                 if (Regex.IsMatch(trimtext, "^What were you referring to\\?") || Plugin.IsDenied(trimtext))
                 {
                     Plugin.Host.EchoText("Skipping Tool Catalog.");
-                    if (!string.IsNullOrEmpty(plugin.bookContainer))
-                        Plugin.Host.SendText($"put my tool catalog in my {plugin.bookContainer}");
+                    if (!string.IsNullOrEmpty(Plugin.bookContainer))
+                        Plugin.Host.SendText($"put my tool catalog in my {Plugin.bookContainer}");
                     else
                         Plugin.Host.SendText("stow my tool catalog");
 
-                    plugin.bookContainer = "";
+                    Plugin.bookContainer = "";
                     scanMode = "HomeStart";
                     Plugin.Host.SendText("home recall");
                 }
@@ -72,12 +72,12 @@ namespace InventoryView.Cases
             {
                 if (trimtext.StartsWith("Currently stored:"))
                 {
-                    if (!string.IsNullOrEmpty(plugin.bookContainer))
-                        Plugin.Host.SendText($"put my tool catalog in my {plugin.bookContainer}");
+                    if (!string.IsNullOrEmpty(Plugin.bookContainer))
+                        Plugin.Host.SendText($"put my tool catalog in my {Plugin.bookContainer}");
                     else
                         Plugin.Host.SendText("stow my tool catalog");
 
-                    plugin.bookContainer = "";
+                    Plugin.bookContainer = "";
                     scanMode = "HomeStart";
                     Plugin.Host.SendText("home recall");
                 }

@@ -146,7 +146,7 @@ namespace InventoryView
                         break;
 
                     case "Inventory":
-                        CaseInventory.InventoryCase(trimtext, text, ref ScanMode, ref level, ref lastItem, currentData);
+                        inventory.InventoryCase(trimtext, text, ref ScanMode, ref level, ref lastItem, currentData);
                         break;
 
                     case "PocketStart":

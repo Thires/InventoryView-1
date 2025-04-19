@@ -4,11 +4,11 @@ namespace InventoryView.Cases
 {
     public class CaseMoonMage
     {
-        private readonly Plugin plugin;
+        private readonly Plugin Plugin;
 
-        public CaseMoonMage(Plugin pluginInstance)
+        public CaseMoonMage(Plugin PluginInstance)
         {
-            plugin = pluginInstance;
+            Plugin = PluginInstance;
         }
 
         public void MoonMageCase(string trimtext, string fullText, ref string scanMode, ref int level, ref ItemData lastItem, CharacterData currentData)
@@ -24,7 +24,7 @@ namespace InventoryView.Cases
 
                 if (trimtext == "Within the belly of the Shadow Servant you see:")
                 {
-                    plugin.ScanStart("MoonMage");
+                    Plugin.ScanStart("MoonMage");
                     return;
                 }
 
