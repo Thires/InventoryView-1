@@ -63,7 +63,7 @@ namespace InventoryView.Cases
             if (Plugin.handledCurrentPocket)
                 return;
 
-            if (Regex.IsMatch(trimtext, "^You rummage through a pocket and see (.+)\\."))
+            if (Regex.IsMatch(trimtext, "^You rummage through a pocket and see (.+)\\.$"))
             {
                 string pocketInv = Regex.Match(trimtext, "^You rummage through a pocket and see (.+)\\.").Groups[1].Value;
                 pocketInv = Regex.Replace(pocketInv, @"\band\s(a|an|some|several)\s", ", $1 ");
@@ -85,13 +85,16 @@ namespace InventoryView.Cases
                 }
                 else
                 {
+                    // Get the container item or add it if missing
                     var containerItem = Plugin.currentData.items
                         .FirstOrDefault(i => i.tap.Equals(Plugin.pocketContainer, StringComparison.OrdinalIgnoreCase));
 
                     containerItem ??= Plugin.currentData.AddItem(new ItemData { tap = Plugin.pocketContainer });
 
+                    // Add the "hidden pocket" item to the container
                     lastItem = containerItem.AddItem(new ItemData { tap = "hidden pocket" });
 
+                    // Add the items inside the pocket to the hidden pocket
                     foreach (string itemText in pocketInv.Split(','))
                     {
                         string tap = Plugin.CleanTapText(itemText.Trim());
@@ -99,11 +102,14 @@ namespace InventoryView.Cases
                     }
                 }
 
-                foreach (string itemText in pocketInv.Split(','))
+                // Add the items to the main inventory (only if pockets are unchecked)
+                if (!((InventoryViewForm)Plugin.Form).toolStripPockets.Checked)
                 {
-                    string tap = Plugin.CleanTapText(itemText.Trim());
-
+                    foreach (string itemText in pocketInv.Split(','))
+                    {
+                        string tap = Plugin.CleanTapText(itemText.Trim());
                         Plugin.currentData.AddItem(new ItemData { tap = tap });
+                    }
                 }
 
                 Plugin.handledCurrentPocket = true;
@@ -131,6 +137,7 @@ namespace InventoryView.Cases
                 ReopenContainers();
             }
         }
+
 
         private void ReopenContainers()
         {
