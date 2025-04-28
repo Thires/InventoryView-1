@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace InventoryView.Cases
 {
@@ -62,30 +63,15 @@ namespace InventoryView.Cases
             {
                 if (fullText.StartsWith("The last note in your book indicates that your vault contains"))
                 {
-                    if (((InventoryViewForm)Plugin.Form).toolStripFamily.Checked)
-                    {
-                        scanMode = "FamilyStart";
-                        if (!string.IsNullOrEmpty(Plugin.bookContainer))
-                            Plugin.Host.SendText($"put my vault book in my {Plugin.bookContainer}");
-                        else
-                            Plugin.Host.SendText("stow my vault book");
-
-                        Plugin.bookContainer = "";
-                        Plugin.Host.SendText("vault family");
-                    }
+                    scanMode = "DeedStart";
+                    if (!string.IsNullOrEmpty(Plugin.bookContainer))
+                        Plugin.Host.SendText($"put my vault book in my {Plugin.bookContainer}");
                     else
-                    {
-                        scanMode = "DeedStart";
-                        Plugin.Host.EchoText("Skipping Family Vault");
-                        if (!string.IsNullOrEmpty(Plugin.bookContainer))
-                            Plugin.Host.SendText($"put my vault book in my {Plugin.bookContainer}");
-                        else
-                            Plugin.Host.SendText("stow my vault book");
+                        Plugin.Host.SendText("stow my vault book");
 
-                        Plugin.bookContainer = "";
-                        Plugin.Host.SendText("get my deed register");
-                    }
-
+                    Plugin.bookContainer = "";
+                    Thread.Sleep(100);
+                    Plugin.Host.SendText("get my deed register");
                     return;
                 }
 
