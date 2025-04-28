@@ -1,5 +1,4 @@
-﻿using GeniePlugin.Interfaces;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -10,7 +9,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Xml;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 
@@ -18,12 +16,34 @@ namespace InventoryView
 {
     public class InventoryViewForm : Form
     {
+        // UI Controls
         private readonly List<TreeNode> searchMatches = new();
-        private IContainer components;
         private TreeView tv;
-
         private MenuStrip menuStrip;
         private ContextMenuStrip listBox_Menu;
+
+        // Tooltip and Timer
+        private Form customTooltip = null;
+        private readonly Timer tooltipTimer = new();
+
+        // Application State
+        private static string basePath = Application.StartupPath;
+        private string currentFilter = "Active Tabs";
+
+        // Data Storage
+        private readonly Dictionary<string, List<MatchedItemInfo>> matchedItemsDictionary = new();
+
+        // Components
+        private IContainer components;
+
+        // ToolStrip Container
+        private ToolStripContainer toolStripContainer1;
+
+        // ToolStrip Separators
+        private ToolStripSeparator toolStripSeparator1;
+        private ToolStripSeparator toolStripSeparator2;
+
+        // ToolStrip Menu Items
         private ToolStripMenuItem copyToolStripMenuItem;
         private ToolStripMenuItem wikiToolStripMenuItem;
         private ToolStripMenuItem copyAllToolStripMenuItem;
@@ -37,7 +57,6 @@ namespace InventoryView
         internal ToolStripMenuItem toolStripReload;
         internal ToolStripMenuItem toolStripWiki;
         private ToolStripMenuItem toolStripExport;
-        private ToolStripContainer toolStripContainer1;
         internal ToolStripMenuItem toolStripAlwaysTop;
         private ToolStripMenuItem toolStripExportAll;
         private ToolStripMenuItem copySelectedToolStripMenuItem;
@@ -46,45 +65,39 @@ namespace InventoryView
         private ToolStripMenuItem filterArchivedtoolStripMenuItem;
         private ToolStripMenuItem resetTabColorsMenuItem;
         private ToolStripMenuItem filterToolStripMenuItem;
-        private ToolStripSeparator toolStripSeparator1;
-        private ToolStripSeparator toolStripSeparator2;
         private ToolStripMenuItem colorTabToolStrip;
         private ToolStripMenuItem resetSingleTabStripMenu;
 
+        // State and Search Variables
         private bool clickSearch = false;
 
-        // Create a new list to store the search matches for each TreeView control
+        // Data Storage for Search Results
         private readonly List<TreeViewSearchMatches> treeViewSearchMatchesList = new();
-        // Create a list to store the hidden tab pages and their original positions
         private readonly List<(TabPage tabPage, int index)> hiddenTabPages = new();
+
+        // UI Controls for Search and Display
         internal TabControl tabControl1;
         private ListBox lblMatches;
-        private TableLayoutPanel tableLayoutPanel1;
-        private Panel panel1;
         private TextBox txtSearch;
-
-        private Label infolabel;
+        private Label lblClick;
         private Label lblFound;
+        private Label lblInfo;
         private Label lblSearch;
-        private Label label1;
-
-        private Button btnRemoveCharacter;
-        private Button btnFindPrev;
-        private Button btnExpand;
-        private Button btnCollapse;
-        private Button btnFindNext;
-        private Button btnReset;
-
-        private SplitContainer splitContainer1;
+        internal CheckBox cbPrecise;
         private ComboBox cboCharacters;
 
-        private Form customTooltip = null;
-        private readonly Timer tooltipTimer = new();
+        // UI Controls for Buttons and Actions
+        private Button btnCollapse;
+        private Button btnFindPrev;
+        private Button btnExpand;
+        private Button btnFindNext;
+        private Button btnRemoveCharacter;
+        private Button btnReset;
 
-        private static string basePath = Application.StartupPath;
-        private string currentFilter = "Active Tabs";
-
-        private readonly Dictionary<string, List<MatchedItemInfo>> matchedItemsDictionary = new();
+        // Layout Controls
+        private TableLayoutPanel tableLayoutPanel1;
+        private Panel panel1;
+        private SplitContainer splitContainer1;
 
         public InventoryViewForm()
         {
@@ -120,6 +133,7 @@ namespace InventoryView
 
             tabControl1.MouseUp += TabControl1_MouseUp;
             resetTabColorsMenuItem.Click += ResetAllTabColors_Click;
+            cbPrecise.CheckedChanged += Precise_CheckedChanged;
 
             if (tabControl1.SelectedTab?.Controls.Count > 0 && tabControl1.SelectedTab.Controls[0] is TreeView tv)
             {
@@ -404,6 +418,7 @@ namespace InventoryView
         private bool SearchTree(TreeView treeView, TreeNodeCollection nodes, List<TreeNode> searchMatches, ref int searchCount, ref int totalCount, string[] searchWords)
         {
             bool isMatchFound = false;
+            bool allWordsMatch;
 
             foreach (TreeNode node in nodes)
             {
@@ -426,8 +441,10 @@ namespace InventoryView
                     node.Collapse();
                 }
 
-                // Check if the node's text contains all search words
-                bool allWordsMatch = searchWords.All(word => node.Text.Contains(word, StringComparison.OrdinalIgnoreCase));
+                if (cbPrecise.Checked)
+                    allWordsMatch = searchWords.All(word =>Regex.IsMatch(node.Text, @"\b" + Regex.Escape(word) + @"\b", RegexOptions.IgnoreCase));
+                else
+                    allWordsMatch = searchWords.All(word => node.Text.Contains(word, StringComparison.OrdinalIgnoreCase));
 
                 if (allWordsMatch)
                 {
@@ -1181,7 +1198,7 @@ namespace InventoryView
             LoadSave.SaveSettings();
             toolStripFamily.Enabled = true;
             if (toolStripFamily.Checked)
-                Plugin.Host.EchoText("To use family vault, be inside the vault or have runners");
+                Plugin.Host.EchoText("To use family vault, be inside the vault or have runners\nFamily vault is stand alone, when checked it will only do family vault");
         }
 
         public void Pockets_CheckedChanged(object sender, EventArgs e)
@@ -1189,6 +1206,13 @@ namespace InventoryView
             toolStripPockets.Enabled = false;
             LoadSave.SaveSettings();
             toolStripPockets.Enabled = true;
+        }
+
+        public void Precise_CheckedChanged(object sender, EventArgs e)
+        {
+            cbPrecise.Enabled = false;
+            LoadSave.SaveSettings();
+            cbPrecise.Enabled = true;
         }
 
         public void DarkMode_CheckedChanged(object sender, EventArgs e)
@@ -1251,7 +1275,7 @@ namespace InventoryView
                 UpdateNodeColors(tv.Nodes, foreColor, backColor);
             }
 
-            ToolStripItem[] toolStripItemsToUpdate = new ToolStripItem[]
+        ToolStripItem[] toolStripItemsToUpdate = new ToolStripItem[]
             {
                 optionsToolStripMenuItem,
                 commandsToolStripMenuItem,
@@ -1477,7 +1501,6 @@ namespace InventoryView
             return luminance > 0.4 ? Color.Black : Color.White;
         }
 
-
         public static void DrawTab(DrawItemEventArgs e, TabControl tabControl)
         {
             TabPage page = tabControl.TabPages[e.Index];
@@ -1597,7 +1620,6 @@ namespace InventoryView
             isResetting = false;
         }
 
-
         private void ColorTabToolStrip_Click(object sender, EventArgs e)
         {
             ChangeTabColor(tabControl1);
@@ -1662,8 +1684,9 @@ namespace InventoryView
             lblMatches = new ListBox();
             tableLayoutPanel1 = new TableLayoutPanel();
             panel1 = new Panel();
-            label1 = new Label();
-            infolabel = new Label();
+            cbPrecise = new CheckBox();
+            lblClick = new Label();
+            lblInfo = new Label();
             cboCharacters = new ComboBox();
             btnRemoveCharacter = new Button();
             btnFindPrev = new Button();
@@ -1811,8 +1834,9 @@ namespace InventoryView
             // 
             panel1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             panel1.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            panel1.Controls.Add(label1);
-            panel1.Controls.Add(infolabel);
+            panel1.Controls.Add(cbPrecise);
+            panel1.Controls.Add(lblClick);
+            panel1.Controls.Add(lblInfo);
             panel1.Controls.Add(cboCharacters);
             panel1.Controls.Add(btnRemoveCharacter);
             panel1.Controls.Add(btnFindPrev);
@@ -1829,31 +1853,42 @@ namespace InventoryView
             panel1.Size = new Size(726, 73);
             panel1.TabIndex = 0;
             // 
-            // label1
+            // cbPrecise
             // 
-            label1.AutoSize = true;
-            label1.Location = new Point(1, 1);
-            label1.Name = "label1";
-            label1.Size = new Size(200, 15);
-            label1.TabIndex = 17;
-            label1.Text = "Right click tabs to archive or activate";
+            cbPrecise.AutoSize = true;
+            cbPrecise.Location = new Point(230, 1);
+            cbPrecise.Name = "cbPrecise";
+            cbPrecise.Size = new Size(117, 19);
+            cbPrecise.TabIndex = 18;
+            cbPrecise.Text = "Precise Matching";
+            cbPrecise.UseVisualStyleBackColor = true;
+            cbPrecise.CheckedChanged += Precise_CheckedChanged;
             // 
-            // infolabel
+            // lblClick
             // 
-            infolabel.AutoSize = true;
-            infolabel.Font = new Font("Segoe UI", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
-            infolabel.Location = new Point(2, 51);
-            infolabel.Margin = new Padding(4, 0, 4, 0);
-            infolabel.Name = "infolabel";
-            infolabel.Size = new Size(245, 17);
-            infolabel.TabIndex = 16;
-            infolabel.Text = "T = Total Item Count  M = Total Matches";
+            lblClick.AutoSize = true;
+            lblClick.Location = new Point(1, 1);
+            lblClick.Name = "lblClick";
+            lblClick.Size = new Size(200, 15);
+            lblClick.TabIndex = 17;
+            lblClick.Text = "Right click tabs to archive or activate";
+            // 
+            // lblInfo
+            // 
+            lblInfo.AutoSize = true;
+            lblInfo.Font = new Font("Segoe UI", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
+            lblInfo.Location = new Point(2, 51);
+            lblInfo.Margin = new Padding(4, 0, 4, 0);
+            lblInfo.Name = "lblInfo";
+            lblInfo.Size = new Size(245, 17);
+            lblInfo.TabIndex = 16;
+            lblInfo.Text = "T = Total Item Count  M = Total Matches";
             // 
             // cboCharacters
             // 
             cboCharacters.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             cboCharacters.FormattingEnabled = true;
-            cboCharacters.Location = new Point(607, 7);
+            cboCharacters.Location = new Point(612, 7);
             cboCharacters.Margin = new Padding(4, 3, 4, 3);
             cboCharacters.Name = "cboCharacters";
             cboCharacters.Size = new Size(109, 23);
@@ -1864,7 +1899,7 @@ namespace InventoryView
             btnRemoveCharacter.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             btnRemoveCharacter.AutoSize = true;
             btnRemoveCharacter.ForeColor = SystemColors.ControlText;
-            btnRemoveCharacter.Location = new Point(607, 41);
+            btnRemoveCharacter.Location = new Point(612, 41);
             btnRemoveCharacter.Margin = new Padding(4, 3, 4, 3);
             btnRemoveCharacter.MinimumSize = new Size(109, 25);
             btnRemoveCharacter.Name = "btnRemoveCharacter";
@@ -1879,7 +1914,7 @@ namespace InventoryView
             btnFindPrev.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnFindPrev.AutoSize = true;
             btnFindPrev.ForeColor = SystemColors.ControlText;
-            btnFindPrev.Location = new Point(417, 7);
+            btnFindPrev.Location = new Point(422, 7);
             btnFindPrev.Margin = new Padding(4, 3, 4, 3);
             btnFindPrev.Name = "btnFindPrev";
             btnFindPrev.Size = new Size(88, 29);
@@ -1925,7 +1960,7 @@ namespace InventoryView
             btnExpand.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnExpand.AutoSize = true;
             btnExpand.ForeColor = SystemColors.ControlText;
-            btnExpand.Location = new Point(511, 7);
+            btnExpand.Location = new Point(516, 7);
             btnExpand.Margin = new Padding(4, 3, 4, 3);
             btnExpand.Name = "btnExpand";
             btnExpand.Size = new Size(88, 29);
@@ -1940,7 +1975,7 @@ namespace InventoryView
             btnCollapse.AutoSize = true;
             btnCollapse.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
             btnCollapse.ForeColor = SystemColors.ControlText;
-            btnCollapse.Location = new Point(511, 38);
+            btnCollapse.Location = new Point(516, 38);
             btnCollapse.Margin = new Padding(4, 3, 4, 3);
             btnCollapse.Name = "btnCollapse";
             btnCollapse.Size = new Size(88, 29);
@@ -1954,7 +1989,7 @@ namespace InventoryView
             btnFindNext.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnFindNext.AutoSize = true;
             btnFindNext.ForeColor = SystemColors.ControlText;
-            btnFindNext.Location = new Point(417, 38);
+            btnFindNext.Location = new Point(422, 38);
             btnFindNext.Margin = new Padding(4, 3, 4, 3);
             btnFindNext.Name = "btnFindNext";
             btnFindNext.Size = new Size(88, 29);
@@ -1969,7 +2004,7 @@ namespace InventoryView
             btnReset.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnReset.AutoSize = true;
             btnReset.ForeColor = SystemColors.ControlText;
-            btnReset.Location = new Point(327, 24);
+            btnReset.Location = new Point(330, 24);
             btnReset.Margin = new Padding(4, 3, 4, 3);
             btnReset.Name = "btnReset";
             btnReset.Size = new Size(75, 25);
@@ -2087,6 +2122,7 @@ namespace InventoryView
             toolStripScan.BackColor = SystemColors.Control;
             toolStripScan.ForeColor = SystemColors.ControlText;
             toolStripScan.Name = "toolStripScan";
+            toolStripScan.ShortcutKeys = Keys.Control | Keys.Alt | Keys.S;
             toolStripScan.Size = new Size(221, 22);
             toolStripScan.Text = "Scan Character";
             toolStripScan.Click += Scan_Click;
@@ -2096,6 +2132,7 @@ namespace InventoryView
             toolStripReload.BackColor = SystemColors.Control;
             toolStripReload.ForeColor = SystemColors.ControlText;
             toolStripReload.Name = "toolStripReload";
+            toolStripReload.ShortcutKeys = Keys.Control | Keys.Alt | Keys.R;
             toolStripReload.Size = new Size(221, 22);
             toolStripReload.Text = "Reload File";
             toolStripReload.Click += Reload_Click;
@@ -2164,21 +2201,21 @@ namespace InventoryView
             // filtarAlltoolStripMenuItem
             // 
             filtarAlltoolStripMenuItem.Name = "filtarAlltoolStripMenuItem";
-            filtarAlltoolStripMenuItem.Size = new Size(180, 22);
+            filtarAlltoolStripMenuItem.Size = new Size(121, 22);
             filtarAlltoolStripMenuItem.Text = "All";
             filtarAlltoolStripMenuItem.Click += FiltarAlltoolStripMenuItem_Click;
             // 
             // filterActivetoolStripMenuItem
             // 
             filterActivetoolStripMenuItem.Name = "filterActivetoolStripMenuItem";
-            filterActivetoolStripMenuItem.Size = new Size(180, 22);
+            filterActivetoolStripMenuItem.Size = new Size(121, 22);
             filterActivetoolStripMenuItem.Text = "Active";
             filterActivetoolStripMenuItem.Click += FilterActivetoolStripMenuItem_Click;
             // 
             // filterArchivedtoolStripMenuItem
             // 
             filterArchivedtoolStripMenuItem.Name = "filterArchivedtoolStripMenuItem";
-            filterArchivedtoolStripMenuItem.Size = new Size(180, 22);
+            filterArchivedtoolStripMenuItem.Size = new Size(121, 22);
             filterArchivedtoolStripMenuItem.Text = "Archived";
             filterArchivedtoolStripMenuItem.Click += FilterArchivedtoolStripMenuItem_Click;
             // 

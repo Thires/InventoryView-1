@@ -4,7 +4,6 @@ using System.Windows.Forms;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System;
 using InventoryView.Cases;
 
 namespace InventoryView
@@ -21,14 +20,9 @@ namespace InventoryView
 
         private Dictionary<string, (bool Archived, string TabColor, string TabTextColor)> _preservedProperties;
 
-
         // This contains all the of the inventory data.
         private static List<CharacterData> characterData = new();
         public static List<CharacterData> CharacterData { get => characterData; set => characterData = value; }
-
-        private static readonly List<string> surfacesEncountered = new();
-        public static List<string> SurfacesEncountered => surfacesEncountered;
-        private readonly string[] surfaces = { "a jewelry case", "an ammunition box", "a bottom drawer", "a middle drawer", "a top drawer", "a shoe tree", "a weapon rack", "a steel wire rack", "a small shelf", "a large shelf", "a brass hook" };
 
         // Whether or not InventoryView is currently scanning data, and what state it is in.
         internal string ScanMode = null;
@@ -45,32 +39,31 @@ namespace InventoryView
         private bool Debug = false;
         internal bool togglecraft = false;
         internal bool InFamVault = false;
+        internal bool waitingToInventory = false;
+        internal bool handledCurrentPocket;
+        internal bool pocketScanStarted;
 
         internal string LastText = "";
         internal string bookContainer;
         internal string pocketContainer;
-        internal bool pocketScanStarted;
         internal string pocketContainerShort;
-        internal bool handledCurrentPocket;
-        internal HashSet<string> processedPockets = new();
-
-
         internal string guild = "";
         internal string accountName = "";
-        internal string currentSurface = "";
+
+        internal HashSet<string> processedPockets = new();
         internal List<string> closedContainers = new();
 
         public CaseCatalog catalog;
         public CaseDeed deed;
         public CaseHome home;
-        //public CaseInVault inVault;
         public CaseInventory inventory;
+        public CaseInVault inVault;
         public CaseMoonMage moonmage;
         public CasePocket pocket;
         public CaseTrader trader;
         public CaseVault vault;
-        //public CaseVaultFamily familyvault;
-        public CaseVaultStandard standard;
+        public CaseFamilyVault familyvault;
+        public CaseStandardVault standard;
 
         public void Initialize(IHost host)
         {
@@ -87,13 +80,13 @@ namespace InventoryView
             
             home = new CaseHome(this);
             inventory = new CaseInventory(this);
-            //inVault = new CaseInVault(this);
+            inVault = new CaseInVault(this);
             moonmage = new CaseMoonMage(this);
             pocket = new CasePocket(this);
             trader = new CaseTrader(this);
             vault = new CaseVault(this);
-            //familyvault = new CaseVaultFamily(this);
-            standard = new CaseVaultStandard(this);
+            familyvault = new CaseFamilyVault(this);
+            standard = new CaseStandardVault(this);
         }
 
         public void Show()
@@ -125,14 +118,25 @@ namespace InventoryView
                 {
                     guild = Regex.Match(trimtext, "Guild: ([A-z ]+)$").Groups[1].Value;
                     Host.set_Variable("guild", guild);
-                    if (((InventoryViewForm)Form).toolStripFamily.Checked && Host.get_Variable("roomname").Contains("Family Vault"))
-                    {
-                        Thread.Sleep(500);
-                        ScanMode = "InFamilyCheck";
 
+                    if (((InventoryViewForm)Form).toolStripFamily.Checked)
+                    {
+                        if (Host.get_Variable("roomname").Contains("Family Vault"))
+                        {
+                            Thread.Sleep(500);
+                            ScanMode = "InFamilyCheck";
+                        }
+                        else
+                        {
+                            ScanMode = "FamilyStart";
+                            Plugin.Host.SendText("vault family");
+                        }
                     }
                     else
+                    {
                         Host.SendText("inventory list");
+                    }
+
                 }
 
                 switch (ScanMode)
@@ -158,222 +162,63 @@ namespace InventoryView
                         break;
 
                     case "InVault":
-                        if (Regex.IsMatch(trimtext, "You rummage through a secure vault but there is nothing in there\\."))
-                        {
-                            ScanMode = null;
-                            Thread.Sleep(500);
-                            Host.SendText("close vault");
-                            Thread.Sleep(500);
-                            Host.SendText("go door");
-                            Thread.Sleep(500);
-                            Host.SendText("go arch");
-                            Thread.Sleep(2000);
-
-                            ScanMode = "DeedStart";
-                            Host.SendText("get my deed register");
-                            break;
-                        }
-
-                        var match = Regex.Match(trimtext, "^You rummage through a(?: secure)? vault and see (.+)\\.");
-                        if (match.Success)
-                        {
-                            string vaultInv = match.Groups[1].Value;
-
-                            if (!string.IsNullOrWhiteSpace(vaultInv))
-                            {
-                                // now call ScanStart after content is confirmed
-                                ScanStart("InVault");
-
-                                if (Regex.Match(vaultInv, @"\b\sand\s(?:a|an|some|several)\s\b").Success)
-                                    vaultInv = Regex.Replace(vaultInv, @"\b\sand\s(a|an|some|several)\s\b", ", $1 ");
-
-                                List<string> items = new(vaultInv.Split(','));
-
-                                if (Regex.IsMatch(items[^1], @"\b\s(?:a|an|some|several)\s\b"))
-                                {
-                                    string[] lastItemSplit = Regex.Split(items[^1], @"\b^\s(?:a|an|some|several)\s\b");
-                                    items.RemoveAt(items.Count - 1);
-                                    if (Regex.IsMatch(lastItemSplit[0], @"\band\s(?:a|an|some|several)\s\b"))
-                                    {
-                                        items[^1] += " " + lastItemSplit[0];
-                                        Array.Copy(lastItemSplit, 1, lastItemSplit, 0, lastItemSplit.Length - 1);
-                                    }
-                                    items.AddRange(lastItemSplit);
-                                }
-
-                                foreach (string itemText in items)
-                                {
-                                    string tap = itemText.Trim();
-                                    if (surfaces.Contains(tap))
-                                    {
-                                        tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
-                                        SurfacesEncountered.Add(tap);
-                                    }
-                                    else
-                                    {
-                                        tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
-                                        lastItem = currentData.AddItem(new ItemData { tap = tap });
-                                    }
-                                }
-
-                                ScanMode = "Surface";
-                            }
-                        }
+                        inVault.InVaultCase(trimtext, ref ScanMode, ref lastItem);
                         break;
 
                     case "Surface":
-                        currentSurface = SurfacesEncountered[0];
-                        if (currentSurface == "steel wire rack")
-                            currentSurface = "wire rack";
-                        if (!trimtext.StartsWith("You rummage"))
-                            Host.SendText("rummage " + currentSurface);
-                        ScanMode = "SurfaceRummage";
+                        inVault.SurfaceCase(trimtext, ref ScanMode);
                         break;
+
                     case "SurfaceRummage":
-                        if (currentSurface == "wire rack")
-                            currentSurface = "steel wire rack";
-                        for (int i = 0; i < SurfacesEncountered.Count; i++)
-                        {
-                            trimtext = text;
-
-                            if (!trimtext.StartsWith("You rummage"))
-                                break;
-                            if (RummageCheck(trimtext, currentSurface, out _))
-                            {
-                                SurfaceRummage(SurfacesEncountered[i], trimtext);
-                                SurfacesEncountered.RemoveAt(i); // Remove the surface
-
-                                Thread.Sleep(100);
-
-                                ScanMode = "Surface";
-                                break;
-                            }
-                        }
-
-                        if (SurfacesEncountered.Count == 0)
-                        {
-                            if (InFamVault)
-                            {
-                                InFamVault = false;
-                                ScanMode = null;
-                                Host.EchoText("Scan Complete.");
-                                Host.SendText("#parse Scan Complete");
-                                LoadSave.SaveSettings();
-                            }
-                            else
-                            {
-                                Thread.Sleep(500);
-                                Host.SendText("close vault");
-                                Thread.Sleep(500);
-                                Host.SendText("go door");
-                                Thread.Sleep(500);
-                                Host.SendText("go arch");
-                                Thread.Sleep(2000);
-
-                                ScanMode = "DeedStart";
-                                Host.SendText("get my deed register");
-                            }
-                        }
+                        inVault.SurfaceRummageCase(trimtext, ref ScanMode, ref lastItem, currentData);
                         break;
 
                     case "InFamilyCheck":
-                        if (!InFamVault)
                         {
-                            InFamVault = true;
-                            ScanStart("FamilyVault");
-                            Host.SendText("turn vault");
-                            Host.SendText("open vault");
-                            Thread.Sleep(6000);
-                            Host.SendText("rummage vault");
-                            ScanMode = "InVault";
+                            if (!InFamVault)
+                            {
+                                InFamVault = true;
+                                ScanStart("FamilyVault");
+                                Host.SendText("turn vault");
+                                Host.SendText("open vault");
+                                ScanMode = "WaitingForVault";
+                                break;
+                            }
                         }
                         break;
+
+                    case "WaitingForVault":
+                        {
+                            if (IsDenied(trimtext))
+                            {
+                                Host.EchoText("Vault is currently locked. Skipping Family Vault.");
+                                ScanMode = null;
+                                Host.SendText("#parse Scan Complete");
+                                LoadSave.SaveSettings();
+                            }
+                            else if (trimtext.Contains("vault slides open.") || trimtext.Contains("The vault is already open."))
+                            {
+                                Thread.Sleep(6000);
+                                Host.SendText("rummage vault");
+                                ScanMode = "InVault";
+                            }
+                            break;
+                        }
 
                     case "VaultStart":
                     case "Vault":
                         vault.VaultCase(trimtext, text, ref ScanMode, ref level, ref lastItem, currentData);
                         break;
 
-
                     case "StandardStart":
                     case "Standard":
                         standard.StandardVaultCase(trimtext, text, ref ScanMode, ref level, ref lastItem, currentData);
                         break;
 
-
                     case "FamilyStart":
-                        if (text.StartsWith("Roundtime:"))
-                        {
-                            PauseForRoundtime(trimtext);
-                            ScanMode = "FamilyStart";
-                            Host.SendText("vault family");
-                        }
-                        if (Regex.Match(trimtext, "You flag down an urchin and direct him to the nearest carousel").Success || trimtext == "You flag down an urchin and direct her to the nearest carousel")
-                        {
-                            Host.EchoText("Scanning Family Vault.");
-                        }
-                        else if (trimtext == "Vault Inventory:") // This text appears at the beginning of the vault list.
-                        {
-                            ScanStart("FamilyVault");
-                        }
-                        // If you don't have access to family vault, it skips to checking your deed register.
-
-                        else if (IsDenied(trimtext))
-                        {
-                            if (text.StartsWith("Roundtime:"))
-                            {
-                                PauseForRoundtime(trimtext);
-                                ScanMode = "DeedStart";
-                                Host.SendText("get my deed register");
-                            }
-                            else
-                            {
-                                Host.EchoText("Skipping Family Vault.");
-                                ScanMode = "DeedStart";
-                                Host.SendText("get my deed register");
-                            }
-                        }
-                        break; //end of VaultFamilyStart
-
                     case "FamilyVault":
-                        // This text indicates the end of the vault inventory list.
-                        if (text.StartsWith("The last note indicates that your vault contains"))
-                        {
-                            ScanMode = "DeedStart";
-                        }
-                        else
-                        {
-                            // Determine how many levels down an item is based on the number of spaces before it.
-                            int spaces = text.Length - text.TrimStart().Length;
-                            spaces = (spaces >= 5 && spaces <= 20 && spaces % 5 == 0) ? spaces / 5 : 1;
-
-                            string tap = trimtext;
-                            tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
-                            tap = Regex.Replace(tap, @"\)\s{1,4}(an?|some|several)\s", ") ");
-                            tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
-                            if (spaces == 1)
-                            {
-                                lastItem = currentData.AddItem(new ItemData() { tap = tap, storage = true });
-                            }
-                            else if (spaces == level)
-                            {
-                                lastItem = lastItem.parent.AddItem(new ItemData() { tap = tap });
-                            }
-                            else if (spaces == level + 1)
-                            {
-                                lastItem = lastItem.AddItem(new ItemData() { tap = tap });
-                            }
-                            else
-                            {
-                                for (int i = spaces; i <= level; i++)
-                                {
-                                    lastItem = lastItem.parent;
-                                }
-                                lastItem = lastItem.AddItem(new ItemData() { tap = tap });
-                            }
-                            level = spaces;
-                        }
-                        break; //end of Family Vault
+                        familyvault.FamilyVaultCase(trimtext, text, ref ScanMode, ref level, ref lastItem, currentData);
+                        break;
 
                     case "DeedStart":
                     case "Deed":
@@ -412,6 +257,7 @@ namespace InventoryView
         internal void ScanStart(string mode)
         {
             ScanMode = mode;
+
             if (!mode.StartsWith("Pocket in") && mode != "Pocket")
             {
                 processedPockets.Clear();
@@ -423,31 +269,37 @@ namespace InventoryView
 
             if (mode == "FamilyVault")
             {
-                // Find the index of the CharacterData with the specified source
-                int sourceIndex = CharacterData.FindIndex(cd => cd.name == "Family Vault(s)" && cd.source == accountName);
-
-                if (sourceIndex != -1)
+                // Only remove any existing Family Vault(s) tied to account
+                int index = CharacterData.FindIndex(cd => cd.name == "Family Vault(s)" && cd.source == accountName);
+                if (index != -1)
                 {
-                    CharacterData.RemoveAt(sourceIndex);
+                    CharacterData.RemoveAt(index);
                 }
 
-                // Create a new CharacterData
-                currentData = new CharacterData() { name = "Family Vault(s)", source = accountName };
+                currentData = new CharacterData()
+                {
+                    name = "Family Vault(s)",
+                    source = accountName
+                };
 
-                // Insert the new CharacterData in alphabetical order
                 CharacterData.Add(currentData);
-                CharacterData = CharacterData.OrderBy(cd => cd.source).ToList();
-
+                CharacterData = CharacterData.OrderBy(cd => cd.name).ToList();
                 level = 1;
             }
             else
             {
+                if (mode == "Start")
+                {
+                    string characterName = Host.get_Variable("charactername");
+                    CharacterData.RemoveAll(cd => cd.name == characterName);
+                }
+
                 if (!((InventoryViewForm)Form).toolStripPockets.Checked)
                 {
                     if (mode == "Pocket")
                         mode = $"Pocket in {pocketContainer}";
-
                 }
+
                 if (mode == "InVault")
                     mode = "Vault";
                 if (mode == "Standard")
@@ -458,21 +310,19 @@ namespace InventoryView
                     mode = "Tool Catalog";
                 if (mode == "MoonMage")
                     mode = "Shadow Servant";
-                currentData = new CharacterData() { name = Host.get_Variable("charactername"), source = mode };
 
-                        currentData = new CharacterData() 
-        { 
-            name = Host.get_Variable("charactername"), 
-            source = mode 
-        };
+                currentData = new CharacterData()
+                {
+                    name = Host.get_Variable("charactername"),
+                    source = mode
+                };
 
-        // Apply preserved properties if available
-        if (_preservedProperties != null && _preservedProperties.TryGetValue(mode, out var props))
-        {
-            currentData.Archived = props.Archived;
-            currentData.TabColor = props.TabColor;
-            currentData.TabTextColor = props.TabTextColor;
-        }
+                if (_preservedProperties != null && _preservedProperties.TryGetValue(mode, out var props))
+                {
+                    currentData.Archived = props.Archived;
+                    currentData.TabColor = props.TabColor;
+                    currentData.TabTextColor = props.TabTextColor;
+                }
 
                 CharacterData.Add(currentData);
                 level = 1;
@@ -526,59 +376,17 @@ namespace InventoryView
             }
         }
 
-        internal static bool RummageCheck(string trimtext, string currentSurface, out string resultText)
+        internal static void FinishFamilyVault()
         {
-            resultText = null;
+            Plugin.Host.EchoText("Setting Family vault to False");
+            ((InventoryViewForm)Form).toolStripFamily.Checked = false;
+            Thread.Sleep(2000);
 
-            if (Regex.IsMatch(trimtext, $"^You rummage(?: through| around on) (?:a|an) {Regex.Escape(currentSurface)} but there is nothing in there\\."))
-            {
-                resultText = trimtext;
-                return true;
-            }
-            else if (Regex.IsMatch(trimtext, $"^You rummage(?: through| around on) (?:a|an) {Regex.Escape(currentSurface)} and see (.+\\.?)"))
-            {
-                resultText = trimtext;
-                return true;
-            }
-
-            return false;
+            Plugin.Host.EchoText("Scan Complete.");
+            Plugin.Host.SendText("#parse Scan Complete");
+            LoadSave.SaveSettings();
         }
 
-
-        internal void SurfaceRummage(string surfaceType, string rummageText)
-        {
-            lastItem = currentData.AddItem(new ItemData() { tap = surfaceType, storage = true });
-            if (Regex.Match(rummageText, $"^You rummage(?: through| around on) (?:a|an) {Regex.Escape(surfaceType)} and see (.+\\.?)").Success)
-            {
-                string itemsMatch = Regex.Match(rummageText, $"^You rummage(?: through| around on) (?:a|an) {Regex.Escape(surfaceType)} and see (.+\\.?)").Groups[1].Value;
-
-                List<string> items = new(itemsMatch.Split(','));
-
-                if (Regex.IsMatch(items[^1], @"\band\s(?:a|an|some|several)\b"))
-                {
-                    string[] lastItemSplit = Regex.Split(items[^1], @"\band\s(?:an?|some|several)\b");
-                    items.RemoveAt(items.Count - 1);
-
-                    // Combine the last two items if the first part doesn't end with an article
-                    if (!Regex.IsMatch(lastItemSplit[0], @"\b(?:an?|some|several)\b"))
-                    {
-                        items[^1] += " " + lastItemSplit[0];
-                        Array.Copy(lastItemSplit, 1, lastItemSplit, 0, lastItemSplit.Length - 1);
-                    }
-                    items.AddRange(lastItemSplit);
-                }
-
-                foreach (string itemText in items)
-                {
-                    string tap = itemText.Trim();
-
-                    if (tap[^1] == '.')
-                        tap = tap.TrimEnd('.');
-                    tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
-                    lastItem = (lastItem.parent ?? lastItem).AddItem(new ItemData() { tap = tap });
-                }
-            }
-        }
 
         internal static string CleanTapText(string text)
         {
@@ -613,7 +421,9 @@ namespace InventoryView
                 "^You shouldn't read somebody else's \\w+ \\w+\\.",
                 "^Now may not be the best time for that\\.",
                 "^\\[You don't have access to advanced vault urchins because you don't have a subscription\\.  To sign up for one, please visit https\\://www\\.play\\.net/dr/signup/subscribe\\.asp \\.\\]",
+                "\\[You or a family member recently opened an account vault that is still in use\\.  Please wait 10 minutes and try again\\.\\]",
                 "^While it's closed?",
+                "^Now may not be the best time for that\\.",
                 "^There is nothing in there\\.",
                 "^I don't know what you are referring to\\.",
                 "^You rummage through a pocket but there is nothing in there\\.",
@@ -656,22 +466,28 @@ namespace InventoryView
                         ScanMode = "Start";
 
                         var characterName = Host.get_Variable("charactername");
-                        var existingEntries = CharacterData.Where(tbl => tbl.name == characterName).ToList();
-                        _preservedProperties = new Dictionary<string, (bool, string, string)>();
-                        foreach (var entry in existingEntries)
+
+                        if (!((InventoryViewForm)Form).toolStripFamily.Checked)
                         {
-                            _preservedProperties[entry.source] = (entry.Archived, entry.TabColor, entry.TabTextColor);
+                            // Only clear tabs if NOT FamilyVault mode
+                            var existingEntries = CharacterData.Where(tbl => tbl.name == characterName).ToList();
+                            _preservedProperties = new Dictionary<string, (bool, string, string)>();
+                            foreach (var entry in existingEntries)
+                            {
+                                _preservedProperties[entry.source] = (entry.Archived, entry.TabColor, entry.TabTextColor);
+                            }
+
+                            CharacterData.RemoveAll(tbl => tbl.name == characterName);
                         }
 
-                        // Remove existing entries for the character
-                        CharacterData.RemoveAll(tbl => tbl.name == characterName);
-
-
                         if (((InventoryViewForm)Form).toolStripFamily.Checked)
+                        {
                             Host.SendText("played");
+                        }
                         Host.SendText("info");
                     }
                 }
+
                 else if (SplitText[1].ToLower() == "open")
                 {
                     Show();
@@ -748,7 +564,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "3.0.3c"; }
+            get { return "3.0.4c"; }
         }
 
         public string Description

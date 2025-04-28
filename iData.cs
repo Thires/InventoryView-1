@@ -5,8 +5,6 @@ using System.Text;
 using System.Xml.Serialization;
 using System.Xml;
 using System.Windows.Forms;
-using System.Drawing;
-using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace InventoryView
@@ -297,6 +295,17 @@ namespace InventoryView
                 pocketsElement.InnerText = ((InventoryViewForm)Plugin.Form).toolStripPockets.Checked.ToString();
                 doc.DocumentElement.AppendChild(pocketsElement);
             }
+
+            // Precise matching logic
+            XmlNode preciseNode = doc.SelectSingleNode("/Root/Precise");
+            if (preciseNode != null)
+                preciseNode.InnerText = ((InventoryViewForm)Plugin.Form).cbPrecise.Checked.ToString();
+            else
+            {
+                XmlElement preciseElement = doc.CreateElement("Precise");
+                preciseElement.InnerText = ((InventoryViewForm)Plugin.Form).cbPrecise.Checked.ToString();
+                doc.DocumentElement.AppendChild(preciseElement);
+            }
         }
 
         public static void LoadSettings()
@@ -350,9 +359,9 @@ namespace InventoryView
                         pocketsElement.InnerText = "False";
                         newRootNode.AppendChild(pocketsElement);
 
-                        //XmlElement filterElement = doc.CreateElement("Filter");
-                        //filterElement.InnerText = ("Filter Tabs");
-                        //newRootNode.AppendChild(filterElement);
+                        XmlElement preciseElement = doc.CreateElement("Precise");
+                        preciseElement.InnerText = "False";
+                        newRootNode.AppendChild(preciseElement);
 
                         // Replace the old root node with the new root node
                         doc.ReplaceChild(newRootNode, doc.DocumentElement);
@@ -430,11 +439,9 @@ namespace InventoryView
                     if (pocketsNode != null)
                         ((InventoryViewForm)Plugin.Form).toolStripPockets.Checked = bool.Parse(pocketsNode.InnerText);
 
-                    //XmlNode filterNode = doc.SelectSingleNode("/Root/Filter");
-                    //if (filterNode != null)
-                    //    ((InventoryViewForm)plugin.Form).currentFilter = filterNode.InnerText;
-
-
+                    XmlNode preciseNode = doc.SelectSingleNode("/Root/Precise");
+                    if (preciseNode != null)
+                        ((InventoryViewForm)Plugin.Form).cbPrecise.Checked = bool.Parse(preciseNode.InnerText);
                 }
                 else
                     Plugin.Host.EchoText("File does not exist");
