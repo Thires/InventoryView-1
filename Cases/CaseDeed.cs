@@ -6,6 +6,8 @@ namespace InventoryView.Cases
     {
         private readonly Plugin Plugin;
 
+        private string bookContainer;
+
         public CaseDeed(Plugin PluginInstance)
         {
             Plugin = PluginInstance;
@@ -25,13 +27,14 @@ namespace InventoryView.Cases
 
                 if (Regex.IsMatch(trimtext, "^You get a.*deed register.*from") || trimtext == "You are already holding that.")
                 {
-                    Match match = Regex.Match(trimtext, "^You get a.*deed register.*from.+your (.+)\\.");
-                    Plugin.bookContainer = match.Success ? match.Groups[1].Value : "";
+                    Match match = Regex.Match(trimtext, @"^You get a.*deed register.*from.+your\s+(.+?)\.$");
 
-                    if (!string.IsNullOrEmpty(Plugin.bookContainer))
+                    bookContainer = match.Success ? match.Groups[1].Value : "";
+
+                    if (!string.IsNullOrEmpty(bookContainer))
                     {
-                        string[] words = Plugin.bookContainer.Split(' ');
-                        Plugin.bookContainer = words.Length switch
+                        string[] words = bookContainer.Split(' ');
+                        bookContainer = words.Length switch
                         {
                             3 => $"{words[0]} {words[2]}",
                             2 => $"{words[0]} {words[1]}",
@@ -64,12 +67,12 @@ namespace InventoryView.Cases
                 {
                     Plugin.Host.EchoText("Skipping Deed Register.");
 
-                    if (!string.IsNullOrEmpty(Plugin.bookContainer))
-                        Plugin.Host.SendText($"put my deed register in my {Plugin.bookContainer}");
+                    if (!string.IsNullOrEmpty(bookContainer))
+                        Plugin.Host.SendText($"put my deed register in my {bookContainer}");
                     else
                         Plugin.Host.SendText("stow my deed register");
 
-                    Plugin.bookContainer = "";
+                    bookContainer = "";
                     scanMode = "CatalogStart";
                     Plugin.Host.SendText("get my tool catalog");
                     return;
@@ -82,12 +85,12 @@ namespace InventoryView.Cases
             {
                 if (Regex.IsMatch(trimtext, @"^Currently [Ss]tored"))
                 {
-                    if (!string.IsNullOrEmpty(Plugin.bookContainer))
-                        Plugin.Host.SendText($"put my deed register in my {Plugin.bookContainer}");
+                    if (!string.IsNullOrEmpty(bookContainer))
+                        Plugin.Host.SendText($"put my deed register in my {bookContainer}");
                     else
                         Plugin.Host.SendText("stow my deed register");
 
-                    Plugin.bookContainer = "";
+                    bookContainer = "";
                     scanMode = "CatalogStart";
                     Plugin.Host.SendText("get my tool catalog");
                     return;

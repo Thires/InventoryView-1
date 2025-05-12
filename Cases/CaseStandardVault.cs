@@ -41,46 +41,45 @@ namespace InventoryView.Cases
             if (scanMode == "Standard")
             {
                 if (trimtext.StartsWith("The last note indicates that your vault contains"))
-                { 
+                {
                     Thread.Sleep(5000);
                     Plugin.ScanMode = "DeedStart";
-                    Plugin.Host.SendText("get my deed register");
-                }
-            else
-            {
-                // Determine level of indentation
-                int spaces = fullText.Length - fullText.TrimStart().Length;
-                spaces = spaces >= 5 && spaces <= 25 && spaces % 5 == 0 ? spaces / 5 : 1;
-
-                string tap = trimtext;
-                if (tap[^1] == '.') tap = tap.TrimEnd('.');
-                tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
-                tap = Regex.Replace(tap, @"\)\s{1,4}(an?|some|several)\s", ") ");
-
-                // Build item tree
-                if (spaces == 1)
-                {
-                    lastItem = currentData.AddItem(new ItemData { tap = tap, storage = true });
-                }
-                else if (spaces == level)
-                {
-                    lastItem = lastItem.parent.AddItem(new ItemData { tap = tap });
-                }
-                else if (spaces == level + 1)
-                {
-                    lastItem = lastItem.AddItem(new ItemData { tap = tap });
                 }
                 else
                 {
-                    for (int i = spaces; i <= level; i++)
-                    {
-                        lastItem = lastItem.parent;
-                    }
-                    lastItem = lastItem.AddItem(new ItemData { tap = tap });
-                }
+                    // Determine level of indentation
+                    int spaces = fullText.Length - fullText.TrimStart().Length;
+                    spaces = spaces >= 5 && spaces <= 25 && spaces % 5 == 0 ? spaces / 5 : 1;
 
-                level = spaces;
-            }
+                    string tap = trimtext;
+                    if (tap[^1] == '.') tap = tap.TrimEnd('.');
+                    tap = Regex.Replace(tap, @"^(an?|some|several)\s", "");
+                    tap = Regex.Replace(tap, @"\)\s{1,4}(an?|some|several)\s", ") ");
+
+                    // Build item tree
+                    if (spaces == 1)
+                    {
+                        lastItem = currentData.AddItem(new ItemData { tap = tap, storage = true });
+                    }
+                    else if (spaces == level)
+                    {
+                        lastItem = lastItem.parent.AddItem(new ItemData { tap = tap });
+                    }
+                    else if (spaces == level + 1)
+                    {
+                        lastItem = lastItem.AddItem(new ItemData { tap = tap });
+                    }
+                    else
+                    {
+                        for (int i = spaces; i <= level; i++)
+                        {
+                            lastItem = lastItem.parent;
+                        }
+                        lastItem = lastItem.AddItem(new ItemData { tap = tap });
+                    }
+
+                    level = spaces;
+                }
             }
         }
     }
