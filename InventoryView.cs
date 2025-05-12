@@ -1,10 +1,10 @@
-using System.Collections.Generic;
 using GeniePlugin.Interfaces;
-using System.Windows.Forms;
+using InventoryView.Cases;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
-using InventoryView.Cases;
+using System.Windows.Forms;
 
 namespace InventoryView
 {
@@ -77,7 +77,7 @@ namespace InventoryView
 
             catalog = new CaseCatalog(this);
             deed = new CaseDeed(this);
-            
+
             home = new CaseHome(this);
             inventory = new CaseInventory(this);
             inVault = new CaseInVault(this);
@@ -110,9 +110,9 @@ namespace InventoryView
                 if (trimtext.StartsWith("XML") && trimtext.EndsWith("XML")) return ""; // Skip XML parser lines
                 else if (string.IsNullOrEmpty(trimtext)) return ""; // Skip blank lines
 
-                if (((InventoryViewForm)Form).toolStripFamily.Checked)
-                    if (Regex.IsMatch(trimtext, "^Account Info for\\s+(.+):"))
-                        accountName = Regex.Match(trimtext, "^Account Info for\\s+(.+):").Groups[1].Value;
+                //if (((InventoryViewForm)Form).toolStripFamily.Checked)
+                //    if (Regex.IsMatch(trimtext, "^Account Info for\\s+(.+):"))
+                //        accountName = Regex.Match(trimtext, "^Account Info for\\s+(.+):").Groups[1].Value;
 
                 if (Regex.IsMatch(trimtext, "Guild: [A-z ]+$"))
                 {
@@ -482,7 +482,8 @@ namespace InventoryView
 
                         if (((InventoryViewForm)Form).toolStripFamily.Checked)
                         {
-                            Host.SendText("played");
+                            //Host.SendText("played");
+                            accountName = Host.get_Variable("account");
                         }
                         Host.SendText("info");
                     }
@@ -564,7 +565,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "3.0.4c"; }
+            get { return "3.0.5c"; }
         }
 
         public string Description

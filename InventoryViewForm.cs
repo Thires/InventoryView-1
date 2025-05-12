@@ -7,9 +7,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
-using System.Threading.Tasks;
 
 
 namespace InventoryView
@@ -209,9 +209,9 @@ namespace InventoryView
                     tabPage.Text = $"{character} (T: {totalCount})";
 
                 foreach (TreeNode rootNode in tv.Nodes)
-                    {
-                        rootNode.Expand();
-                    }
+                {
+                    rootNode.Expand();
+                }
             }
         }
 
@@ -442,7 +442,7 @@ namespace InventoryView
                 }
 
                 if (cbPrecise.Checked)
-                    allWordsMatch = searchWords.All(word =>Regex.IsMatch(node.Text, @"\b" + Regex.Escape(word) + @"\b", RegexOptions.IgnoreCase));
+                    allWordsMatch = searchWords.All(word => Regex.IsMatch(node.Text, @"\b" + Regex.Escape(word) + @"\b", RegexOptions.IgnoreCase));
                 else
                     allWordsMatch = searchWords.All(word => node.Text.Contains(word, StringComparison.OrdinalIgnoreCase));
 
@@ -1275,8 +1275,8 @@ namespace InventoryView
                 UpdateNodeColors(tv.Nodes, foreColor, backColor);
             }
 
-        ToolStripItem[] toolStripItemsToUpdate = new ToolStripItem[]
-            {
+            ToolStripItem[] toolStripItemsToUpdate = new ToolStripItem[]
+                {
                 optionsToolStripMenuItem,
                 commandsToolStripMenuItem,
                 filterToolStripMenuItem,
@@ -1291,7 +1291,7 @@ namespace InventoryView
                 toolStripReload,
                 toolStripWiki,
                 toolStripExport
-            };
+                };
 
             foreach (ToolStripItem toolStripItem in toolStripItemsToUpdate)
             {
@@ -1659,8 +1659,8 @@ namespace InventoryView
                     }
                 }
             }
-                await Task.Delay(500);
-                isResetting = false;
+            await Task.Delay(500);
+            isResetting = false;
         }
 
         protected override void Dispose(bool disposing)
@@ -2123,7 +2123,7 @@ namespace InventoryView
             toolStripScan.ForeColor = SystemColors.ControlText;
             toolStripScan.Name = "toolStripScan";
             toolStripScan.ShortcutKeys = Keys.Control | Keys.Alt | Keys.S;
-            toolStripScan.Size = new Size(221, 22);
+            toolStripScan.Size = new Size(323, 22);
             toolStripScan.Text = "Scan Character";
             toolStripScan.Click += Scan_Click;
             // 
@@ -2133,61 +2133,62 @@ namespace InventoryView
             toolStripReload.ForeColor = SystemColors.ControlText;
             toolStripReload.Name = "toolStripReload";
             toolStripReload.ShortcutKeys = Keys.Control | Keys.Alt | Keys.R;
-            toolStripReload.Size = new Size(221, 22);
+            toolStripReload.Size = new Size(323, 22);
             toolStripReload.Text = "Reload File";
             toolStripReload.Click += Reload_Click;
             // 
             // toolStripSeparator1
             // 
             toolStripSeparator1.Name = "toolStripSeparator1";
-            toolStripSeparator1.Size = new Size(218, 6);
+            toolStripSeparator1.Size = new Size(320, 6);
             // 
             // toolStripWiki
             // 
             toolStripWiki.BackColor = SystemColors.Control;
             toolStripWiki.ForeColor = SystemColors.ControlText;
             toolStripWiki.Name = "toolStripWiki";
-            toolStripWiki.Size = new Size(221, 22);
+            toolStripWiki.Size = new Size(323, 22);
             toolStripWiki.Text = "Wiki Lookup";
             toolStripWiki.Click += Wiki_Click;
             // 
             // toolStripExport
             // 
             toolStripExport.Name = "toolStripExport";
-            toolStripExport.Size = new Size(221, 22);
+            toolStripExport.Size = new Size(323, 22);
             toolStripExport.Text = "Export Current";
             toolStripExport.Click += Export_Click;
             // 
             // toolStripExportAll
             // 
             toolStripExportAll.Name = "toolStripExportAll";
-            toolStripExportAll.Size = new Size(221, 22);
+            toolStripExportAll.Size = new Size(323, 22);
             toolStripExportAll.Text = "Export All";
             toolStripExportAll.Click += ExportAll_Click;
             // 
             // toolStripSeparator2
             // 
             toolStripSeparator2.Name = "toolStripSeparator2";
-            toolStripSeparator2.Size = new Size(218, 6);
+            toolStripSeparator2.Size = new Size(320, 6);
             // 
             // resetTabColorsMenuItem
             // 
             resetTabColorsMenuItem.Name = "resetTabColorsMenuItem";
-            resetTabColorsMenuItem.Size = new Size(221, 22);
+            resetTabColorsMenuItem.Size = new Size(323, 22);
             resetTabColorsMenuItem.Text = "Reset All Tab Colors";
             resetTabColorsMenuItem.Click += ResetAllTabColors_Click;
             // 
             // resetSingleTabStripMenu
             // 
             resetSingleTabStripMenu.Name = "resetSingleTabStripMenu";
-            resetSingleTabStripMenu.Size = new Size(221, 22);
+            resetSingleTabStripMenu.Size = new Size(323, 22);
             resetSingleTabStripMenu.Text = "Reset Selected Tab Colors";
             resetSingleTabStripMenu.Click += ResetSelectedTabColorButton_Click;
             // 
             // colorTabToolStrip
             // 
             colorTabToolStrip.Name = "colorTabToolStrip";
-            colorTabToolStrip.Size = new Size(221, 22);
+            colorTabToolStrip.ShortcutKeyDisplayString = "Shift + Right Click";
+            colorTabToolStrip.Size = new Size(323, 22);
             colorTabToolStrip.Text = "Change Selected Tab Colors";
             colorTabToolStrip.Click += ColorTabToolStrip_Click;
             // 
@@ -2218,9 +2219,6 @@ namespace InventoryView
             filterArchivedtoolStripMenuItem.Size = new Size(121, 22);
             filterArchivedtoolStripMenuItem.Text = "Archived";
             filterArchivedtoolStripMenuItem.Click += FilterArchivedtoolStripMenuItem_Click;
-            // 
-            // toolStripContainer1
-            // 
             // 
             // toolStripContainer1.ContentPanel
             // 
