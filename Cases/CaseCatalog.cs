@@ -52,7 +52,16 @@ namespace InventoryView.Cases
                     return;
                 }
 
-                if (Regex.IsMatch(trimtext, "^What were you referring to\\?") || Plugin.IsDenied(trimtext))
+                if (Regex.IsMatch(trimtext, "^What were you referring to\\?"))
+                {
+                    Plugin.Host.EchoText("Skipping Tool Catalog.");
+
+                    Plugin.bookContainer = "";
+                    scanMode = "HomeStart";
+                    Plugin.Host.SendText("home recall");
+                }
+
+                if (Plugin.IsDenied(trimtext))
                 {
                     Plugin.Host.EchoText("Skipping Tool Catalog.");
                     if (!string.IsNullOrEmpty(Plugin.bookContainer))

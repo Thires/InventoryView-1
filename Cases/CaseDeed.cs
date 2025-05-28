@@ -63,7 +63,17 @@ namespace InventoryView.Cases
                     return;
                 }
 
-                if (Regex.IsMatch(trimtext, "^What were you referring to\\?") || Plugin.IsDenied(trimtext))
+                if (Regex.IsMatch(trimtext, "^What were you referring to\\?"))
+                {
+                    Plugin.Host.EchoText("Skipping Deed Register.");
+
+                    bookContainer = "";
+                    scanMode = "CatalogStart";
+                    Plugin.Host.SendText("get my tool catalog");
+                    return;
+                }
+
+                if (Plugin.IsDenied(trimtext))
                 {
                     Plugin.Host.EchoText("Skipping Deed Register.");
 

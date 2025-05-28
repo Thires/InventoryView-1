@@ -44,7 +44,16 @@ namespace InventoryView.Cases
                     return;
                 }
 
-                if (Regex.IsMatch(fullText, "^What were you referring to\\?") || Plugin.IsDenied(trimtext))
+                if (Regex.IsMatch(fullText, "^What were you referring to\\?"))
+                {
+                    Plugin.Host.EchoText("Skipping Book Vault.");
+                    Plugin.bookContainer = "";
+                    scanMode = "StandardStart";
+                    Plugin.Host.SendText("vault standard");
+                    return;
+                }
+
+                if (Plugin.IsDenied(trimtext))
                 {
                     Plugin.Host.EchoText("Skipping Book Vault.");
                     if (!string.IsNullOrEmpty(Plugin.bookContainer))
