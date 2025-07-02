@@ -429,8 +429,9 @@ namespace InventoryView
                 "^You rummage through a pocket but there is nothing in there\\.",
                 "^You rummage through a (?!pocket$).*$",
                 "^In the keyblank pocket you see",
-                "^You tap [A-z ]+ keyblank pocket",
-                "^You tap [A-z ]+ pocket that you are wearing\\.",
+                "^You tap [A-z\\-\\' ]+ keyblank pocket",
+                "^You tap [A-z\\-\\' ]+ pocket that you are wearing\\.",
+                "^You tap an? .+pocket.+inside your .+\\.",
                 "^I could not find what you were referring to\\."
             };
 
@@ -565,7 +566,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "3.0.6c"; }
+            get { return "3.0.7c"; }
         }
 
         public string Description
