@@ -1,5 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 using System.Threading;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace InventoryView.Cases
 {
@@ -14,8 +15,17 @@ namespace InventoryView.Cases
 
         public void VaultCase(string trimtext, string fullText, ref string scanMode, ref int level, ref ItemData lastItem, CharacterData currentData)
         {
+ 
+
             if (scanMode == "VaultStart")
             {
+                if (trimtext.StartsWith("[Roundtime:"))
+                {
+                    Plugin.Host.EchoText("Pausing because overburdened.");
+                    Plugin.Host.EchoText("When RT is over it will continue, don't do anything.");
+                    Plugin.PauseForRoundtime(trimtext);
+                }
+
                 if (Regex.IsMatch(trimtext, "^You get a.*vault book.*from") || trimtext == "You are already holding that.")
                 {
                     Match match = Regex.Match(trimtext, "^You get a.*vault book.*from.+your (.+)\\.");
@@ -30,7 +40,6 @@ namespace InventoryView.Cases
                             2 => $"{words[0]} {words[1]}",
                             _ => words[0]
                         };
-
                         Plugin.Host.EchoText("Scanning Book Vault.");
                         Plugin.Host.SendText("read my vault book");
                     }

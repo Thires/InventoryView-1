@@ -25,6 +25,13 @@ namespace InventoryView.Cases
                     return;
                 }
 
+                if (trimtext.StartsWith("[Roundtime:"))
+                {
+                    Plugin.Host.EchoText("Pausing because overburdened.");
+                    Plugin.Host.EchoText("When RT is over it will continue, don't do anything.");
+                    Plugin.PauseForRoundtime(trimtext);
+                }
+
                 if (Regex.IsMatch(trimtext, "^You get a.*deed register.*from") || trimtext == "You are already holding that.")
                 {
                     Match match = Regex.Match(trimtext, @"^You get a.*deed register.*from.+your\s+(.+?)\.$");

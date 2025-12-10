@@ -14,7 +14,20 @@ namespace InventoryView.Cases
         private readonly string[] surfaces = {
             "jewelry case", "ammunition box", "bottom drawer", "middle drawer",
             "top drawer", "shoe tree", "weapon rack", "steel wire rack",
-            "small shelf", "large shelf", "brass hook"
+            "small shelf", "large shelf", "brass hook", "lavender rack", 
+            "moss-green rack", "periwinkle rack", "canary-yellow rack", "carrot-orange rack", 
+            "maroon rack", "scarlet rack", "chalk-white rack", "seal-brown rack",
+            "steel-grey rack",  "copper bracket", "bronze bracket", "walnut peg",
+            "maple peg", "cedar peg", "birch peg", "gilded bracket", 
+            "brass bracket", "steel bracket", "beige shelf", "burgundy shelf", 
+            "seafoam shelf", "powder-blue shelf", "cyan shelf", "sunny-yellow shelf",
+            "saffron shelf", "cameo-pink shelf", "crimson shelf", "milk-white shelf",
+            "midnight-black shelf", "fir armor rack", "walnut armor rack", "pine armor rack", 
+            "maple armor rack", "burlwood armor rack", "cedar armor rack", "birch armor rack", 
+            "copper armor rack", "bronze armor rack", "steel armor rack", "teak weapon rack",
+            "spruce weapon rack", "maple weapon rack", "hickory weapon rack", "driftwood weapon rack", 
+            "birch weapon rack", "bamboo weapon rack", "gilded weapon rack", "brass weapon rack", 
+            "copper weapon rack", "steel weapon rack"
         };
         private string currentSurface = "";
 

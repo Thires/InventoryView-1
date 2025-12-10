@@ -24,6 +24,13 @@ namespace InventoryView.Cases
                     return;
                 }
 
+                if (trimtext.StartsWith("[Roundtime:"))
+                {
+                    Plugin.Host.EchoText("Pausing because overburdened.");
+                    Plugin.Host.EchoText("When RT is over it will continue, don't do anything.");
+                    Plugin.PauseForRoundtime(trimtext);
+                }
+
                 if (Regex.IsMatch(trimtext, "You flag down an urchin and direct (him|her) to the nearest carousel"))
                 {
                     Plugin.Host.EchoText("Scanning Family Vault.");
@@ -40,6 +47,13 @@ namespace InventoryView.Cases
                 {
                     if (fullText.StartsWith("Roundtime:"))
                     {
+                        Plugin.PauseForRoundtime(trimtext);
+                    }
+
+                    if (trimtext.StartsWith("[Roundtime:"))
+                    {
+                        Plugin.Host.EchoText("Pausing because overburdened.");
+                        Plugin.Host.EchoText("When RT is over it will continue, don't do anything.");
                         Plugin.PauseForRoundtime(trimtext);
                     }
 
