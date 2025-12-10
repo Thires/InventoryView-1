@@ -331,7 +331,7 @@ namespace InventoryView
 
         internal static void PauseForRoundtime(string text)
         {
-            Match match = Regex.Match(text, @"^(Roundtime:|\.\.\.wait)\s{1,3}(\d{1,3})\s{1,3}(secs?|seconds?|Irenos?)\.$");
+            Match match = Regex.Match(text, @"^(Roundtime:|\.\.\.wait|\[Roundtime:)\s{1,3}(\d{1,3})\s{0,3}(?:(?:secs?|seconds?|Irenos?)\.|\])$");
             int roundtime = int.Parse(match.Groups[2].Value);
             Host.EchoText($"Pausing {roundtime} seconds for RT.");
             Thread.Sleep(roundtime * 1000);
@@ -431,7 +431,7 @@ namespace InventoryView
                 "^In the keyblank pocket you see",
                 "^You tap [A-z\\-\\' ]+ keyblank pocket",
                 "^You tap [A-z\\-\\' ]+ pocket that you are wearing\\.",
-                "^You tap an? .+pocket.+inside your .+\\.",
+                "^You tap an? .+ pocket .+ inside your .+\\.",
                 "^I could not find what you were referring to\\."
             };
 
@@ -566,7 +566,7 @@ namespace InventoryView
 
         public string Version
         {
-            get { return "3.0.7c"; }
+            get { return "3.0.8c"; }
         }
 
         public string Description
